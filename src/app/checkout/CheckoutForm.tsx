@@ -38,8 +38,6 @@ export default function CheckoutForm({
     setBusy(true);
 
     try {
-      await loadCheckout();
-
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -47,6 +45,14 @@ export default function CheckoutForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not start the payment.");
+
+      // Local prototype mode: no Razorpay keys, order already fulfilled.
+      if (data.noPayment) {
+        window.location.href = `/order/${data.orderId}`;
+        return;
+      }
+
+      await loadCheckout();
 
       const rzp = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,

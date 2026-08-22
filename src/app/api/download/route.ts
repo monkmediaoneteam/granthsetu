@@ -46,9 +46,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "File not available yet." }, { status: 503 });
   }
 
-  const upstream = await fetch(book.file_url);
+  // file_url may be relative (the placeholder sample lives in /public).
+  const fileUrl = book.file_url.startsWith("http")
+    ? book.file_url
+    : new URL(book.file_url, req.url).toString();
+
+  const upstream = await fetch(fileUrl);
   if (!upstream.ok || !upstream.body) {
-    console.error("[download] upstream failed", book.file_url, upstream.status);
+    console.error("[download] upstream failed", fileUrl, upstream.status);
     return NextResponse.json({ error: "Could not fetch the file." }, { status: 502 });
   }
 

@@ -56,15 +56,16 @@ const run = async () => {
 
   for (const b of BOOKS) {
     await sql`
-      insert into books (slug, title, subtitle, description, price_inr, publisher, pages, year, sort, file_format)
+      insert into books (slug, title, subtitle, description, price_inr, publisher, pages, year, sort, file_format, file_url)
       values (${b.slug}, ${b.title}, ${b.subtitle}, ${b.description}, ${b.price_inr},
-              ${b.publisher}, ${b.pages}, ${b.year}, ${b.sort}, 'PDF')
+              ${b.publisher}, ${b.pages}, ${b.year}, ${b.sort}, 'PDF', '/sample.pdf')
       on conflict (slug) do update set
         title = excluded.title,
         subtitle = excluded.subtitle,
         description = excluded.description,
         publisher = excluded.publisher,
-        sort = excluded.sort
+        sort = excluded.sort,
+        file_url = coalesce(books.file_url, excluded.file_url)
     `;
     console.log("  seeded", b.slug);
   }

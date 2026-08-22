@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "node --env-file=.env.local scripts/seed.mjs"
+    "seed": "node --env-file=.env.local scripts/seed.mjs",
+    "test": "node scripts/test-token.mjs && node --env-file=.env.local scripts/test-fulfil.mjs",
+    "sample-pdf": "node scripts/make-sample-pdf.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
