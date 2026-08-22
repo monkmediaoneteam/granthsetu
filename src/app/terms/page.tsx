@@ -1,4 +1,4 @@
-import { Legal, ENTITY } from "../legal";
+import { Legal, ENTITY } from "@/components/legal";
 export const metadata = { title: "Terms of Use" };
 
 export default function Page() {
