@@ -4,6 +4,7 @@ import { sql, getBook, logEvent } from "@/lib/db";
 import { computeTotals } from "@/lib/money";
 import { createRazorpayOrder } from "@/lib/razorpay";
 import { fulfilOrder } from "@/lib/fulfil";
+import { env } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -17,7 +18,7 @@ const MAX_ORDERS_PER_HOUR = 10;
  * fail, not start giving books away.
  */
 const noPaymentMode = () =>
-  process.env.NODE_ENV !== "production" && !process.env.RAZORPAY_KEY_ID;
+  process.env.NODE_ENV !== "production" && !env("RAZORPAY_KEY_ID");
 
 export async function POST(req: Request) {
   let body: { slug?: string; email?: string; phone?: string };

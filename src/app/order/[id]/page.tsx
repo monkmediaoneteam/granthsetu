@@ -1,6 +1,7 @@
 import { getOrder, sql } from "@/lib/db";
 import { rupees } from "@/lib/money";
 import { mintDownloadToken } from "@/lib/token";
+import CopyLinkButton from "@/components/CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your order", robots: { index: false } };
@@ -35,7 +36,11 @@ export default async function OrderPage({
 
   return (
     <div className="wrap max-w-[760px] py-18">
-      <p className="eyebrow mb-5">Order {order.id}</p>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="eyebrow">Order {order.id}</p>
+        <CopyLinkButton orderId={order.id} />
+      </div>
+
 
       {!paid ? (
         <>

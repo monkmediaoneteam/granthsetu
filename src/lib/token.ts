@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { requireEnv } from "./env";
 
 /**
  * Download tokens: HMAC over orderId|slug|exp. Stateless, unforgeable, expiring.
@@ -7,11 +8,11 @@ import crypto from "node:crypto";
  */
 const TTL_MS = 15 * 60 * 1000;
 
-const secret = () => {
-  const s = process.env.DOWNLOAD_SECRET;
-  if (!s) throw new Error("DOWNLOAD_SECRET is not set");
-  return s;
-};
+const secret = () =>
+  requireEnv(
+    "DOWNLOAD_SECRET",
+    "Generate one: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  );
 
 const sign = (data: string) =>
   crypto.createHmac("sha256", secret()).update(data).digest("hex");

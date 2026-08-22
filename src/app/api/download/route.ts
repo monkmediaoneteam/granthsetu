@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql, getBook, getOrder, logEvent } from "@/lib/db";
 import { verifyDownloadToken } from "@/lib/token";
+import { stampPdf } from "@/lib/pdf";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,7 @@ const MAX_DOWNLOADS = 10;
 /**
  * The only door to the file. Streams through the server rather than redirecting
  * to storage, so the counter cannot be bypassed and the storage URL never leaks.
+ * Stamps the PDF footer with the buyer's email and order ID.
  */
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("t") || "";
@@ -52,7 +54,7 @@ export async function GET(req: Request) {
     : new URL(book.file_url, req.url).toString();
 
   const upstream = await fetch(fileUrl);
-  if (!upstream.ok || !upstream.body) {
+  if (!upstream.ok) {
     console.error("[download] upstream failed", fileUrl, upstream.status);
     return NextResponse.json({ error: "Could not fetch the file." }, { status: 502 });
   }
@@ -63,17 +65,27 @@ export async function GET(req: Request) {
   `;
   await logEvent(claim.orderId, "download", {
     slug: claim.slug,
-    ip: req.headers.get("x-forwarded-for"),
-    ua: req.headers.get("user-agent"),
+    ip: req.headers.get("x-forwarded-for") || "unknown",
+    ua: req.headers.get("user-agent") || "unknown",
   });
 
-  // ponytail: serving the master file as-is. Per-buyer footer stamping (PRD §2)
-  // needs pdf-lib and the real PDFs — wire it here once the files land.
-  const filename = `${book.slug}.${(book.file_format || "pdf").toLowerCase()}`;
+  const format = (book.file_format || "pdf").toLowerCase();
+  const filename = `${book.slug}.${format}`;
+  const contentType = format === "epub" ? "application/epub+zip" : "application/pdf";
 
-  return new NextResponse(upstream.body, {
+  let body: BodyInit;
+  if (format === "pdf") {
+    const rawBytes = await upstream.arrayBuffer();
+    const stampText = `Licensed to ${order.email} · Order #${order.id} · INVENTAYU® Books`;
+    const stamped = await stampPdf(rawBytes, stampText);
+    body = Buffer.from(stamped);
+  } else {
+    body = (await upstream.blob()) as unknown as BodyInit;
+  }
+
+  return new NextResponse(body, {
     headers: {
-      "content-type": "application/pdf",
+      "content-type": contentType,
       "content-disposition": `attachment; filename="${filename}"`,
       "cache-control": "no-store",
     },

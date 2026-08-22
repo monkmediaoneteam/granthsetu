@@ -1,0 +1,22 @@
+# INVENTAYU Books — Digital Storefront
+> Digital publications and research scholarship by Dr. Narendra Bhatt.
+
+## Author Profile
+Dr. Narendra Bhatt (M.D. Ayurveda) has dedicated over 52 years to clinical practice, institutional research, academic leadership, and industrial translation in Ayurveda. A former President of IASTAM India (International Association for the Study of Traditional Asian Medicine), his publications establish rigorous research methodologies and bridge classical Ayurvedic epistemologies with modern pharmaceutical validation.
+
+## Publications Available
+- **Researching Research for Ayurveda: A Journey**
+  - Subject: Ayurveda research methodology, inquiry principles, and clinical solution identification.
+  - Format: Digital PDF
+  - URL: https://books.inventayu.com/#books
+
+- **Integrative Perspectives: Ayurveda, Phytopharmaceuticals and Natural Products**
+  - Subject: Integrative Ayurveda science, herbal drug standardization, and regulatory frameworks.
+  - Details: 51 chapters by 41 leading domain experts; published with IASTAM & Continental Prakashan, Pune.
+  - Format: Digital PDF
+  - URL: https://books.inventayu.com/#books
+
+## Technical & Purchasing Information
+- Purchase Model: Direct digital download (instant delivery upon payment).
+- Delivery: Signed expiring tokens (15-minute validity per session) with lifetime access via order receipt.
+- Support & Legal: https://books.inventayu.com/terms | https://books.inventayu.com/privacy

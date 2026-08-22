@@ -2,6 +2,8 @@ import Image from "next/image";
 import { getBooks } from "@/lib/db";
 import { rupees } from "@/lib/money";
 import Reveal from "@/components/Reveal";
+import ChapterPreview from "@/components/ChapterPreview";
+import StickyBuyBar from "@/components/StickyBuyBar";
 
 export const dynamic = "force-dynamic";
 
@@ -32,16 +34,64 @@ const FAQ: [string, string][] = [
 
 export default async function Home() {
   const books = await getBooks();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://books.inventayu.com";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": `${siteUrl}/#author`,
+        name: "Dr. Narendra Bhatt",
+        jobTitle: "Ayurvedic Physician & Research Scientist",
+        description:
+          "Over 52 years of experience spanning clinical practice, academic leadership, and industrial translation in Ayurveda. Former President of IASTAM India.",
+        affiliation: {
+          "@type": "Organization",
+          name: "INVENTAYU Pvt. Ltd.",
+          url: "https://www.inventayu.com",
+        },
+      },
+      ...books.map((b) => ({
+        "@type": ["Book", "Product"],
+        "@id": `${siteUrl}/#book-${b.slug}`,
+        name: b.title,
+        headline: b.subtitle || b.title,
+        description: b.description,
+        bookFormat: "https://schema.org/EBook",
+        author: { "@id": `${siteUrl}/#author` },
+        publisher: b.publisher ? { "@type": "Organization", name: b.publisher } : undefined,
+        offers: {
+          "@type": "Offer",
+          price: (b.price_inr / 100).toFixed(2),
+          priceCurrency: "INR",
+          availability: "https://schema.org/InStock",
+          url: `${siteUrl}/checkout?book=${encodeURIComponent(b.slug)}`,
+        },
+      })),
+    ],
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Reveal />
+      <StickyBuyBar />
 
       <header className="wrap pt-24 pb-18">
-        <p className="eyebrow mb-7 flex items-center gap-2.5">
-          <span className="dot" />
-          Written by Dr. Narendra Bhatt
-        </p>
+        <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
+          <p className="eyebrow flex items-center gap-2.5">
+            <span className="dot" />
+            Written by Dr. Narendra Bhatt
+          </p>
+          <span className="eyebrow text-gold font-serif tracking-widest">
+            ॥ आयुर्वेदोऽमृतानाम् ॥
+          </span>
+        </div>
+
         <h1 className="disp h1 mb-8 max-w-[14ch]">
           Five decades,
           <br />
@@ -103,7 +153,12 @@ export default async function Home() {
                     className="object-cover"
                   />
                 ) : (
-                  <span className="eyebrow">Cover pending</span>
+                  <div className="flex flex-col items-center p-4 text-center">
+                    <span className="eyebrow text-[10px] text-ink-mute mb-2">Digital Edition</span>
+                    <span className="font-serif text-sm font-medium leading-tight text-ink">
+                      {b.title}
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -144,6 +199,8 @@ export default async function Home() {
                   </a>
                 </div>
                 <p className="eyebrow mt-4">Instant download · No account needed</p>
+
+                <ChapterPreview slug={b.slug} />
               </div>
             </article>
           ))}

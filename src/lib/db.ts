@@ -1,28 +1,15 @@
 import { neon } from "@neondatabase/serverless";
+import { requireEnv } from "./env";
 
-/** Fail loudly on the unedited .env.example placeholder — otherwise this
- *  surfaces as a bare `getaddrinfo ENOTFOUND host`, which says nothing. */
-function connectionString() {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set. Copy .env.example to .env.local and fill it in."
-    );
-  }
-  if (url.includes("user:password@") || /@host\//.test(url)) {
-    throw new Error(
-      "DATABASE_URL is still the .env.example placeholder. Paste the real Neon connection string into .env.local."
-    );
-  }
-  return url;
-}
-
-/** Constructed lazily: the build collects page data without a database, so the
- *  placeholder check must fire on first query, not on import. */
+/** Constructed lazily: the build collects page data without a database, so a
+ *  missing DATABASE_URL must fail on first query, not on import. */
 let client: ReturnType<typeof neon> | null = null;
 
 export const sql = ((...args: unknown[]) => {
-  if (!client) client = neon(connectionString());
+  if (!client)
+    client = neon(
+      requireEnv("DATABASE_URL", "Paste your Neon connection string into .env.local.")
+    );
   return (client as (...a: unknown[]) => unknown)(...args);
 }) as ReturnType<typeof neon>;
 

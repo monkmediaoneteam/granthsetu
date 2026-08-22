@@ -1,19 +1,21 @@
 {
   "name": "inventayu-books",
   "private": true,
+  "type": "module",
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "seed": "node --env-file=.env.local scripts/seed.mjs",
-    "test": "node scripts/test-token.mjs && node --env-file=.env.local scripts/test-fulfil.mjs",
+    "test": "node scripts/test-token.mjs && node scripts/test-pdf-stamp.mjs && node --env-file=.env.local scripts/test-fulfil.mjs",
     "sample-pdf": "node scripts/make-sample-pdf.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "@tailwindcss/postcss": "^4.3.3",
     "next": "^16.3.2",
+    "pdf-lib": "^1.17.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3"

@@ -52,7 +52,14 @@ const BOOKS = [
 
 const run = async () => {
   console.log("Applying schema…");
-  await sql(readFileSync(new URL("../schema.sql", import.meta.url), "utf8"));
+  // Neon's HTTP driver runs one statement per call, so split the file.
+  const schema = readFileSync(new URL("../schema.sql", import.meta.url), "utf8")
+    .replace(/^\s*--.*$/gm, "")
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const stmt of schema) await sql(stmt);
+  console.log(`  ${schema.length} statements applied`);
 
   for (const b of BOOKS) {
     await sql`

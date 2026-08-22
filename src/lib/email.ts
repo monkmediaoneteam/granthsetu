@@ -1,10 +1,12 @@
 import { rupees } from "./money";
 import type { Order } from "./db";
+import { env } from "./env";
 
 /** Resend is one POST. Failures are logged, never thrown — a dead mail
  *  provider must not roll back a captured payment. */
 async function send(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) {
+  const key = env("RESEND_API_KEY");
+  if (!key) {
     console.warn("[email] RESEND_API_KEY unset, skipping:", subject);
     return;
   }
@@ -12,7 +14,7 @@ async function send(to: string, subject: string, html: string) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        authorization: `Bearer ${key}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({ from: process.env.MAIL_FROM, to, subject, html }),
@@ -60,3 +62,26 @@ export function orderConfirmation(order: Order, siteUrl: string) {
     `)
   );
 }
+
+export function alertAdmin(subject: string, message: string, details?: unknown) {
+  const adminEmail = env("ADMIN_EMAIL");
+  if (!adminEmail) {
+    console.warn("[email-alert] ADMIN_EMAIL unset; alert message:", subject, message);
+    return;
+  }
+
+  const detailsFormatted = details
+    ? `<pre style="background:#F6F5F0;padding:12px;border-radius:6px;font-size:12px;overflow:auto">${JSON.stringify(details, null, 2)}</pre>`
+    : "";
+
+  return send(
+    adminEmail,
+    `[INVENTAYU Alert] ${subject}`,
+    shell(`
+      <div style="font-size:20px;font-weight:600;color:#B3261E;margin-bottom:12px">${subject}</div>
+      <p style="color:#4A524F;line-height:1.6">${message}</p>
+      ${detailsFormatted}
+    `)
+  );
+}
+
