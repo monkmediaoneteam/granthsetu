@@ -1,27 +1,54 @@
+/**
+ * stampPdf() swallows errors and returns the ORIGINAL buffer on failure, so
+ * "output is a valid PDF of >= original size" passes even when stamping did
+ * nothing. The only assertion that catches that is differential: two buyers
+ * must get different bytes.
+ */
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { PDFDocument, rgb } from "pdf-lib";
 import { stampPdf } from "../src/lib/pdf.ts";
 
+const sha = (b) => createHash("sha256").update(Buffer.from(b)).digest("hex");
+
 async function run() {
-  // Create a minimal 2-page sample PDF in memory
   const doc = await PDFDocument.create();
-  const page1 = doc.addPage([400, 600]);
-  page1.drawText("Page 1 Sample Content", { x: 50, y: 500, size: 14, color: rgb(0, 0, 0) });
-  const page2 = doc.addPage([400, 600]);
-  page2.drawText("Page 2 Sample Content", { x: 50, y: 500, size: 14, color: rgb(0, 0, 0) });
-  const initialBytes = await doc.save();
+  for (const n of [1, 2]) {
+    doc.addPage([400, 600]).drawText(`Page ${n} Sample Content`, {
+      x: 50,
+      y: 500,
+      size: 14,
+      color: rgb(0, 0, 0),
+    });
+  }
+  const original = await doc.save();
 
-  const stampText = "Licensed to buyer@example.com · Order ord_test123 · INVENTAYU® Books";
-  const stampedBytes = await stampPdf(initialBytes, stampText);
+  const alice = await stampPdf(original, "Licensed to alice@example.com \u00B7 Order A1");
+  const bob = await stampPdf(original, "Licensed to bob@example.com \u00B7 Order B2");
 
-  assert.ok(stampedBytes.length > 0, "Stamped output must not be empty");
-  assert.ok(stampedBytes.length >= initialBytes.length, "Stamped PDF must be larger or equal to original");
+  // The real guarantee: the buyer's identity reaches the bytes.
+  assert.notEqual(
+    sha(alice),
+    sha(bob),
+    "different buyers must produce different files — stamping silently failed"
+  );
+  assert.notEqual(
+    sha(alice),
+    sha(original),
+    "stamped file must differ from the source — stamping silently failed"
+  );
 
-  // Verify stamped PDF can be reloaded and has the same number of pages
-  const reloaded = await PDFDocument.load(stampedBytes);
-  assert.equal(reloaded.getPageCount(), 2, "Page count must remain identical");
+  // Length tracks the licence text, which a returned-original never would.
+  assert.ok(
+    Math.abs(alice.length - bob.length) >= 1,
+    "output length should track the licence text length"
+  );
 
-  console.log("PDF stamping test passed");
+  // And it must still be a usable PDF with every page intact.
+  const reloaded = await PDFDocument.load(alice);
+  assert.equal(reloaded.getPageCount(), 2, "page count must survive stamping");
+
+  console.log("PDF stamping test passed (differential)");
 }
 
 run().catch((e) => {
