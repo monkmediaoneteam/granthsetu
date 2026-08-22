@@ -6,6 +6,12 @@ inventayu.com site except the design tokens, which are copied, not imported.
 
 See `PRD.md` for scope and decisions.
 
+## Stack
+
+Next.js 16 (App Router, Turbopack) - React 19 - Tailwind v4 - Neon Postgres -
+Razorpay - Resend. Design tokens live in `src/app/globals.css` under `@theme`,
+copied from inventayu.com so both properties read as one system.
+
 ## Setup
 
 ```bash

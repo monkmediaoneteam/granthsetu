@@ -7,7 +7,7 @@ export default function Page() {
       <p><strong>Digital books cannot be returned once downloaded.</strong> This
       is stated at checkout before you pay.</p>
       <p>We will refund you in full if:</p>
-      <ul style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
+      <ul>
         <li>the file will not open or is corrupted, and we cannot replace it;</li>
         <li>you were charged more than once for the same order;</li>
         <li>payment was taken but no book was delivered.</li>

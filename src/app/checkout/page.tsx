@@ -15,38 +15,42 @@ export default async function Checkout({
 
   if (!book || !book.active) {
     return (
-      <main className="wrap" style={{ padding: "96px 0" }}>
-        <h1 className="disp h3" style={{ marginTop: 0 }}>That book is not available.</h1>
-        <a className="btn btn-ghost" href="/">← Back to the books</a>
-      </main>
+      <div className="wrap py-24">
+        <h1 className="disp h3 mb-6">That book is not available.</h1>
+        <a className="btn btn-ghost" href="/">
+          <span aria-hidden>&larr;</span> Back to the books
+        </a>
+      </div>
     );
   }
 
   return (
-    <main className="wrap" style={{ padding: "72px 0", maxWidth: 880 }}>
-      <div className="eyebrow" style={{ marginBottom: 20 }}>Checkout</div>
-      <h1 className="disp h3" style={{ margin: "0 0 40px" }}>{book.title}</h1>
+    <div className="wrap max-w-[880px] py-18">
+      <p className="eyebrow mb-5">Checkout</p>
+      <h1 className="disp h3 mb-10">{book.title}</h1>
 
-      <div className="card" style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-          <div>
-            <div style={{ fontWeight: 500 }}>{book.title}</div>
-            <div className="eyebrow" style={{ marginTop: 6 }}>
-              {book.file_format || "PDF"} · Instant download
-            </div>
-          </div>
-          <div className="disp" style={{ fontSize: 28 }}>{rupees(book.price_inr)}</div>
+      <div className="card mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="m-0 font-medium">{book.title}</p>
+          <p className="eyebrow mt-1.5">
+            {book.file_format || "PDF"} &middot; Instant download
+          </p>
         </div>
+        <p className="disp m-0 text-[28px]">{rupees(book.price_inr)}</p>
       </div>
 
-      <CheckoutForm slug={book.slug} amountLabel={rupees(book.price_inr)} title={book.title} />
+      <CheckoutForm
+        slug={book.slug}
+        amountLabel={rupees(book.price_inr)}
+        title={book.title}
+      />
 
-      <p style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 28, maxWidth: "62ch" }}>
+      <p className="mt-7 max-w-[62ch] text-[13px] text-ink-soft">
         Digital copies cannot be returned once downloaded. If the file fails to open,
         write to us and we will replace it or refund you. By paying you agree to our{" "}
-        <a href="/terms" style={{ textDecoration: "underline" }}>terms</a> and{" "}
-        <a href="/refund-policy" style={{ textDecoration: "underline" }}>refund policy</a>.
+        <a href="/terms" className="underline">terms</a> and{" "}
+        <a href="/refund-policy" className="underline">refund policy</a>.
       </p>
-    </main>
+    </div>
   );
 }

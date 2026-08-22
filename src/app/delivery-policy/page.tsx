@@ -7,7 +7,7 @@ export default function Page() {
       <p>All books sold here are <strong>digital</strong>. Nothing is shipped and
       no physical delivery takes place.</p>
       <p>Delivery is immediate. As soon as your payment is confirmed:</p>
-      <ul style={{ color: "var(--ink-soft)", lineHeight: 1.7 }}>
+      <ul>
         <li>a download link appears on your order page, and</li>
         <li>the same link is emailed to the address you entered at checkout.</li>
       </ul>

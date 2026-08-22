@@ -13,7 +13,8 @@ const loadCheckout = () =>
     const s = document.createElement("script");
     s.src = "https://checkout.razorpay.com/v1/checkout.js";
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Could not reach Razorpay. Check your connection."));
+    s.onerror = () =>
+      reject(new Error("Could not reach Razorpay. Check your connection."));
     document.body.appendChild(s);
   });
 
@@ -52,7 +53,7 @@ export default function CheckoutForm({
         order_id: data.razorpayOrderId,
         amount: data.amount,
         currency: "INR",
-        name: "INVENTAYU®",
+        name: "INVENTAYU",
         description: title,
         prefill: { email, contact: phone },
         theme: { color: "#2F7A4D" },
@@ -61,9 +62,7 @@ export default function CheckoutForm({
         handler: () => {
           window.location.href = `/order/${data.orderId}`;
         },
-        modal: {
-          ondismiss: () => setBusy(false),
-        },
+        modal: { ondismiss: () => setBusy(false) },
       });
 
       rzp.open();
@@ -74,36 +73,48 @@ export default function CheckoutForm({
   }
 
   return (
-    <form onSubmit={pay}>
-      <label className="field">
-        <span>Email — where your book is sent</span>
+    <form onSubmit={pay} noValidate={false}>
+      <div className="mb-5">
+        <label className="field-label" htmlFor="email">
+          Email &mdash; where your book is sent
+        </label>
         <input
+          id="email"
+          name="email"
           type="email"
           required
+          className="field-input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           autoComplete="email"
+          aria-describedby={err ? "checkout-error" : undefined}
         />
-      </label>
+      </div>
 
-      <label className="field">
-        <span>Phone (optional)</span>
+      <div className="mb-5">
+        <label className="field-label" htmlFor="phone">
+          Phone (optional)
+        </label>
         <input
+          id="phone"
+          name="phone"
           type="tel"
+          className="field-input"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="+91"
           autoComplete="tel"
         />
-      </label>
+      </div>
 
       <button className="btn btn-primary" type="submit" disabled={busy}>
-        {busy ? "Opening payment…" : `Pay ${amountLabel}`} <span aria-hidden>→</span>
+        {busy ? "Opening payment\u2026" : `Pay ${amountLabel}`}{" "}
+        <span aria-hidden>&rarr;</span>
       </button>
 
       {err && (
-        <p role="alert" style={{ color: "#B3261E", fontSize: 14, marginTop: 16 }}>
+        <p id="checkout-error" role="alert" className="mt-4 text-sm text-danger">
           {err}
         </p>
       )}

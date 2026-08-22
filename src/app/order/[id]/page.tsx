@@ -5,6 +5,8 @@ import { mintDownloadToken } from "@/lib/token";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your order", robots: { index: false } };
 
+const MAX_DOWNLOADS = 10;
+
 export default async function OrderPage({
   params,
 }: {
@@ -15,10 +17,12 @@ export default async function OrderPage({
 
   if (!order) {
     return (
-      <main className="wrap" style={{ padding: "96px 0" }}>
-        <h1 className="disp h3" style={{ marginTop: 0 }}>Order not found.</h1>
-        <a className="btn btn-ghost" href="/">← Back to the books</a>
-      </main>
+      <div className="wrap py-24">
+        <h1 className="disp h3 mb-6">Order not found.</h1>
+        <a className="btn btn-ghost" href="/">
+          <span aria-hidden>&larr;</span> Back to the books
+        </a>
+      </div>
     );
   }
 
@@ -30,81 +34,70 @@ export default async function OrderPage({
   const used = new Map(counts.map((c) => [c.book_slug, c.count]));
 
   return (
-    <main className="wrap" style={{ padding: "72px 0", maxWidth: 760 }}>
-      <div className="eyebrow" style={{ marginBottom: 20 }}>
-        Order {order.id}
-      </div>
+    <div className="wrap max-w-[760px] py-18">
+      <p className="eyebrow mb-5">Order {order.id}</p>
 
       {!paid ? (
         <>
-          <h1 className="disp h3" style={{ margin: "0 0 16px" }}>
-            Waiting for payment confirmation.
-          </h1>
-          <p style={{ color: "var(--ink-soft)", maxWidth: "58ch" }}>
-            This can take a few seconds. Refresh this page — and check your email,
-            the download link is sent there the moment payment clears. If you were
-            charged and this does not update within a few minutes, write to us with
-            your order number above.
+          <h1 className="disp h3 mb-4">Waiting for payment confirmation.</h1>
+          <p className="max-w-[58ch] text-ink-soft">
+            This can take a few seconds. Refresh this page &mdash; and check your
+            email, the download link is sent there the moment payment clears. If you
+            were charged and this does not update within a few minutes, write to us
+            with your order number above.
           </p>
         </>
       ) : (
         <>
-          <h1 className="disp h3" style={{ margin: "0 0 16px" }}>
-            Thank you. Your copy is ready.
-          </h1>
-          <p style={{ color: "var(--ink-soft)", margin: "0 0 40px", maxWidth: "58ch" }}>
-            Links below expire in 15 minutes for safety — reopen this page any time
-            for fresh ones. Bookmark it, or keep the confirmation email.
+          <h1 className="disp h3 mb-4">Thank you. Your copy is ready.</h1>
+          <p className="mb-10 max-w-[58ch] text-ink-soft">
+            Links below expire in 15 minutes for safety &mdash; reopen this page any
+            time for fresh ones. Bookmark it, or keep the confirmation email.
           </p>
 
-          <div style={{ display: "grid", gap: 16, marginBottom: 40 }}>
+          <ul className="mb-10 grid gap-4">
             {order.items.map((item) => {
               const n = used.get(item.slug) ?? 0;
-              const exhausted = n >= 10;
+              const exhausted = n >= MAX_DOWNLOADS;
               return (
-                <div
+                <li
                   key={item.slug}
-                  className="card"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 20,
-                    flexWrap: "wrap",
-                  }}
+                  className="card flex flex-wrap items-center justify-between gap-5"
                 >
                   <div>
-                    <div style={{ fontWeight: 500 }}>{item.title}</div>
-                    <div className="eyebrow" style={{ marginTop: 6 }}>
-                      {n} of 10 downloads used
-                    </div>
+                    <p className="m-0 font-medium">{item.title}</p>
+                    <p className="eyebrow mt-1.5">
+                      {n} of {MAX_DOWNLOADS} downloads used
+                    </p>
                   </div>
                   {exhausted ? (
-                    <span className="eyebrow">Limit reached — contact us</span>
+                    <span className="eyebrow">Limit reached &mdash; contact us</span>
                   ) : (
                     <a
                       className="btn btn-primary"
                       href={`/api/download?t=${mintDownloadToken(order.id, item.slug)}`}
                     >
-                      Download <span aria-hidden>↓</span>
+                      Download <span aria-hidden>&darr;</span>
                     </a>
                   )}
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </>
       )}
 
-      <div className="rule" style={{ margin: "0 0 24px" }} />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15 }}>
-        <span className="eyebrow">Total paid</span>
-        <span style={{ fontFamily: "var(--mono)" }}>{rupees(order.total)}</span>
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, marginTop: 10 }}>
-        <span className="eyebrow">Sent to</span>
-        <span>{order.email}</span>
-      </div>
-    </main>
+      <hr className="mb-6 border-line" />
+      <dl className="grid gap-2.5 text-[15px]">
+        <div className="flex justify-between">
+          <dt className="eyebrow">Total paid</dt>
+          <dd className="m-0 font-mono">{rupees(order.total)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="eyebrow">Sent to</dt>
+          <dd className="m-0">{order.email}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }

@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin", robots: { index: false, follow: false } };
 
 /**
- * Deliberately plain. One user, read-only, token in the URL.
- * ponytail: URL token leaks via referrer/history. Fine for a single operator on
- * an unlinked page; move to a signed cookie if anyone else ever gets access.
+ * Deliberately plain. One user, read-only.
+ * ponytail: token rides in the URL, so it leaks via referrer and history.
+ * Fine for a single operator on an unlinked page; move to a signed cookie the
+ * moment anyone else gets access.
  */
 export default async function Admin({
   searchParams,
@@ -18,9 +19,9 @@ export default async function Admin({
 
   if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
     return (
-      <main className="wrap" style={{ padding: "96px 0" }}>
-        <h1 className="disp h3" style={{ marginTop: 0 }}>Not authorised.</h1>
-      </main>
+      <div className="wrap py-24">
+        <h1 className="disp h3">Not authorised.</h1>
+      </div>
     );
   }
 
@@ -28,8 +29,12 @@ export default async function Admin({
     select id, email, total, status, created_at, items
     from orders order by created_at desc limit 200
   `) as {
-    id: string; email: string; total: number; status: string;
-    created_at: string; items: { title: string }[];
+    id: string;
+    email: string;
+    total: number;
+    status: string;
+    created_at: string;
+    items: { title: string }[];
   }[];
 
   const [totals] = (await sql`
@@ -38,27 +43,31 @@ export default async function Admin({
   `) as { revenue: number; units: number }[];
 
   return (
-    <main className="wrap" style={{ padding: "56px 0" }}>
-      <div className="eyebrow" style={{ marginBottom: 24 }}>Admin</div>
+    <div className="wrap py-14">
+      <p className="eyebrow mb-6">Admin</p>
 
-      <div style={{ display: "flex", gap: 48, marginBottom: 40 }}>
+      <dl className="mb-10 flex flex-wrap gap-12">
         <div>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Revenue</div>
-          <div className="disp" style={{ fontSize: 44 }}>{rupees(totals.revenue)}</div>
+          <dt className="eyebrow mb-2">Revenue</dt>
+          <dd className="disp m-0 text-[44px]">{rupees(totals.revenue)}</dd>
         </div>
         <div>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Paid orders</div>
-          <div className="disp" style={{ fontSize: 44 }}>{totals.units}</div>
+          <dt className="eyebrow mb-2">Paid orders</dt>
+          <dd className="disp m-0 text-[44px]">{totals.units}</dd>
         </div>
-      </div>
+      </dl>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <caption className="sr-only">Recent orders</caption>
           <thead>
             <tr>
               {["Order", "Email", "Book", "Total", "Status", "When"].map((h) => (
-                <th key={h} className="eyebrow"
-                  style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--line-2)" }}>
+                <th
+                  key={h}
+                  scope="col"
+                  className="eyebrow border-b border-line-2 px-3 py-2.5 text-left"
+                >
                   {h}
                 </th>
               ))}
@@ -67,29 +76,38 @@ export default async function Admin({
           <tbody>
             {orders.map((o) => (
               <tr key={o.id}>
-                <td style={cell}><a href={`/order/${o.id}`} style={{ fontFamily: "var(--mono)" }}>{o.id}</a></td>
-                <td style={cell}>{o.email}</td>
-                <td style={cell}>{o.items?.[0]?.title ?? "—"}</td>
-                <td style={{ ...cell, fontFamily: "var(--mono)" }}>{rupees(o.total)}</td>
-                <td style={cell}>
-                  <span style={{
-                    color: o.status === "fulfilled" || o.status === "paid"
-                      ? "var(--emerald)" : "var(--ink-soft)",
-                  }}>{o.status}</span>
+                <td className="border-b border-line px-3 py-2.5">
+                  <a className="font-mono underline" href={`/order/${o.id}`}>
+                    {o.id}
+                  </a>
                 </td>
-                <td style={{ ...cell, color: "var(--ink-soft)" }}>
+                <td className="border-b border-line px-3 py-2.5">{o.email}</td>
+                <td className="border-b border-line px-3 py-2.5">
+                  {o.items?.[0]?.title ?? "\u2014"}
+                </td>
+                <td className="border-b border-line px-3 py-2.5 font-mono">
+                  {rupees(o.total)}
+                </td>
+                <td className="border-b border-line px-3 py-2.5">
+                  <span
+                    className={
+                      o.status === "fulfilled" || o.status === "paid"
+                        ? "text-brand"
+                        : "text-ink-soft"
+                    }
+                  >
+                    {o.status}
+                  </span>
+                </td>
+                <td className="border-b border-line px-3 py-2.5 text-ink-soft">
                   {new Date(o.created_at).toLocaleString("en-IN")}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {orders.length === 0 && (
-          <p style={{ color: "var(--ink-soft)", padding: "24px 0" }}>No orders yet.</p>
-        )}
+        {orders.length === 0 && <p className="py-6 text-ink-soft">No orders yet.</p>}
       </div>
-    </main>
+    </div>
   );
 }
-
-const cell = { padding: "10px 12px", borderBottom: "1px solid var(--line)" } as const;

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getBooks } from "@/lib/db";
 import { rupees } from "@/lib/money";
 import Reveal from "@/components/Reveal";
@@ -36,88 +37,70 @@ export default async function Home() {
     <>
       <Reveal />
 
-      {/* hero */}
-      <header className="wrap" style={{ paddingTop: 96, paddingBottom: 72 }}>
-        <div className="eyebrow" style={{ marginBottom: 28 }}>
-          <span className="dot" style={{ marginRight: 10 }} />
+      <header className="wrap pt-24 pb-18">
+        <p className="eyebrow mb-7 flex items-center gap-2.5">
+          <span className="dot" />
           Written by Dr. Narendra Bhatt
-        </div>
-        <h1 className="disp h1" style={{ margin: "0 0 32px", maxWidth: "14ch" }}>
+        </p>
+        <h1 className="disp h1 mb-8 max-w-[14ch]">
           Five decades,
           <br />
-          <span style={{ color: "var(--emerald)" }}>written down.</span>
+          <span className="text-brand">written down.</span>
         </h1>
-        <p
-          style={{
-            maxWidth: "58ch",
-            color: "var(--ink-soft)",
-            fontSize: 20,
-            margin: "0 0 40px",
-          }}
-        >
+        <p className="mb-10 max-w-[58ch] text-xl text-ink-soft">
           Books on Ayurveda research methodology, integrative perspectives and the
           translation of classical knowledge into validated science — drawn from a
           career across academia, industry, clinic and research.
         </p>
         <a className="btn btn-ghost" href="#books">
-          Read the contents →
+          Read the contents <span aria-hidden>→</span>
         </a>
       </header>
 
-      {/* credibility */}
-      <section className="wrap reveal" style={{ paddingBottom: 88 }}>
-        <div className="rule" style={{ marginBottom: 32 }} />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-            gap: 32,
-          }}
-        >
+      <section className="wrap reveal pb-22">
+        <hr className="mb-8 border-line" />
+        <dl className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {CREDENTIALS.map((c) => (
             <div key={c.k}>
-              <div className="eyebrow" style={{ marginBottom: 12 }}>
-                {c.k}
-              </div>
-              <div className="disp" style={{ fontSize: 56, marginBottom: 8 }}>
-                {c.v}
-              </div>
-              <div style={{ fontSize: 14, color: "var(--ink-soft)" }}>{c.l}</div>
+              <dt className="eyebrow mb-3">{c.k}</dt>
+              <dd className="m-0">
+                <span className="disp mb-2 block text-[56px]">{c.v}</span>
+                <span className="text-sm text-ink-soft">{c.l}</span>
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
       </section>
 
-      {/* books */}
-      <section id="books" className="wrap" style={{ paddingBottom: 96 }}>
-        <div className="eyebrow" style={{ marginBottom: 20 }}>
-          The Books
-        </div>
-        <h2 className="disp h2" style={{ margin: "0 0 56px", maxWidth: "18ch" }}>
-          Available as digital editions.
-        </h2>
+      <section id="books" className="wrap pb-24">
+        <p className="eyebrow mb-5">The Books</p>
+        <h2 className="disp h2 mb-14 max-w-[18ch]">Available as digital editions.</h2>
 
-        <div style={{ display: "grid", gap: 32 }}>
+        <div className="grid gap-8">
           {books.length === 0 && (
             <div className="card">
-              <div className="eyebrow" style={{ marginBottom: 12 }}>
-                No books yet
-              </div>
-              <p style={{ margin: 0, color: "var(--ink-soft)" }}>
-                Run <code>npm run seed</code> to load placeholder titles, then
-                replace them with the real files, prices and covers.
+              <p className="eyebrow mb-3">No books yet</p>
+              <p className="m-0 text-ink-soft">
+                Run <code className="font-mono text-[15px]">npm run seed</code> to load
+                placeholder titles, then replace them with the real files, prices and
+                covers.
               </p>
             </div>
           )}
 
           {books.map((b) => (
-            <article key={b.slug} className="card reveal book-row">
-              <div className="cover">
+            <article
+              key={b.slug}
+              className="card reveal grid items-start gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] md:gap-10"
+            >
+              <div className="relative grid aspect-3/4 w-full max-w-[180px] place-items-center overflow-hidden rounded-2 border border-line-2 bg-bg-3 md:max-w-none">
                 {b.cover ? (
-                  <img
+                  <Image
                     src={b.cover}
-                    alt={"Cover of " + b.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    alt={`Cover of ${b.title}`}
+                    fill
+                    sizes="(max-width: 768px) 180px, 220px"
+                    className="object-cover"
                   />
                 ) : (
                   <span className="eyebrow">Cover pending</span>
@@ -125,40 +108,15 @@ export default async function Home() {
               </div>
 
               <div>
-                <h3 className="disp h3" style={{ margin: "0 0 12px" }}>
-                  {b.title}
-                </h3>
+                <h3 className="disp h3 mb-3">{b.title}</h3>
                 {b.subtitle && (
-                  <p
-                    style={{
-                      margin: "0 0 20px",
-                      color: "var(--ink-soft)",
-                      fontSize: 17,
-                    }}
-                  >
-                    {b.subtitle}
-                  </p>
+                  <p className="mb-5 text-[17px] text-ink-soft">{b.subtitle}</p>
                 )}
                 {b.description && (
-                  <p
-                    style={{
-                      margin: "0 0 24px",
-                      color: "var(--ink-soft)",
-                      maxWidth: "62ch",
-                    }}
-                  >
-                    {b.description}
-                  </p>
+                  <p className="mb-6 max-w-[62ch] text-ink-soft">{b.description}</p>
                 )}
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 20,
-                    flexWrap: "wrap",
-                    marginBottom: 28,
-                  }}
-                >
+                <dl className="mb-7 flex flex-wrap gap-5">
                   {(
                     [
                       ["Publisher", b.publisher],
@@ -170,62 +128,36 @@ export default async function Home() {
                     .filter(([, v]) => v)
                     .map(([k, v]) => (
                       <div key={k}>
-                        <div className="eyebrow" style={{ marginBottom: 4 }}>
-                          {k}
-                        </div>
-                        <div style={{ fontSize: 15 }}>{v}</div>
+                        <dt className="eyebrow mb-1">{k}</dt>
+                        <dd className="m-0 text-[15px]">{v}</dd>
                       </div>
                     ))}
-                </div>
+                </dl>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 24,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div className="disp" style={{ fontSize: 34 }}>
-                    {rupees(b.price_inr)}
-                  </div>
+                <div className="flex flex-wrap items-center gap-6">
+                  <p className="disp m-0 text-[34px]">{rupees(b.price_inr)}</p>
                   <a
                     className="btn btn-primary"
-                    href={"/checkout?book=" + encodeURIComponent(b.slug)}
+                    href={`/checkout?book=${encodeURIComponent(b.slug)}`}
                   >
                     Buy the digital edition <span aria-hidden>→</span>
                   </a>
                 </div>
-                <p className="eyebrow" style={{ marginTop: 16 }}>
-                  Instant download · No account needed
-                </p>
+                <p className="eyebrow mt-4">Instant download · No account needed</p>
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* faq */}
-      <section className="wrap reveal" style={{ paddingBottom: 40 }}>
-        <div className="rule" style={{ marginBottom: 48 }} />
-        <div className="eyebrow" style={{ marginBottom: 20 }}>
-          Questions
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
-            gap: 40,
-          }}
-        >
+      <section className="wrap reveal pb-10">
+        <hr className="mb-12 border-line" />
+        <p className="eyebrow mb-5">Questions</p>
+        <div className="grid gap-10 sm:grid-cols-2">
           {FAQ.map(([q, a]) => (
             <div key={q}>
-              <h4 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 600 }}>
-                {q}
-              </h4>
-              <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 15 }}>
-                {a}
-              </p>
+              <h3 className="mb-2 text-[17px] font-semibold">{q}</h3>
+              <p className="m-0 text-[15px] text-ink-soft">{a}</p>
             </div>
           ))}
         </div>
