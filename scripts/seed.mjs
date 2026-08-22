@@ -8,7 +8,20 @@
 import { neon } from "@neondatabase/serverless";
 import { readFileSync } from "node:fs";
 
-const sql = neon(process.env.DATABASE_URL);
+const DB = process.env.DATABASE_URL;
+if (!DB || DB.includes("user:password@") || /@host\//.test(DB)) {
+  console.error(
+    [
+      "",
+      "DATABASE_URL is missing or still the .env.example placeholder.",
+      "Create a Neon project, then paste its connection string into .env.local.",
+      "",
+    ].join("\n")
+  );
+  process.exit(1);
+}
+
+const sql = neon(DB);
 
 const BOOKS = [
   {
