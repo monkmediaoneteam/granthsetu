@@ -17,7 +17,7 @@ const CREDENTIALS = [
 const FAQ: [string, string][] = [
   [
     "How is the book delivered?",
-    "Immediately after payment. A download link appears on screen and is emailed to you. The link in the email keeps working — it regenerates each time you open it.",
+    "Immediately after payment. A download link appears on screen and is emailed to you. The link in the email keeps working it regenerates each time you open it.",
   ],
   [
     "Do I need an account?",

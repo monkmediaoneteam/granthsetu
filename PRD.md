@@ -1,4 +1,4 @@
-# PRD — INVENTAYU Books (digital)
+# PRD INVENTAYU Books (digital)
 
 Standalone storefront selling Dr. Narendra Bhatt's books as digital copies.
 Separate app, separate deploy, separate DB from the main static site.
@@ -11,11 +11,11 @@ Separate app, separate deploy, separate DB from the main static site.
 | Delivery | Instant. Signed expiring URL, emailed + on the order page. |
 | Stack | **Next.js App Router (TS)** in `books/`, own Vercel project. |
 | Domain | `books.inventayu.com` |
-| DB | **Vercel Postgres (Neon)** — new instance, not the blog DB. |
+| DB | **Vercel Postgres (Neon)** new instance, not the blog DB. |
 | Files | **Vercel Blob, private access.** Never a public URL. |
 | Payments | **Razorpay Standard Checkout** + signature-verified webhook. |
 | Auth | **Guest checkout.** No login. Order link re-mints download links. |
-| Email | **Resend** — order confirmation + download link only. |
+| Email | **Resend** order confirmation + download link only. |
 
 Design: reuse the main site's tokens verbatim (emerald/gold on warm off-white,
 Geist + Geist Mono, mono uppercase eyebrows, oversized tight display headings,
@@ -23,23 +23,23 @@ hairline rules, scroll-reveal). Copy stays institutional and evidence-first —
 "Read the contents →" over "Buy now". The book is presented as scholarship, the
 purchase is the quiet secondary action.
 
-## 2. Scope — today
+## 2. Scope today
 
 ### Pages
-- `/` — landing. Hero, both books, author credibility block (52+ yrs, 100+
+- `/` landing. Hero, both books, author credibility block (52+ yrs, 100+
   papers/chapters/patents, IASTAM), contents/chapter preview, sample pages, FAQ,
   footer. Sticky buy bar on mobile.
-- `/checkout` — email + phone only. Creates order → Razorpay.
-- `/order/[id]` — receipt + download buttons. Unguessable id. Re-mints links on
+- `/checkout` email + phone only. Creates order → Razorpay.
+- `/order/[id]` receipt + download buttons. Unguessable id. Re-mints links on
   demand, so a lost email is never a lost book.
-- `/admin` — token-gated. Orders table, revenue/units, download counts.
-- `/privacy`, `/terms`, `/refund-policy`, `/delivery-policy` — **required by
+- `/admin` token-gated. Orders table, revenue/units, download counts.
+- `/privacy`, `/terms`, `/refund-policy`, `/delivery-policy` **required by
   Razorpay for activation.**
 
 ### Order lifecycle
 `created → paid → fulfilled` plus `payment_failed`, `refunded`.
 That's the whole machine. Razorpay webhook (`payment.captured`) is the sole
-source of truth for `paid` — never the browser redirect. Idempotent on
+source of truth for `paid` never the browser redirect. Idempotent on
 `payment_id`.
 
 ### Download security
@@ -47,7 +47,7 @@ source of truth for `paid` — never the browser redirect. Idempotent on
 - **Cap of 10 downloads per order line**, then the order page says contact us.
 - Every mint logged to `events` (ip, ua, ts) so abuse is visible in `/admin`.
 - PDF stamped with buyer email + order id on the footer of each page.
-  *Deterrent, not DRM — see §5.*
+  *Deterrent, not DRM see §5.*
 
 ### Emails (Resend)
 1. Order confirmed + download links.
@@ -59,7 +59,7 @@ file_format, file_size, isbn, publisher, pages, year, active)
 `orders` (id, email, phone, items jsonb, subtotal, tax, total, status,
 razorpay_order_id, razorpay_payment_id, created_at, paid_at)
 `downloads` (order_id, book_slug, count, last_at)
-`events` (order_id, type, payload jsonb, created_at) — audit trail.
+`events` (order_id, type, payload jsonb, created_at) audit trail.
 
 ### SEO / analytics
 Per-page metadata + canonical, OG images, JSON-LD `Book` + `Product` + `Offer`
@@ -74,15 +74,15 @@ abandoned-cart email, affiliate links, print edition.
 
 ## 4. Inputs needed from you
 
-1. **The actual PDF/EPUB files.** Hard blocker — nothing ships without these.
+1. **The actual PDF/EPUB files.** Hard blocker nothing ships without these.
 2. Price per book (INR).
 3. Cover images (high-res), ISBN, publisher, page count, year.
 4. Sample pages / table of contents for the preview section.
 5. Razorpay: KYC submitted? Test keys?
-6. Refund stance for digital — recommend "no refund once downloaded", stated
+6. Refund stance for digital recommend "no refund once downloaded", stated
    plainly on the checkout page.
-7. Resend sending domain — `books.inventayu.com` or `inventayu.com`?
-8. **GST rate on e-books — confirm with your CA.** Printed books are exempt but
+7. Resend sending domain `books.inventayu.com` or `inventayu.com`?
+8. **GST rate on e-books confirm with your CA.** Printed books are exempt but
    digital editions are not treated the same way, and I'm not certain of the
    current rate. This changes the displayed price, so it needs a real answer
    before launch, not after.

@@ -30,12 +30,12 @@ async function run() {
   assert.notEqual(
     sha(alice),
     sha(bob),
-    "different buyers must produce different files — stamping silently failed"
+    "different buyers must produce different files stamping silently failed"
   );
   assert.notEqual(
     sha(alice),
     sha(original),
-    "stamped file must differ from the source — stamping silently failed"
+    "stamped file must differ from the source stamping silently failed"
   );
 
   // Length tracks the licence text, which a returned-original never would.

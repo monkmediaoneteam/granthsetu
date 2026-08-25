@@ -33,7 +33,8 @@ export function validateEmail(raw: string): { ok: true; value: string } | { ok: 
   if (DISPOSABLE_DOMAINS.has(domain)) {
     return {
       ok: false,
-      error: "Please use a permanent email address — your book is delivered there.",
+      error:
+        "Please use a permanent email address your book is delivered there.",
     };
   }
   return { ok: true, value };
@@ -48,11 +49,12 @@ export function validatePhone(raw: string): { ok: true; value: string } | { ok: 
   const digits = raw.replace(/\D/g, "");
   if (!digits) return { ok: false, error: "Phone number is required." };
 
-  const local = digits.startsWith("91") && digits.length === 12
-    ? digits.slice(2)
-    : digits.startsWith("0") && digits.length === 11
-    ? digits.slice(1)
-    : digits;
+  const local =
+    digits.startsWith("91") && digits.length === 12
+      ? digits.slice(2)
+      : digits.startsWith("0") && digits.length === 11
+        ? digits.slice(1)
+        : digits;
 
   if (local.length !== 10) {
     return { ok: false, error: "Enter a 10-digit Indian mobile number." };
@@ -60,7 +62,7 @@ export function validatePhone(raw: string): { ok: true; value: string } | { ok: 
   if (!/^[6-9]/.test(local)) {
     return { ok: false, error: "That is not a valid mobile number." };
   }
-  // 9999999999, 8888888888 etc. — never real, always test input.
+  // 9999999999, 8888888888 etc. never real, always test input.
   if (/^(\d)\1{9}$/.test(local)) {
     return { ok: false, error: "That is not a valid mobile number." };
   }

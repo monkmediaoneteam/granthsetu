@@ -3,7 +3,7 @@ import { requireEnv } from "./env";
 
 /**
  * Download tokens: HMAC over orderId|slug|exp. Stateless, unforgeable, expiring.
- * The file itself is never exposed by URL — /api/download is the only door,
+ * The file itself is never exposed by URL /api/download is the only door,
  * which is also what lets us count downloads server-side.
  */
 const TTL_MS = 15 * 60 * 1000;

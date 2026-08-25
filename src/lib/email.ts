@@ -2,7 +2,7 @@ import { rupees } from "./money";
 import type { Order } from "./db";
 import { env } from "./env";
 
-/** Resend is one POST. Failures are logged, never thrown — a dead mail
+/** Resend is one POST. Failures are logged, never thrown a dead mail
  *  provider must not roll back a captured payment. */
 async function send(to: string, subject: string, html: string) {
   const key = env("RESEND_API_KEY");
@@ -111,7 +111,7 @@ export function orderConfirmation(order: Order, siteUrl: string) {
 
   return send(
     order.email,
-    `Your book is ready — ${inv}`,
+    `Your book is ready ${inv}`,
     shell(
       `
       <p style="margin:0 0 10px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${BRAND.mute};">Order confirmed</p>
@@ -156,8 +156,8 @@ export function orderConfirmation(order: Order, siteUrl: string) {
         Your copy carries your email on each page. It is licensed for your personal
         use &mdash; please do not redistribute it.
       </p>`,
-      `Your copy of ${order.items[0]?.title ?? "your book"} is ready to download.`
-    )
+      `Your copy of ${order.items[0]?.title ?? "your book"} is ready to download.`,
+    ),
   );
 }
 

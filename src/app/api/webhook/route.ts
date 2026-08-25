@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 /**
  * The only place a real payment becomes `paid`. The browser redirect is never
- * trusted — a buyer can close the tab, and a hostile one can forge the callback.
+ * trusted a buyer can close the tab, and a hostile one can forge the callback.
  */
 export async function POST(req: Request) {
   const raw = await req.text();

@@ -1,6 +1,6 @@
 # INVENTAYU Books
 
-Digital storefront for Dr. Narendra Bhatt's books. **Standalone project** — its
+Digital storefront for Dr. Narendra Bhatt's books. **Standalone project** its
 own repo, own Vercel project, own Neon database. Shares nothing with the main
 inventayu.com site except the design tokens, which are copied, not imported.
 
@@ -39,7 +39,7 @@ Point it at `https://<domain>/api/webhook`, subscribe to **`payment.captured`**
 and **`payment.failed`**, and use the same secret as `RAZORPAY_WEBHOOK_SECRET`.
 
 The webhook is the only thing that marks an order paid. The browser redirect
-just moves the buyer to their receipt — never trust it for money.
+just moves the buyer to their receipt never trust it for money.
 
 ## Going live
 
@@ -49,7 +49,7 @@ just moves the buyer to their receipt — never trust it for money.
 
 ## Still placeholder
 
-- Book prices, covers, ISBN, page counts, year — see `scripts/seed.mjs`.
+- Book prices, covers, ISBN, page counts, year see `scripts/seed.mjs`.
 - `books.file_url` is empty; downloads return 503 until the real PDFs are hosted.
 - Entity address, support email and phone in `src/app/legal.tsx`.
 - Tax is hardcoded to 0 pending the e-book GST answer (`src/lib/money.ts`).

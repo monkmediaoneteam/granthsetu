@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
 /**
- * Razorpay via plain fetch — order creation is one authenticated POST and
+ * Razorpay via plain fetch order creation is one authenticated POST and
  * webhook verification is one HMAC. The SDK would not earn its dependency.
  */
 const auth = () =>
@@ -48,7 +48,7 @@ export function verifyWebhook(rawBody: string, signature: string | null) {
  * Creates a hosted Razorpay Payment Link and returns its short_url.
  *
  * Chosen over a static no-code Payment Button because a static button is the
- * same URL for every buyer — nothing ties a payment back to our order row, so
+ * same URL for every buyer nothing ties a payment back to our order row, so
  * we could take money and not know whose book to send. `reference_id` carries
  * our order id through to the webhook, which keeps tracking intact while
  * Razorpay still hosts the entire payment page.

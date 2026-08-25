@@ -15,7 +15,7 @@ const MAX_ORDERS_PER_HOUR = 10;
 /**
  * True when there are no Razorpay keys and we are not in production: the order
  * is marked paid immediately so the whole flow can be clicked through locally.
- * Both conditions are required — a production deploy that forgets its keys must
+ * Both conditions are required a production deploy that forgets its keys must
  * fail, not start giving books away.
  */
 const noPaymentMode = () =>

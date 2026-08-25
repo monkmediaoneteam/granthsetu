@@ -21,7 +21,7 @@ const PREVIEWS: Record<string, PreviewData> = {
     summary:
       "A foundational treatise synthesizing five decades of research practice into an actionable framework for Ayurvedic scientific inquiry.",
     highlights: [
-      "Chapter 1: Conceptual Epistemology — From Classical Texts to Scientific Inquiry",
+      "Chapter 1: Conceptual Epistemology From Classical Texts to Scientific Inquiry",
       "Chapter 2: Hypothesis Formulation & Clinical Trial Design in Traditional Medicine",
       "Chapter 3: Botanical Authentication, Extraction & Standardization Protocols",
       "Chapter 4: Evidence-Based Translation & Bridging Academia-Industry Realities",

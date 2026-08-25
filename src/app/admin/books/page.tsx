@@ -54,54 +54,119 @@ export default async function AdminBooks({
               <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-4">
                 <h2 className="disp text-[22px]">{b.title}</h2>
                 <p className="eyebrow">
-                  {s ? `${s.orders} orders · ${s.downloads} downloads` : "No sales yet"}
+                  {s
+                    ? `${s.orders} orders · ${s.downloads} downloads`
+                    : "No sales yet"}
                 </p>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
-                <Field name="title" label="Title" defaultValue={b.title} required />
-                <Field name="subtitle" label="Subtitle" defaultValue={b.subtitle ?? ""} />
-                <Field name="price_inr" label="Price (₹)" type="number" step="1" min="0"
-                  defaultValue={String(b.price_inr / 100)} required />
-                <Field name="publisher" label="Publisher" defaultValue={b.publisher ?? ""} />
+                <Field
+                  name="title"
+                  label="Title"
+                  defaultValue={b.title}
+                  required
+                />
+                <Field
+                  name="subtitle"
+                  label="Subtitle"
+                  defaultValue={b.subtitle ?? ""}
+                />
+                <Field
+                  name="price_inr"
+                  label="Price (₹)"
+                  type="number"
+                  step="1"
+                  min="0"
+                  defaultValue={String(b.price_inr / 100)}
+                  required
+                />
+                <Field
+                  name="publisher"
+                  label="Publisher"
+                  defaultValue={b.publisher ?? ""}
+                />
                 <Field name="isbn" label="ISBN" defaultValue={b.isbn ?? ""} />
-                <Field name="pages" label="Pages" type="number" defaultValue={b.pages ? String(b.pages) : ""} />
-                <Field name="year" label="Year" type="number" defaultValue={b.year ? String(b.year) : ""} />
-                <Field name="cover" label="Cover path" defaultValue={b.cover ?? ""} />
+                <Field
+                  name="pages"
+                  label="Pages"
+                  type="number"
+                  defaultValue={b.pages ? String(b.pages) : ""}
+                />
+                <Field
+                  name="year"
+                  label="Year"
+                  type="number"
+                  defaultValue={b.year ? String(b.year) : ""}
+                />
+                <Field
+                  name="cover"
+                  label="Cover path"
+                  defaultValue={b.cover ?? ""}
+                />
                 <div className="md:col-span-2">
-                  <Field name="file_url" label="PDF file URL" defaultValue={b.file_url ?? ""}
-                    hint="Leave blank until the real book file is hosted — downloads return 503 while empty." />
+                  <Field
+                    name="file_url"
+                    label="PDF file URL"
+                    defaultValue={b.file_url ?? ""}
+                    hint="Leave blank until the real book file is hosted downloads return 503 while empty."
+                  />
                 </div>
               </div>
 
               <div className="mt-5 grid gap-5">
                 <div>
-                  <label className="field-label" htmlFor={`${b.slug}-desc`}>Short description</label>
-                  <textarea id={`${b.slug}-desc`} name="description" rows={3}
-                    className="field-input resize-y" defaultValue={b.description ?? ""} />
+                  <label className="field-label" htmlFor={`${b.slug}-desc`}>
+                    Short description
+                  </label>
+                  <textarea
+                    id={`${b.slug}-desc`}
+                    name="description"
+                    rows={3}
+                    className="field-input resize-y"
+                    defaultValue={b.description ?? ""}
+                  />
                 </div>
                 <div>
                   <label className="field-label" htmlFor={`${b.slug}-long`}>
-                    Long description (shown under “View more”, blank line between paragraphs)
+                    Long description (shown under “View more”, blank line
+                    between paragraphs)
                   </label>
-                  <textarea id={`${b.slug}-long`} name="long_description" rows={10}
-                    className="field-input resize-y" defaultValue={b.long_description ?? ""} />
+                  <textarea
+                    id={`${b.slug}-long`}
+                    name="long_description"
+                    rows={10}
+                    className="field-input resize-y"
+                    defaultValue={b.long_description ?? ""}
+                  />
                 </div>
                 <div>
-                  <label className="field-label" htmlFor={`${b.slug}-hl`}>Highlights (one per line)</label>
-                  <textarea id={`${b.slug}-hl`} name="highlights" rows={4}
+                  <label className="field-label" htmlFor={`${b.slug}-hl`}>
+                    Highlights (one per line)
+                  </label>
+                  <textarea
+                    id={`${b.slug}-hl`}
+                    name="highlights"
+                    rows={4}
                     className="field-input resize-y"
-                    defaultValue={(b.highlights ?? []).join("\n")} />
+                    defaultValue={(b.highlights ?? []).join("\n")}
+                  />
                 </div>
               </div>
 
               <div className="mt-6 flex flex-wrap items-center gap-5 border-t border-line pt-5">
                 <label className="flex items-center gap-2 text-[15px]">
-                  <input type="checkbox" name="active" defaultChecked={b.active}
-                    className="h-4 w-4 accent-[color:var(--color-brand)]" />
+                  <input
+                    type="checkbox"
+                    name="active"
+                    defaultChecked={b.active}
+                    className="h-4 w-4 accent-[color:var(--color-brand)]"
+                  />
                   Visible on the storefront
                 </label>
-                <button className="btn btn-primary" type="submit">Save changes</button>
+                <button className="btn btn-primary" type="submit">
+                  Save changes
+                </button>
               </div>
             </form>
           );

@@ -1,6 +1,6 @@
 /**
  * TailAdmin-style chrome (fixed sidebar, stat cards, panelled tables) rendered
- * in INVENTAYU's own tokens rather than importing the TailAdmin template — see
+ * in INVENTAYU's own tokens rather than importing the TailAdmin template see
  * the note in README. Server component: no client JS needed for a static nav.
  */
 export default function AdminShell({

@@ -55,38 +55,60 @@ export async function GET(req: Request) {
 
   for (const order of stuckOrders) {
     try {
-      const res = await fetch(
-        `https://api.razorpay.com/v1/orders/${order.razorpay_order_id}/payments`,
-        { headers: { authorization: auth } }
-      );
+      const ref = order.razorpay_order_id;
 
+      // Payment Links carry a plink_ id; the Orders API uses order_. Checkout
+      // creates links now, but older rows may still be orders, so handle both.
+      const isLink = ref.startsWith("plink_");
+      const url = isLink
+        ? `https://api.razorpay.com/v1/payment_links/${ref}`
+        : `https://api.razorpay.com/v1/orders/${ref}/payments`;
+
+      const res = await fetch(url, { headers: { authorization: auth } });
       if (!res.ok) {
-        console.error(`[reconcile] Failed to fetch payments for order ${order.id}:`, await res.text());
+        console.error(`[reconcile] lookup failed for ${order.id}:`, await res.text());
         continue;
       }
 
       const data = (await res.json()) as {
+        status?: string;
+        payments?: { payment_id?: string; id?: string; status?: string }[];
         items?: { id: string; status: string }[];
       };
-      const items = data.items || [];
 
-      const captured = items.find((p) => p.status === "captured");
-      if (captured) {
-        const ok = await fulfilOrder(order.razorpay_order_id, captured.id);
-        if (ok) {
-          fulfilledCount++;
-          await logEvent(order.id, "reconcile.fulfilled", { paymentId: captured.id });
+      let capturedId: string | null = null;
+      let definitelyFailed = false;
+
+      if (isLink) {
+        if (data.status === "paid") {
+          const p = (data.payments || []).find((x) => x.status === "captured")
+            ?? (data.payments || [])[0];
+          capturedId = p?.payment_id ?? p?.id ?? null;
+        } else if (data.status === "cancelled" || data.status === "expired") {
+          definitelyFailed = true;
         }
       } else {
-        const allFailed = items.length > 0 && items.every((p) => p.status === "failed");
-        if (allFailed) {
-          await sql`
-            update orders set status = 'payment_failed'
-            where id = ${order.id} and status = 'created'
-          `;
-          failedCount++;
-          await logEvent(order.id, "reconcile.payment_failed", {});
+        const items = data.items || [];
+        const captured = items.find((p) => p.status === "captured");
+        capturedId = captured?.id ?? null;
+        definitelyFailed = !captured && items.length > 0 && items.every((p) => p.status === "failed");
+      }
+
+      // A paid link with no retrievable payment id is still a paid order — the
+      // buyer must get their book; the payment id is only bookkeeping.
+      if (capturedId || (isLink && data.status === "paid")) {
+        const ok = await fulfilOrder(ref, capturedId);
+        if (ok) {
+          fulfilledCount++;
+          await logEvent(order.id, "reconcile.fulfilled", { paymentId: capturedId });
         }
+      } else if (definitelyFailed) {
+        await sql`
+          update orders set status = 'payment_failed'
+          where id = ${order.id} and status = 'created'
+        `;
+        failedCount++;
+        await logEvent(order.id, "reconcile.payment_failed", {});
       }
     } catch (err) {
       console.error(`[reconcile] Error reconciling order ${order.id}:`, err);

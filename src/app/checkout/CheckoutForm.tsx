@@ -44,11 +44,24 @@ export default function CheckoutForm({
     }
   }
 
-  const fields: { k: Field; label: string; type: string; ac: string; ph: string; hint?: string }[] = [
-    { k: "name", label: "Full name", type: "text", ac: "name", ph: "Narendra Bhatt" },
+  const fields: {
+    k: Field;
+    label: string;
+    type: string;
+    ac: string;
+    ph: string;
+    hint?: string;
+  }[] = [
+    {
+      k: "name",
+      label: "Full name",
+      type: "text",
+      ac: "name",
+      ph: "Narendra Bhatt",
+    },
     {
       k: "email",
-      label: "Email — where your book is sent",
+      label: "Email where your book is sent",
       type: "email",
       ac: "email",
       ph: "you@example.com",

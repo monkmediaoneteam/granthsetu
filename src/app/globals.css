@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ============================================================
-   INVENTAYU Books — tokens lifted verbatim from inventayu.com
+   INVENTAYU Books tokens lifted verbatim from inventayu.com
    so the two properties read as one system.
    Tailwind v4 is CSS-first: these become bg-*, text-*, border-*.
    ============================================================ */
@@ -19,7 +19,7 @@
   --color-line: #e8e6dd;
   --color-line-2: #d6d3c7;
 
-  /* Named `brand`, not `emerald` — overriding Tailwind's emerald scale
+  /* Named `brand`, not `emerald` overriding Tailwind's emerald scale
      would silently repaint any future emerald-500 with our green. */
   --color-brand: #2f7a4d;
   --color-brand-deep: #1f5a3a;
@@ -54,7 +54,7 @@
     overflow-x: clip;
   }
 
-  /* Visible focus everywhere — keyboard users are not an edge case. */
+  /* Visible focus everywhere keyboard users are not an edge case. */
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;

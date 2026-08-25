@@ -1,4 +1,4 @@
--- INVENTAYU Books — digital storefront.
+-- INVENTAYU Books digital storefront.
 -- Run once against the project's own Neon instance.
 
 create table if not exists books (

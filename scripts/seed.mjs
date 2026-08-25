@@ -60,7 +60,7 @@ const run = async () => {
     console.log("  seeded", b.slug);
   }
 
-  console.log("\nDone. Prices and files are PLACEHOLDERS — replace before launch.");
+  console.log("\nDone. Prices and files are PLACEHOLDERS replace before launch.");
 };
 
 run().catch((e) => { console.error(e); process.exit(1); });

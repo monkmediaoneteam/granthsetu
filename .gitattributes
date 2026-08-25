@@ -1,4 +1,4 @@
-# PDFs store byte offsets in their xref table — any line-ending conversion
+# PDFs store byte offsets in their xref table any line-ending conversion
 # corrupts them. Never let git touch these.
 *.pdf binary
 
