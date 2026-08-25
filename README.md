@@ -35,11 +35,36 @@ npm run dev
 
 ## Razorpay webhook
 
-Point it at `https://<domain>/api/webhook`, subscribe to **`payment.captured`**
-and **`payment.failed`**, and use the same secret as `RAZORPAY_WEBHOOK_SECRET`.
+Point it at `https://<domain>/api/webhook` and use the same secret as
+`RAZORPAY_WEBHOOK_SECRET`. Subscribe to all five events:
+
+| Event | What it does |
+|---|---|
+| `payment_link.paid` | marks the order paid, sends the book — **the important one** |
+| `payment_link.cancelled` | marks the order failed |
+| `payment_link.expired` | marks the order failed |
+| `payment.captured` | same as above, for the older Orders API path |
+| `payment.failed` | marks the order failed |
+
+Checkout creates hosted **Payment Links** (`plink_…`) rather than Orders, with
+`reference_id` set to our order id — a static no-code Payment Button would be
+the same URL for every buyer, so nothing would tie a payment back to an order.
 
 The webhook is the only thing that marks an order paid. The browser redirect
-just moves the buyer to their receipt never trust it for money.
+just moves the buyer to their receipt — never trust it for money. If a webhook
+is ever missed, the hourly `/api/cron/reconcile` job asks Razorpay directly and
+recovers the order.
+
+## Committing
+
+Do **not** override the git identity when committing. Vercel blocks a
+deployment when GitHub cannot associate the committer with a GitHub user, and
+on a Hobby plan an unrecognised committer counts as a second team member:
+
+> The Deployment was blocked because GitHub could not associate the committer
+> with a GitHub user.
+
+Plain `git commit` uses this repo's configured identity, which is correct.
 
 ## Going live
 
