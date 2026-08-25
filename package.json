@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "seed": "node --env-file=.env.local scripts/seed.mjs",
-    "test": "node scripts/test-token.mjs && node scripts/test-pdf-stamp.mjs && node --env-file=.env.local scripts/test-fulfil.mjs",
+    "test": "node scripts/test-token.mjs && node scripts/test-pdf-stamp.mjs && node scripts/test-validate.mjs && node scripts/test-csv.mjs && node --env-file=.env.local scripts/test-fulfil.mjs",
     "sample-pdf": "node scripts/make-sample-pdf.mjs"
   },
   "dependencies": {

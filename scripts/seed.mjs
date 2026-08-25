@@ -23,32 +23,10 @@ if (!DB || DB.includes("user:password@") || /@host\//.test(DB)) {
 
 const sql = neon(DB);
 
-const BOOKS = [
-  {
-    slug: "researching-research-for-ayurveda",
-    title: "Researching Research for Ayurveda",
-    subtitle: "A Journey",
-    description:
-      "A book reflecting Dr. Bhatt's journey through research for Ayurveda, structured to provide depth and clarity on fundamentals, inquiry, experimentation and solution identification.",
-    price_inr: 49900, // PLACEHOLDER ₹499
-    publisher: null,
-    pages: null,
-    year: null,
-    sort: 1,
-  },
-  {
-    slug: "integrative-perspectives",
-    title: "Integrative Perspectives",
-    subtitle: "Ayurveda, Phytopharmaceuticals and Natural Products",
-    description:
-      "A landmark publication by IASTAM in association with Continental Prakashan, Pune, comprising 51 chapters by 41 well-known experts and IASTAM awardees; it explains integration in Ayurveda, especially drug standardization and regulatory aspects.",
-    price_inr: 89900, // PLACEHOLDER ₹899
-    publisher: "IASTAM · Continental Prakashan, Pune",
-    pages: null,
-    year: null,
-    sort: 2,
-  },
-];
+const BOOKS = JSON.parse(
+  readFileSync(new URL("./books.json", import.meta.url), "utf8")
+);
+
 
 const run = async () => {
   console.log("Applying schema…");
@@ -63,13 +41,18 @@ const run = async () => {
 
   for (const b of BOOKS) {
     await sql`
-      insert into books (slug, title, subtitle, description, price_inr, publisher, pages, year, sort, file_format, file_url)
-      values (${b.slug}, ${b.title}, ${b.subtitle}, ${b.description}, ${b.price_inr},
+      insert into books (slug, title, subtitle, description, long_description, highlights,
+                         cover, price_inr, publisher, pages, year, sort, file_format, file_url)
+      values (${b.slug}, ${b.title}, ${b.subtitle}, ${b.description}, ${b.long_description},
+              ${JSON.stringify(b.highlights)}::jsonb, ${b.cover}, ${b.price_inr},
               ${b.publisher}, ${b.pages}, ${b.year}, ${b.sort}, 'PDF', '/sample.pdf')
       on conflict (slug) do update set
         title = excluded.title,
         subtitle = excluded.subtitle,
         description = excluded.description,
+        long_description = excluded.long_description,
+        highlights = excluded.highlights,
+        cover = excluded.cover,
         publisher = excluded.publisher,
         sort = excluded.sort,
         file_url = coalesce(books.file_url, excluded.file_url)

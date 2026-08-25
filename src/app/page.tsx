@@ -4,6 +4,7 @@ import { rupees } from "@/lib/money";
 import Reveal from "@/components/Reveal";
 import ChapterPreview from "@/components/ChapterPreview";
 import StickyBuyBar from "@/components/StickyBuyBar";
+import BookCopy from "@/components/BookCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -81,30 +82,50 @@ export default async function Home() {
       <Reveal />
       <StickyBuyBar />
 
-      <header className="wrap pt-24 pb-18">
-        <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-          <p className="eyebrow flex items-center gap-2.5">
-            <span className="dot" />
-            Written by Dr. Narendra Bhatt
+      <header className="wrap grid items-center gap-12 pt-24 pb-18 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+        <div>
+          <div className="mb-7 flex flex-wrap items-center gap-4">
+            <p className="eyebrow flex items-center gap-2.5">
+              <span className="dot" />
+              Written by Dr. Narendra Bhatt
+            </p>
+          </div>
+
+          <h1 className="disp h1 mb-8 max-w-[14ch]">
+            Five decades,
+            <br />
+            <span className="text-brand">written down.</span>
+          </h1>
+          <p className="mb-10 max-w-[54ch] text-xl text-ink-soft">
+            Books on Ayurveda research methodology, integrative perspectives and the
+            translation of classical knowledge into validated science &mdash; drawn from
+            a career across academia, industry, clinic and research.
           </p>
-          <span className="eyebrow text-gold font-serif tracking-widest">
-            ॥ आयुर्वेदोऽमृतानाम् ॥
-          </span>
+          <a className="btn btn-ghost" href="#books">
+            Read the contents <span aria-hidden>&rarr;</span>
+          </a>
         </div>
 
-        <h1 className="disp h1 mb-8 max-w-[14ch]">
-          Five decades,
-          <br />
-          <span className="text-brand">written down.</span>
-        </h1>
-        <p className="mb-10 max-w-[58ch] text-xl text-ink-soft">
-          Books on Ayurveda research methodology, integrative perspectives and the
-          translation of classical knowledge into validated science — drawn from a
-          career across academia, industry, clinic and research.
-        </p>
-        <a className="btn btn-ghost" href="#books">
-          Read the contents <span aria-hidden>→</span>
-        </a>
+        <figure className="relative m-0">
+          <div className="relative overflow-hidden rounded-3 border border-line bg-bg-3">
+            <Image
+              src="/assets/DrNarendraBhatt.jpg"
+              alt="Dr. Narendra Bhatt"
+              width={800}
+              height={730}
+              priority
+              sizes="(max-width: 1024px) 100vw, 420px"
+              className="h-auto w-full object-cover"
+            />
+          </div>
+          <figcaption className="mt-4 flex items-baseline justify-between gap-3">
+            <span className="text-[15px] font-medium">Dr. Narendra Bhatt</span>
+            <span className="eyebrow text-gold">&#2405; आयुर्वेद &#2405;</span>
+          </figcaption>
+          <p className="eyebrow mt-1">
+            Ayurvedic physician &middot; Researcher &middot; Author
+          </p>
+        </figure>
       </header>
 
       <section className="wrap reveal pb-22">
@@ -143,14 +164,14 @@ export default async function Home() {
               key={b.slug}
               className="card reveal grid items-start gap-6 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] md:gap-10"
             >
-              <div className="relative grid aspect-3/4 w-full max-w-[180px] place-items-center overflow-hidden rounded-2 border border-line-2 bg-bg-3 md:max-w-none">
+              <div className="relative grid aspect-3/4 w-full max-w-[180px] place-items-center overflow-hidden rounded-2 border border-line-2 bg-white md:max-w-none">
                 {b.cover ? (
                   <Image
                     src={b.cover}
                     alt={`Cover of ${b.title}`}
                     fill
                     sizes="(max-width: 768px) 180px, 220px"
-                    className="object-cover"
+                    className="object-contain p-1"
                   />
                 ) : (
                   <div className="flex flex-col items-center p-4 text-center">
@@ -167,9 +188,11 @@ export default async function Home() {
                 {b.subtitle && (
                   <p className="mb-5 text-[17px] text-ink-soft">{b.subtitle}</p>
                 )}
-                {b.description && (
-                  <p className="mb-6 max-w-[62ch] text-ink-soft">{b.description}</p>
-                )}
+                <BookCopy
+                  short={b.description}
+                  long={b.long_description}
+                  highlights={b.highlights ?? []}
+                />
 
                 <dl className="mb-7 flex flex-wrap gap-5">
                   {(

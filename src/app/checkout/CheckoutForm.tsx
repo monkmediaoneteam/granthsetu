@@ -1,36 +1,22 @@
 "use client";
 import { useState } from "react";
 
-declare global {
-  interface Window {
-    Razorpay: new (opts: Record<string, unknown>) => { open: () => void };
-  }
-}
-
-const loadCheckout = () =>
-  new Promise<void>((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
-    s.onload = () => resolve();
-    s.onerror = () =>
-      reject(new Error("Could not reach Razorpay. Check your connection."));
-    document.body.appendChild(s);
-  });
+type Field = "name" | "email" | "phone";
 
 export default function CheckoutForm({
   slug,
   amountLabel,
-  title,
 }: {
   slug: string;
   amountLabel: string;
-  title: string;
+  title?: string;
 }) {
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<{ message: string; field?: Field } | null>(null);
+
+  const set = (k: Field) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [k]: e.target.value });
 
   async function pay(e: React.FormEvent) {
     e.preventDefault();
@@ -41,87 +27,81 @@ export default function CheckoutForm({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, email, phone }),
+        body: JSON.stringify({ slug, ...form }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not start the payment.");
-
-      // Local prototype mode: no Razorpay keys, order already fulfilled.
-      if (data.noPayment) {
-        window.location.href = `/order/${data.orderId}`;
+      if (!res.ok) {
+        setErr({ message: data.error || "Could not start the payment.", field: data.field });
+        setBusy(false);
         return;
       }
 
-      await loadCheckout();
-
-      const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        order_id: data.razorpayOrderId,
-        amount: data.amount,
-        currency: "INR",
-        name: "INVENTAYU",
-        description: title,
-        prefill: { email, contact: phone },
-        theme: { color: "#2F7A4D" },
-        // The webhook is what actually marks the order paid. This only moves
-        // the buyer to their receipt page.
-        handler: () => {
-          window.location.href = `/order/${data.orderId}`;
-        },
-        modal: { ondismiss: () => setBusy(false) },
-      });
-
-      rzp.open();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Something went wrong.");
+      // Razorpay hosts the payment page; we only redirect and wait for the webhook.
+      window.location.href = data.paymentUrl || `/order/${data.orderId}`;
+    } catch {
+      setErr({ message: "Network problem. Please try again." });
       setBusy(false);
     }
   }
 
+  const fields: { k: Field; label: string; type: string; ac: string; ph: string; hint?: string }[] = [
+    { k: "name", label: "Full name", type: "text", ac: "name", ph: "Narendra Bhatt" },
+    {
+      k: "email",
+      label: "Email — where your book is sent",
+      type: "email",
+      ac: "email",
+      ph: "you@example.com",
+      hint: "Use a permanent address. Disposable inboxes are rejected.",
+    },
+    {
+      k: "phone",
+      label: "Mobile number",
+      type: "tel",
+      ac: "tel",
+      ph: "98765 43210",
+      hint: "Indian mobile, 10 digits.",
+    },
+  ];
+
   return (
-    <form onSubmit={pay} noValidate={false}>
-      <div className="mb-5">
-        <label className="field-label" htmlFor="email">
-          Email &mdash; where your book is sent
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          className="field-input"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          autoComplete="email"
-          aria-describedby={err ? "checkout-error" : undefined}
-        />
-      </div>
+    <form onSubmit={pay}>
+      {fields.map((f) => (
+        <div className="mb-5" key={f.k}>
+          <label className="field-label" htmlFor={f.k}>
+            {f.label}
+          </label>
+          <input
+            id={f.k}
+            name={f.k}
+            type={f.type}
+            required
+            className="field-input"
+            value={form[f.k]}
+            onChange={set(f.k)}
+            placeholder={f.ph}
+            autoComplete={f.ac}
+            aria-invalid={err?.field === f.k || undefined}
+            aria-describedby={err?.field === f.k ? "checkout-error" : `${f.k}-hint`}
+          />
+          {f.hint && (
+            <p id={`${f.k}-hint`} className="mt-1.5 text-[13px] text-ink-soft">
+              {f.hint}
+            </p>
+          )}
+        </div>
+      ))}
 
-      <div className="mb-5">
-        <label className="field-label" htmlFor="phone">
-          Phone (optional)
-        </label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          className="field-input"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+91"
-          autoComplete="tel"
-        />
-      </div>
-
-      <button className="btn btn-primary" type="submit" disabled={busy}>
-        {busy ? "Opening payment\u2026" : `Pay ${amountLabel}`}{" "}
+      <button className="btn btn-primary mt-2" type="submit" disabled={busy}>
+        {busy ? "Redirecting to payment\u2026" : `Pay ${amountLabel}`}{" "}
         <span aria-hidden>&rarr;</span>
       </button>
 
+      <p className="eyebrow mt-3">Secure payment handled by Razorpay</p>
+
       {err && (
         <p id="checkout-error" role="alert" className="mt-4 text-sm text-danger">
-          {err}
+          {err.message}
         </p>
       )}
     </form>

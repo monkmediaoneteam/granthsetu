@@ -55,3 +55,13 @@ create table if not exists events (
 );
 
 create index if not exists events_order_idx on events (order_id, created_at desc);
+
+-- ── customer details + richer book copy (added 23 Aug 2026) ──────────────
+alter table orders add column if not exists name text;
+alter table orders add column if not exists razorpay_link_id text;
+alter table orders add column if not exists invoice_no text;
+
+create unique index if not exists orders_link_idx on orders (razorpay_link_id);
+
+alter table books add column if not exists long_description text;
+alter table books add column if not exists highlights jsonb default '[]'::jsonb;

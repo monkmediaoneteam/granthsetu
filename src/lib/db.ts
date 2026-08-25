@@ -18,6 +18,8 @@ export type Book = {
   title: string;
   subtitle: string | null;
   description: string | null;
+  long_description: string | null;
+  highlights: string[];
   cover: string | null;
   price_inr: number;
   file_url: string | null;
@@ -34,6 +36,7 @@ export type OrderItem = { slug: string; title: string; price: number };
 
 export type Order = {
   id: string;
+  name: string | null;
   email: string;
   phone: string | null;
   items: OrderItem[];
@@ -43,6 +46,8 @@ export type Order = {
   status: "created" | "paid" | "fulfilled" | "payment_failed" | "refunded";
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
+  razorpay_link_id: string | null;
+  invoice_no: string | null;
   created_at: string;
   paid_at: string | null;
 };

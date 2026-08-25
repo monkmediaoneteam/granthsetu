@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { sql, getBook, logEvent } from "@/lib/db";
 import { computeTotals } from "@/lib/money";
-import { createRazorpayOrder } from "@/lib/razorpay";
+import { createPaymentLink } from "@/lib/razorpay";
 import { fulfilOrder } from "@/lib/fulfil";
 import { env } from "@/lib/env";
+import { validateEmail, validatePhone, validateName } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -21,20 +22,26 @@ const noPaymentMode = () =>
   process.env.NODE_ENV !== "production" && !env("RAZORPAY_KEY_ID");
 
 export async function POST(req: Request) {
-  let body: { slug?: string; email?: string; phone?: string };
+  let body: { slug?: string; name?: string; email?: string; phone?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
 
-  const email = (body.email || "").trim().toLowerCase();
-  const slug = (body.slug || "").trim();
-  const phone = (body.phone || "").trim() || null;
+  const nameCheck = validateName(body.name || "");
+  if (!nameCheck.ok) return NextResponse.json({ error: nameCheck.error, field: "name" }, { status: 400 });
 
-  if (!EMAIL_RE.test(email)) {
-    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
-  }
+  const emailCheck = validateEmail(body.email || "");
+  if (!emailCheck.ok) return NextResponse.json({ error: emailCheck.error, field: "email" }, { status: 400 });
+
+  const phoneCheck = validatePhone(body.phone || "");
+  if (!phoneCheck.ok) return NextResponse.json({ error: phoneCheck.error, field: "phone" }, { status: 400 });
+
+  const name = nameCheck.value;
+  const email = emailCheck.value;
+  const phone = phoneCheck.value;
+  const slug = (body.slug || "").trim();
 
   // ponytail: per-email hourly cap. Does not stop someone rotating addresses;
   // add an IP column and a second count if that ever actually happens.
@@ -62,23 +69,40 @@ export async function POST(req: Request) {
 
   try {
     const fake = noPaymentMode();
-    const rzpOrderId = fake
-      ? `nopay_${orderId}`
-      : (await createRazorpayOrder(total, orderId)).id;
+    const site = env("NEXT_PUBLIC_SITE_URL") || new URL(req.url).origin;
+
+    let linkId: string | null = null;
+    let paymentUrl: string | null = null;
+
+    if (!fake) {
+      const link = await createPaymentLink({
+        amountPaise: total,
+        orderId,
+        name,
+        email,
+        phone,
+        description: book.title,
+        callbackUrl: `${site}/order/${orderId}`,
+      });
+      linkId = link.id;
+      paymentUrl = link.short_url;
+    }
 
     await sql`
-      insert into orders (id, email, phone, items, subtotal, tax, total, status, razorpay_order_id)
-      values (${orderId}, ${email}, ${phone}, ${JSON.stringify(items)}::jsonb,
-              ${subtotal}, ${tax}, ${total}, 'created', ${rzpOrderId})
+      insert into orders (id, name, email, phone, items, subtotal, tax, total, status,
+                          razorpay_order_id, razorpay_link_id)
+      values (${orderId}, ${name}, ${email}, ${phone}, ${JSON.stringify(items)}::jsonb,
+              ${subtotal}, ${tax}, ${total}, 'created',
+              ${fake ? `nopay_${orderId}` : linkId}, ${linkId})
     `;
-    await logEvent(orderId, "order.created", { slug, email, total, fake });
+    await logEvent(orderId, "order.created", { slug, name, email, total, fake });
 
     if (fake) {
-      await fulfilOrder(rzpOrderId, null);
+      await fulfilOrder(`nopay_${orderId}`, null);
       return NextResponse.json({ orderId, noPayment: true });
     }
 
-    return NextResponse.json({ orderId, razorpayOrderId: rzpOrderId, amount: total });
+    return NextResponse.json({ orderId, paymentUrl });
   } catch (err) {
     console.error("[checkout]", err);
     return NextResponse.json(

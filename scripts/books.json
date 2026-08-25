@@ -1,0 +1,40 @@
+[
+  {
+    "slug": "researching-research-for-ayurveda",
+    "title": "Researching Research for Ayurveda",
+    "subtitle": "A Journey",
+    "cover": "/assets/book1.png",
+    "description": "A book reflecting Dr. Bhatt's journey through research for Ayurveda, structured to provide depth and clarity on fundamentals, inquiry, experimentation and solution identification.",
+    "long_description": "Ayurveda has never lacked for texts. What it has lacked is an account of how one actually researches it — how a classical proposition becomes a question, how a question becomes an experiment, and how an experiment becomes something a regulator, a clinician or a manufacturer can act on.\n\nThis book is written from inside that problem. Across five decades spanning clinical practice, academic institutions, industrial R&D and formal research, Dr. Bhatt sets out the reasoning that has to happen before a study is designed at all: which parts of the classical corpus carry reproducible signal, which questions are worth the cost of answering, and where enthusiasm for Ayurveda has repeatedly outrun its evidence.\n\nIt is organised as a journey rather than a manual, moving from fundamentals through inquiry and experimentation to the identification of workable solutions. Readers who want to understand why so much Ayurveda research produces so little translatable outcome will find the argument laid out plainly.",
+    "highlights": [
+      "Written from five decades across clinic, academia, industry and research",
+      "Moves from fundamentals through inquiry and experimentation to solutions",
+      "Treats methodology as the subject, not an appendix to it",
+      "For researchers, postgraduate scholars and R&D teams in Ayurveda"
+    ],
+    "price_inr": 49900,
+    "publisher": null,
+    "pages": null,
+    "year": null,
+    "sort": 1
+  },
+  {
+    "slug": "integrative-perspectives",
+    "title": "Integrative Perspectives",
+    "subtitle": "Ayurveda, Phytopharmaceuticals and Natural Products",
+    "cover": "/assets/book2.png",
+    "description": "A landmark publication by IASTAM in association with Continental Prakashan, Pune, comprising 51 chapters by 41 well-known experts and IASTAM awardees; it explains integration in Ayurveda, especially drug standardization and regulatory aspects.",
+    "long_description": "Integration is the word everyone in Ayurveda uses and few define. This volume is an attempt at the definition — assembled not as a single argument but as 51 chapters from 41 contributors, each an established expert or IASTAM awardee writing from their own domain.\n\nThe centre of gravity is drug standardization and the regulatory apparatus around it: the part of the field where claims either survive contact with analytical method and law, or quietly do not. Around that centre the contributors work through phytopharmaceuticals, natural products, pharmaceutics and the points where classical preparation and modern analytics genuinely meet rather than merely coexist.\n\nPublished by IASTAM in association with Continental Prakashan, Pune, it is a reference volume rather than a monograph — intended to sit on the desk of anyone working on the standardization, regulation or industrial development of Ayurvedic and natural products.",
+    "highlights": [
+      "51 chapters by 41 experts and IASTAM awardees",
+      "Centred on drug standardization and regulatory aspects",
+      "Covers phytopharmaceuticals, natural products and pharmaceutics",
+      "Published by IASTAM with Continental Prakashan, Pune"
+    ],
+    "price_inr": 89900,
+    "publisher": "IASTAM · Continental Prakashan, Pune",
+    "pages": null,
+    "year": null,
+    "sort": 2
+  }
+]

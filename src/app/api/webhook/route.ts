@@ -31,6 +31,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
+  // Payment Links fire payment_link.*; the Orders API fires payment.*.
+  // Both are handled, so changing payment method later needs no webhook change.
+  if (event.event === "payment_link.paid") {
+    const link = event?.payload?.payment_link?.entity;
+    if (!link) return NextResponse.json({ ok: true });
+
+    const paid = event?.payload?.payment?.entity;
+    const fresh = await fulfilOrder(link.id, paid?.id ?? null);
+    return NextResponse.json({ ok: true, duplicate: !fresh });
+  }
+
+  if (event.event === "payment_link.cancelled" || event.event === "payment_link.expired") {
+    const link = event?.payload?.payment_link?.entity;
+    if (link) {
+      await sql`
+        update orders set status = 'payment_failed'
+        where razorpay_link_id = ${link.id} and status = 'created'
+      `;
+      await logEvent(null, event.event, { linkId: link.id });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   const payment = event?.payload?.payment?.entity;
   if (!payment) return NextResponse.json({ ok: true });
 
