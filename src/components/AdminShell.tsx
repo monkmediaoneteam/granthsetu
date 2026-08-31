@@ -1,8 +1,10 @@
 /**
  * TailAdmin-style chrome (fixed sidebar, stat cards, panelled tables) rendered
- * in INVENTAYU's own tokens rather than importing the TailAdmin template see
+ * in the store's own tokens rather than importing the TailAdmin template.
  * the note in README. Server component: no client JS needed for a static nav.
  */
+import { STORE } from "@/lib/store";
+
 export default function AdminShell({
   token,
   active,
@@ -27,10 +29,8 @@ export default function AdminShell({
     <div className="min-h-screen lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="border-b border-line bg-bg-2 lg:sticky lg:top-0 lg:h-screen lg:border-r lg:border-b-0">
         <div className="px-6 py-6">
-          <p className="text-[15px] font-semibold tracking-tight">
-            INVENTAYU<sup className="text-[9px]">&reg;</sup>
-          </p>
-          <p className="eyebrow mt-1">Books admin</p>
+          <p className="title text-[15px]">{STORE.name}</p>
+          <p className="eyebrow mt-1">Admin</p>
         </div>
 
         <nav className="px-3 pb-6">

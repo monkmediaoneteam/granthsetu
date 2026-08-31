@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 /* ============================================================
-   INVENTAYU Books tokens lifted verbatim from inventayu.com
-   so the two properties read as one system.
+   Design tokens for the storefront.
    Tailwind v4 is CSS-first: these become bg-*, text-*, border-*.
    ============================================================ */
 
@@ -233,8 +232,7 @@
    ============================================================ */
 
 @layer components {
-  /* Titles use the same Geist display treatment as inventayu.com, so the two
-     properties read as one brand. Scale below .disp, which stays the hero. */
+  /* Display scale below .disp, which stays reserved for the hero. */
   .title {
     font-family: var(--font-sans);
     font-weight: 500;

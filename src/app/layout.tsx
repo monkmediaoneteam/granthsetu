@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import "./globals.css";
+import { STORE } from "@/lib/store";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://books.inventayu.com";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: {
-    default: "Books by Dr. Narendra Bhatt \u2014 INVENTAYU\u00AE",
-    template: "%s \u2014 INVENTAYU\u00AE Books",
-  },
-  description:
-    "Digital editions of Dr. Narendra Bhatt's work on Ayurveda research, integrative perspectives and translational methodology.",
-  openGraph: { type: "website", siteName: "INVENTAYU\u00AE Books", url: SITE },
+  title: { default: STORE.name, template: `%s — ${STORE.name}` },
+  description: STORE.tagline,
+  openGraph: { type: "website", siteName: STORE.name, url: SITE },
   robots: { index: true, follow: true },
 };
 
@@ -43,31 +39,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
 
         <header className="sticky top-0 z-50 border-b border-line bg-bg/85 backdrop-blur-md backdrop-saturate-150">
-          <nav className="wrap flex min-h-[74px] items-center justify-between gap-6">
-            <a href="/" className="flex items-center gap-3">
-              <Image
-                src="/assets/mark.png"
-                alt=""
-                width={34}
-                height={34}
-                priority
-                className="rounded-1"
-              />
-              <span className="flex items-baseline gap-1.5">
-                <span className="text-[15px] font-semibold tracking-tight">
-                  INVENTAYU<sup className="text-[9px]">&reg;</sup>
-                </span>
-                <span className="eyebrow">Books</span>
-              </span>
-              <span className="sr-only">INVENTAYU Books, home</span>
+          <nav className="wrap flex min-h-[70px] items-center justify-between gap-6">
+            <a href="/" className="title text-[17px] tracking-tight">
+              {STORE.name}
             </a>
-            <a
-              className="eyebrow hover:text-ink"
-              href="https://www.inventayu.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Main site <span aria-hidden>&rarr;</span>
+            <a className="eyebrow hover:text-ink" href="/#catalogue">
+              Catalogue
             </a>
           </nav>
         </header>
@@ -75,12 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main">{children}</main>
 
         <footer className="mt-24 border-t border-line py-12">
-          <div className="wrap">
-            <div className="mb-5 flex items-center gap-3">
-              <Image src="/assets/mark.png" alt="" width={28} height={28} className="rounded-1 opacity-90" />
-              <p className="eyebrow m-0">
-                INVENTAYU Pvt. Ltd. &middot; Registered Start-Up &middot; MSME
-              </p>
+          <div className="wrap flex flex-wrap items-start justify-between gap-8">
+            <div>
+              <p className="title mb-2 text-[16px]">{STORE.name}</p>
+              {/* The seller has to be named: Razorpay requires it on the
+                  policy pages, and it must match the account holder. */}
+              <p className="eyebrow m-0">{STORE.legalEntity}</p>
             </div>
             <ul className="flex flex-wrap gap-6 text-sm text-ink-soft">
               {LEGAL.map(([label, href]) => (

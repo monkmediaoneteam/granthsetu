@@ -4,11 +4,18 @@
  * before activation is submitted.
  */
 
+import { STORE } from "@/lib/store";
+
+/**
+ * The storefront is unbranded because it carries many authors, but the seller
+ * still has to be named here: Razorpay will not activate an account whose
+ * policy pages do not identify the entity receiving the money.
+ */
 export const ENTITY = {
-  name: "INVENTAYU Pvt. Ltd.",
-  address: "[REGISTERED ADDRESS \u2014 required before Razorpay activation]",
-  email: "[SUPPORT EMAIL]",
-  phone: "[SUPPORT PHONE]",
+  name: STORE.legalEntity,
+  address: STORE.legalAddress,
+  email: STORE.supportEmail,
+  phone: STORE.supportPhone,
 };
 
 export function Legal({

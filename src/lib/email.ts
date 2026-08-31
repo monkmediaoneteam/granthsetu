@@ -1,6 +1,7 @@
 import { rupees } from "./money";
 import type { Order } from "./db";
 import { env } from "./env";
+import { STORE } from "./store";
 
 /** Resend is one POST. Failures are logged, never thrown a dead mail
  *  provider must not roll back a captured payment. */
@@ -40,7 +41,7 @@ const BRAND = {
 const shell = (body: string, preheader = "") => `
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<title>INVENTAYU Books</title></head>
+<title>${STORE.name}</title></head>
 <body style="margin:0;padding:0;background:${BRAND.bg2};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preheader}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.bg2};padding:32px 12px;">
@@ -51,11 +52,10 @@ const shell = (body: string, preheader = "") => `
     <tr><td style="padding:28px 32px 0;">
       <table role="presentation" width="100%"><tr>
         <td style="font-size:15px;font-weight:600;letter-spacing:-0.02em;color:${BRAND.ink};">
-          INVENTAYU<span style="font-size:9px;vertical-align:super;">&reg;</span>
-          <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${BRAND.mute};padding-left:4px;">Books</span>
+          ${STORE.name}
         </td>
         <td align="right" style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${BRAND.gold};">
-          &#2405; &#2310;&#2351;&#2369;&#2352;&#2381;&#2357;&#2375;&#2342; &#2405;
+          ${STORE.kicker}
         </td>
       </tr></table>
       <div style="height:1px;background:${BRAND.line};margin:18px 0 0;"></div>
@@ -66,7 +66,7 @@ const shell = (body: string, preheader = "") => `
     <tr><td style="padding:0 32px 28px;">
       <div style="height:1px;background:${BRAND.line};margin-bottom:16px;"></div>
       <p style="margin:0 0 6px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${BRAND.mute};">
-        INVENTAYU Pvt. Ltd. &middot; Registered Start-Up &middot; MSME
+        ${STORE.legalEntity}
       </p>
       <p style="margin:0;font-size:12px;line-height:1.6;color:${BRAND.soft};">
         Questions about your order? Just reply to this email.
@@ -174,7 +174,7 @@ export function alertAdmin(subject: string, message: string, details?: unknown) 
 
   return send(
     adminEmail,
-    `[INVENTAYU Alert] ${subject}`,
+    `[${STORE.name}] ${subject}`,
     shell(`
       <div style="font-size:20px;font-weight:600;color:#B3261E;margin-bottom:12px">${subject}</div>
       <p style="color:#4A524F;line-height:1.6">${message}</p>

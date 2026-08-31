@@ -2,20 +2,11 @@ import Image from "next/image";
 import { getBooks, type Book } from "@/lib/db";
 import { rupees } from "@/lib/money";
 import Reveal from "@/components/Reveal";
+import { STORE } from "@/lib/store";
 import StickyBuyBar from "@/components/StickyBuyBar";
 import BookCopy from "@/components/BookCopy";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Provenance of the catalogue, not a personal CV — this is a press, and the
- * volumes carry many contributors between them.
- */
-const PROVENANCE = [
-  { v: "52+", k: "Years", l: "Clinical, academic and industrial research behind the list" },
-  { v: "100+", k: "Papers & patents", l: "Published by the authors and contributors" },
-  { v: "6", k: "Domains", l: "Academia · Industry · Clinic · Research · Science · Practice" },
-];
 
 const FAQ: [string, string][] = [
   [
@@ -28,7 +19,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What am I buying?",
-    "A PDF, readable on any device, licensed for your personal use. Each copy is watermarked with the buyer's email.",
+    "A PDF, readable on any device, licensed for your personal use. Each copy is watermarked with the buyer’s email.",
   ],
   [
     "Can I get a refund?",
@@ -38,7 +29,7 @@ const FAQ: [string, string][] = [
 
 export default async function Home() {
   const books = await getBooks();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://books.inventayu.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -76,25 +67,23 @@ export default async function Home() {
       <Reveal />
       <StickyBuyBar />
 
-      {/* ── hero ────────────────────────────────────────────────── */}
+      {/* ── hero ────────────────────────────────── */}
       <header className="wrap pt-20 pb-16 lg:pt-28">
         <p className="eyebrow mb-8 flex items-center gap-2.5">
           <span className="dot" />
-          INVENTAYU Press &middot; Digital editions
+          {STORE.kicker}
         </p>
 
         <h1 className="disp h1 mb-8 max-w-[13ch] text-balance">
-          Five decades,
+          Research,
           <br />
-          <span className="text-brand">written down.</span>
+          <span className="text-brand">in full.</span>
         </h1>
 
         <hr className="gold-rule mb-8" />
 
         <p className="mb-10 max-w-[56ch] text-xl leading-relaxed text-ink-soft">
-          Books on Ayurveda research methodology, integrative perspectives and the
-          translation of classical knowledge into validated science &mdash; drawn from
-          careers across academia, industry, clinic and research.
+          {STORE.tagline}
         </p>
 
         <div className="flex flex-wrap items-center gap-5">
@@ -104,24 +93,6 @@ export default async function Home() {
           <p className="eyebrow">{books.length} volumes available</p>
         </div>
       </header>
-
-      {/* ── provenance: sits immediately under the hero ─────────── */}
-      <section className="reveal border-y border-line bg-bg-2">
-        <div className="wrap py-12">
-          <p className="eyebrow mb-8">Behind the list</p>
-          <dl className="grid gap-10 sm:grid-cols-3 sm:gap-8">
-            {PROVENANCE.map((c) => (
-              <div key={c.k} className="sm:border-l sm:border-line-2 sm:pl-6 sm:first:border-l-0 sm:first:pl-0">
-                <dd className="title m-0 text-[46px] leading-none text-ink">{c.v}</dd>
-                <dt className="eyebrow mt-3 mb-1.5">{c.k}</dt>
-                <dd className="m-0 max-w-[34ch] text-[14px] leading-relaxed text-ink-soft">
-                  {c.l}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
 
       {/* ── catalogue ───────────────────────────────────────────────── */}
       <section id="catalogue" className="wrap pt-24 pb-8">

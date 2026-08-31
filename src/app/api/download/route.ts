@@ -4,6 +4,7 @@ import path from "node:path";
 import { sql, getBook, getOrder, logEvent } from "@/lib/db";
 import { verifyDownloadToken } from "@/lib/token";
 import { stampPdf } from "@/lib/pdf";
+import { STORE } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -104,7 +105,7 @@ export async function GET(req: Request) {
 
   let body: BodyInit;
   if (format === "pdf") {
-    const stampText = `Licensed to ${order.email} · Order #${order.id} · INVENTAYU® Books`;
+    const stampText = `Licensed to ${order.email} · Order #${order.id} · ${STORE.name}`;
     const stamped = await stampPdf(rawBytes, stampText);
     body = Buffer.from(stamped);
   } else {

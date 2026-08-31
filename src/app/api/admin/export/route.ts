@@ -63,7 +63,7 @@ export async function GET(req: Request) {
   return new NextResponse("\uFEFF" + body, {
     headers: {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="inventayu-orders-${stamp}.csv"`,
+      "content-disposition": `attachment; filename="orders-${stamp}.csv"`,
       "cache-control": "no-store",
     },
   });
