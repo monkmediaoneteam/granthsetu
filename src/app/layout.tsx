@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { STORE } from "@/lib/store";
+import DevPaymentNotice from "@/components/DevPaymentNotice";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -37,6 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
+
+        <DevPaymentNotice />
 
         <header className="sticky top-0 z-50 border-b border-line bg-bg/85 backdrop-blur-md backdrop-saturate-150">
           <nav className="wrap flex min-h-[70px] items-center justify-between gap-6">

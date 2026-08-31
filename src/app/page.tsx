@@ -67,40 +67,34 @@ export default async function Home() {
       <Reveal />
       <StickyBuyBar />
 
-      {/* ── hero ────────────────────────────────── */}
-      <header className="wrap pt-20 pb-16 lg:pt-28">
-        <p className="eyebrow mb-8 flex items-center gap-2.5">
-          <span className="dot" />
-          {STORE.kicker}
-        </p>
-
-        <h1 className="disp h1 mb-8 max-w-[13ch] text-balance">
-          Research,
-          <br />
-          <span className="text-brand">in full.</span>
-        </h1>
-
-        <hr className="gold-rule mb-8" />
-
-        <p className="mb-10 max-w-[56ch] text-xl leading-relaxed text-ink-soft">
-          {STORE.tagline}
-        </p>
-
-        <div className="flex flex-wrap items-center gap-5">
-          <a className="btn btn-primary" href="#catalogue">
-            Browse the catalogue <span aria-hidden>&darr;</span>
-          </a>
-          <p className="eyebrow">{books.length} volumes available</p>
+      {/* ── masthead: two lines, then straight into the books. A viewport-tall
+           statement would be filler in front of a short catalogue. ── */}
+      <section className="border-b border-line bg-bg-2">
+        <div className="wrap flex flex-wrap items-end justify-between gap-x-10 gap-y-5 py-9">
+          <div>
+            <p className="eyebrow mb-2.5 flex items-center gap-2.5">
+              <span className="dot" />
+              {STORE.kicker}
+            </p>
+            <p className="max-w-[54ch] text-[17px] leading-relaxed text-ink-soft">
+              {STORE.tagline}
+            </p>
+          </div>
+          <dl className="flex gap-8">
+            <div>
+              <dt className="eyebrow mb-1">Titles</dt>
+              <dd className="title m-0 text-[28px]">{books.length}</dd>
+            </div>
+            <div>
+              <dt className="eyebrow mb-1">Delivery</dt>
+              <dd className="title m-0 text-[28px]">Instant</dd>
+            </div>
+          </dl>
         </div>
-      </header>
+      </section>
 
-      {/* ── catalogue ───────────────────────────────────────────────── */}
-      <section id="catalogue" className="wrap pt-24 pb-8">
-        <div className="mb-14 flex flex-wrap items-end justify-between gap-6 border-b border-ink pb-5">
-          <h2 className="title title-lg m-0">The catalogue</h2>
-          <p className="eyebrow">Digital editions · INR · Instant delivery</p>
-        </div>
-
+      {/* ── catalogue ── */}
+      <section id="catalogue" className="wrap pt-14 pb-8">
         {books.length === 0 && (
           <div className="card">
             <p className="eyebrow mb-3">Nothing listed yet</p>
@@ -111,7 +105,7 @@ export default async function Home() {
           </div>
         )}
 
-        <div className="grid gap-20">
+        <div className="grid gap-14">
           {books.map((b, i) => (
             <Entry key={b.slug} book={b} index={i + 1} total={books.length} />
           ))}
@@ -136,7 +130,7 @@ export default async function Home() {
   );
 }
 
-/** One catalogue entry: object, apparatus, copy, price. */
+/** One catalogue entry: the book, its apparatus, and the buy action. */
 function Entry({ book: b, index, total }: { book: Book; index: number; total: number }) {
   const facts: [string, string][] = [
     ...Object.entries(b.facts ?? {}),
@@ -148,71 +142,71 @@ function Entry({ book: b, index, total }: { book: Book; index: number; total: nu
   return (
     <article
       id={`book-${b.slug}`}
-      className="reveal grid scroll-mt-24 gap-10 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-16"
+      className="reveal scroll-mt-24 overflow-hidden rounded-3 border border-line bg-bg-2"
     >
-      {/* Object + apparatus travel together, like a card behind the book. */}
-      <div>
-        <div className="volume mx-auto w-full max-w-[260px] lg:mx-0">
-          {b.cover ? (
-            <Image
-              src={b.cover}
-              alt={`Cover of ${b.title}`}
-              width={520}
-              height={660}
-              sizes="(max-width: 1024px) 260px, 300px"
-              className="h-auto w-full"
-            />
-          ) : (
-            <div className="grid aspect-3/4 place-items-center rounded-2 border border-line-2 bg-bg-3">
-              <span className="eyebrow">Cover pending</span>
-            </div>
+      <div className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)] lg:gap-14">
+        <div>
+          <div className="volume mx-auto w-full max-w-[240px] lg:mx-0 lg:max-w-none">
+            {b.cover ? (
+              <Image
+                src={b.cover}
+                alt={`Cover of ${b.title}`}
+                width={540}
+                height={680}
+                priority={index === 1}
+                sizes="(max-width: 1024px) 240px, 270px"
+                className="h-auto w-full"
+              />
+            ) : (
+              <div className="grid aspect-3/4 place-items-center rounded-2 border border-line-2 bg-bg-3">
+                <span className="eyebrow">Cover pending</span>
+              </div>
+            )}
+          </div>
+
+          {facts.length > 0 && (
+            <table className="catalogue mt-8">
+              <caption className="sr-only">Bibliographic details for {b.title}</caption>
+              <tbody>
+                {facts.map(([k, v]) => (
+                  <tr key={k}>
+                    <th scope="row">{k}</th>
+                    <td>{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
-        {facts.length > 0 && (
-          <table className="catalogue mt-9">
-            <caption className="sr-only">Bibliographic details for {b.title}</caption>
-            <tbody>
-              {facts.map(([k, v]) => (
-                <tr key={k}>
-                  <th scope="row">{k}</th>
-                  <td>{v}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="min-w-0">
-        <p className="eyebrow mb-5">
-          {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
-        </p>
-
-        <h3 className="title title-lg mb-3">{b.title}</h3>
-        {b.subtitle && <p className="subtitle mb-6 text-[21px]">{b.subtitle}</p>}
-
-        {b.authorship && (
-          <p className="eyebrow mb-7 text-ink-soft">{b.authorship}</p>
-        )}
-
-        {b.description && (
-          <p className="mb-8 max-w-[58ch] text-[19px] leading-relaxed text-ink">
-            {b.description}
+        <div className="flex min-w-0 flex-col">
+          <p className="eyebrow mb-4">
+            {String(index).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </p>
-        )}
 
-        <BookCopy long={b.long_description} highlights={b.highlights ?? []} />
+          <h2 className="title title-lg mb-3">{b.title}</h2>
+          {b.subtitle && <p className="subtitle mb-5 text-[20px]">{b.subtitle}</p>}
+          {b.authorship && <p className="eyebrow mb-6">{b.authorship}</p>}
 
-        <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-line pt-7">
-          <p className="title m-0 text-[38px] leading-none">{rupees(b.price_inr)}</p>
-          <a
-            className="btn btn-primary"
-            href={`/checkout?book=${encodeURIComponent(b.slug)}`}
-          >
-            Buy the digital edition <span aria-hidden>→</span>
-          </a>
-          <p className="eyebrow">Instant download · No account</p>
+          {b.description && (
+            <p className="mb-7 max-w-[58ch] text-[18px] leading-relaxed text-ink">
+              {b.description}
+            </p>
+          )}
+
+          <BookCopy long={b.long_description} highlights={b.highlights ?? []} />
+
+          {/* Price and action pinned to the bottom so both cards line up. */}
+          <div className="mt-auto flex flex-wrap items-center gap-x-7 gap-y-4 border-t border-line-2 pt-7">
+            <p className="title m-0 text-[34px] leading-none">{rupees(b.price_inr)}</p>
+            <a
+              className="btn btn-primary"
+              href={`/checkout?book=${encodeURIComponent(b.slug)}`}
+            >
+              Buy the digital edition <span aria-hidden>&rarr;</span>
+            </a>
+            <p className="eyebrow">PDF &middot; Instant download</p>
+          </div>
         </div>
       </div>
     </article>
