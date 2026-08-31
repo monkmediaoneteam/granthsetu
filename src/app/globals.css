@@ -49,7 +49,9 @@
   }
 
   body {
-    background: var(--color-bg);
+    /* Tinted ground so white cards read as raised surfaces rather than
+       merging into the page. */
+    background: var(--color-bg-2);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 18px;
@@ -331,125 +333,164 @@
   }
 }
 
+
 /* ============================================================
-   Motion & depth.
-   The subject is Ayurvedic research: plant matter, glassware, the
-   double helix. The dark band and gold linework come from that world
-   rather than from a gradient generator.
+   Surface system: depth, gradient, motion.
+
+   One easing curve, one shadow ladder, one radius ladder. Consistency
+   is what separates "designed" from "decorated" — every lift, every
+   card and every transition below uses the same three scales.
    ============================================================ */
 
+@theme {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layered shadows: a tight contact shadow plus a wide ambient one.
+     A single blurred box-shadow is what makes cheap cards look cheap. */
+  --shadow-e1: 0 1px 2px rgb(12 38 24 / 0.05), 0 1px 3px rgb(12 38 24 / 0.04);
+  --shadow-e2: 0 2px 4px rgb(12 38 24 / 0.04), 0 8px 16px -6px rgb(12 38 24 / 0.10);
+  --shadow-e3: 0 4px 8px rgb(12 38 24 / 0.05), 0 18px 32px -12px rgb(12 38 24 / 0.16);
+  --shadow-e4: 0 8px 16px rgb(12 38 24 / 0.06), 0 34px 60px -20px rgb(12 38 24 / 0.22);
+}
 
 @layer components {
-  /* ── entrance: one orchestrated sequence on load, not scattered effects ── */
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: none; }
+  /* ── ambient gradient field, tinted from the brand rather than random ── */
+  .field {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(120% 80% at 12% 0%, rgb(47 122 77 / 0.10) 0%, transparent 55%),
+      radial-gradient(90% 70% at 92% 8%, rgb(185 133 46 / 0.10) 0%, transparent 52%),
+      linear-gradient(180deg, #ffffff 0%, var(--color-bg-2) 76%);
   }
 
-  .enter > * {
-    animation: rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  }
-  .enter > *:nth-child(1) { animation-delay: 0.05s; }
-  .enter > *:nth-child(2) { animation-delay: 0.14s; }
-  .enter > *:nth-child(3) { animation-delay: 0.23s; }
-  .enter > *:nth-child(4) { animation-delay: 0.32s; }
-  .enter > *:nth-child(5) { animation-delay: 0.41s; }
-
-  /* ── the gold linework draws itself in behind the type ── */
-  @keyframes draw {
-    from { stroke-dashoffset: var(--len, 1200); opacity: 0; }
-    to   { stroke-dashoffset: 0; opacity: 1; }
+  /* A hairline that fades out, instead of a hard border across the page. */
+  .fade-rule {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(90deg,
+      var(--color-line-2) 0%, var(--color-line) 45%, transparent 100%);
   }
 
-  .sprig path,
-  .sprig line,
-  .sprig circle,
-  .sprig ellipse {
-    stroke-dasharray: var(--len, 1200);
-    animation: draw 2.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards;
+  /* ── cards ── */
+  .surface {
+    background: var(--color-bg);
+    border: 1px solid var(--color-line);
+    border-radius: 20px;
+    box-shadow: var(--shadow-e2);
+    transition: box-shadow 0.45s var(--ease-out),
+                transform 0.45s var(--ease-out),
+                border-color 0.45s var(--ease-out);
   }
 
-  @keyframes drift {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50%      { transform: translateY(-10px) rotate(0.6deg); }
+  .surface-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-e4);
+    border-color: var(--color-line-2);
   }
-  .drift { animation: drift 11s ease-in-out infinite; }
 
-  /* ── buttons: the arrow moves, and light passes across the fill ── */
+  /* Gradient hairline along the top edge — catches light like a real edge. */
+  .surface-lit { position: relative; overflow: hidden; }
+  .surface-lit::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent, rgb(47 122 77 / 0.45) 22%, rgb(185 133 46 / 0.40) 68%, transparent);
+  }
+
+  /* ── the cover plate: a tinted well the book sits in ── */
+  .plate {
+    border-radius: 16px;
+    background:
+      radial-gradient(80% 60% at 50% 15%, rgb(255 255 255 / 0.9), transparent 70%),
+      linear-gradient(160deg, var(--color-bg-3) 0%, var(--color-bg-2) 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  }
+
+  .cover-img {
+    transition: transform 0.6s var(--ease-out), filter 0.6s var(--ease-out);
+    filter: drop-shadow(0 14px 24px rgb(12 38 24 / 0.20));
+  }
+  .surface-hover:hover .cover-img,
+  .cover-lift:hover .cover-img {
+    transform: translateY(-8px) scale(1.03);
+    filter: drop-shadow(0 22px 36px rgb(12 38 24 / 0.28));
+  }
+
+  /* ── buttons ── */
   .btn {
     position: relative;
     overflow: hidden;
     isolation: isolate;
+    border-radius: 12px;
+    transition: transform 0.28s var(--ease-out),
+                box-shadow 0.28s var(--ease-out),
+                background-color 0.28s var(--ease-out);
   }
-  .btn [aria-hidden] {
-    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-  }
+  .btn [aria-hidden] { transition: transform 0.3s var(--ease-out); }
   .btn:hover [aria-hidden] { transform: translateX(3px); }
+  .btn:active { transform: translateY(1px) scale(0.995); }
 
-  .btn-primary::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(115deg,
-      transparent 30%,
-      rgb(255 255 255 / 0.18) 48%,
-      transparent 66%);
-    transform: translateX(-120%);
-    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  .btn-primary {
+    background: linear-gradient(175deg, #37905b 0%, var(--color-brand) 55%, #276542 100%);
+    box-shadow: var(--shadow-e2), inset 0 1px 0 rgb(255 255 255 / 0.16);
   }
-  .btn-primary:hover::after { transform: translateX(120%); }
-
-  .btn:active { transform: translateY(1px); }
-
-  /* ── on the dark band ── */
-  .btn-gold {
-    background: var(--color-gold);
-    color: #1a1200;
-    font-weight: 600;
-  }
-  .btn-gold:hover { background: #cf9836; }
-
-  .btn-outline-cream {
-    border-color: rgb(244 241 230 / 0.32);
-    color: var(--color-cream);
-  }
-  .btn-outline-cream:hover {
-    background: rgb(244 241 230 / 0.08);
-    border-color: rgb(244 241 230 / 0.55);
+  .btn-primary:hover {
+    background: linear-gradient(175deg, #3d9c63 0%, #2c724a 55%, #21583a 100%);
+    box-shadow: var(--shadow-e3), inset 0 1px 0 rgb(255 255 255 / 0.2);
   }
 
-  /* ── covers: a little parallax so they read as objects ── */
-  .tilt {
-    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-                filter 0.55s ease;
-    transform-style: preserve-3d;
+  .btn-ghost {
+    background: var(--color-bg);
+    box-shadow: var(--shadow-e1);
   }
-  .tilt:hover {
-    transform: perspective(1100px) rotateY(-9deg) rotateX(3deg) translateY(-10px);
+  .btn-ghost:hover { box-shadow: var(--shadow-e2); background: var(--color-bg); }
+
+  /* ── pills ── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-e1);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
   }
 
-  /* ── scroll reveal, with a stagger driven by --i ── */
-  .reveal { transition-delay: calc(var(--i, 0) * 90ms); }
-
-  /* ── rules that draw across as they enter view ── */
-  .rule-grow {
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+  /* ── motion ── */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: none; }
   }
-  .reveal.in .rule-grow { transform: scaleX(1); }
+  .enter > * { animation: rise 0.8s var(--ease-out) backwards; }
+  .enter > *:nth-child(1) { animation-delay: 0.04s; }
+  .enter > *:nth-child(2) { animation-delay: 0.12s; }
+  .enter > *:nth-child(3) { animation-delay: 0.20s; }
+  .enter > *:nth-child(4) { animation-delay: 0.28s; }
+  .enter > *:nth-child(5) { animation-delay: 0.36s; }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.75s var(--ease-out), transform 0.75s var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+  .reveal.in { opacity: 1; transform: none; }
 }
 
-/* Cross-document view transitions where the browser supports them. */
-@view-transition { navigation: auto; }
-
 @media (prefers-reduced-motion: reduce) {
-  .enter > *,
-  .sprig path, .sprig line, .sprig circle, .sprig ellipse,
-  .drift {
-    animation: none !important;
-  }
-  .tilt, .tilt:hover, .btn:active { transform: none; }
-  .rule-grow { transform: scaleX(1); transition: none; }
+  .enter > * { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .btn, .surface, .cover-img { transition: none; }
+  .btn:hover [aria-hidden],
+  .surface-hover:hover,
+  .surface-hover:hover .cover-img { transform: none; }
 }

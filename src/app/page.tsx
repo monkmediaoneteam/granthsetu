@@ -69,11 +69,17 @@ export default async function Home() {
       <Hero books={books} />
 
       {/* ── catalogue ── */}
-      <section id="catalogue" className="wrap pt-24 pb-8">
-        <div className="reveal mb-12">
-          <h2 className="title title-lg mb-4">The catalogue</h2>
-          <div className="rule-grow h-px w-full bg-line" />
+      <section id="catalogue" className="wrap scroll-mt-20 pt-20 pb-10">
+        <div className="reveal mb-10 flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <h2 className="title title-lg mb-3">The catalogue</h2>
+            <p className="text-[16px] text-ink-soft">
+              Every title is delivered as a watermarked PDF.
+            </p>
+          </div>
+          <span className="pill">All prices in INR</span>
         </div>
+        <hr className="fade-rule reveal mb-12" />
 
         {books.length === 0 && (
           <div className="card">
@@ -94,12 +100,12 @@ export default async function Home() {
 
       {/* ── faq ─────────────────────────────────────────────────────── */}
       <section id="faq" className="wrap reveal scroll-mt-24 pb-16">
-        <h2 className="title title-lg mb-4">Before you buy</h2>
-        <div className="rule-grow mb-10 h-px w-full bg-line" />
+        <h2 className="title title-lg mb-5">Before you buy</h2>
+        <hr className="fade-rule mb-10" />
         <dl className="grid gap-x-16 gap-y-9 md:grid-cols-2">
           {FAQ.map(([q, a]) => (
-            <div key={q} className="border-t border-line pt-5">
-              <dt className="mb-2.5 text-[17px] font-medium">{q}</dt>
+            <div key={q} className="surface surface-hover reveal p-6">
+              <dt className="mb-2.5 text-[16px] font-medium">{q}</dt>
               <dd className="m-0 max-w-[52ch] text-[15px] leading-relaxed text-ink-soft">
                 {a}
               </dd>
@@ -123,12 +129,12 @@ function Entry({ book: b, index, total }: { book: Book; index: number; total: nu
   return (
     <article
       id={`book-${b.slug}`}
-      className="reveal lift scroll-mt-24 overflow-hidden rounded-3 border border-line bg-bg-2"
+      className="surface surface-lit reveal scroll-mt-20 overflow-hidden"
       style={{ ["--i" as string]: index - 1 }}
     >
-      <div className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)] lg:gap-14">
+      <div className="grid gap-9 p-6 sm:p-9 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-14">
         <div>
-          <div className="volume mx-auto w-full max-w-[240px] lg:mx-0 lg:max-w-none">
+          <div className="plate cover-lift mx-auto grid w-full max-w-[260px] place-items-center p-6 lg:mx-0 lg:max-w-none">
             {b.cover ? (
               <Image
                 src={b.cover}
@@ -137,10 +143,10 @@ function Entry({ book: b, index, total }: { book: Book; index: number; total: nu
                 height={680}
                 priority={index === 1}
                 sizes="(max-width: 1024px) 240px, 270px"
-                className="h-auto w-full"
+                className="cover-img h-auto w-full"
               />
             ) : (
-              <div className="grid aspect-3/4 place-items-center rounded-2 border border-line-2 bg-bg-3">
+              <div className="grid aspect-3/4 w-full place-items-center">
                 <span className="eyebrow">Cover pending</span>
               </div>
             )}
