@@ -152,22 +152,21 @@ function Entry({ book: b, index, total }: { book: Book; index: number; total: nu
     >
       {/* Object + apparatus travel together, like a card behind the book. */}
       <div>
-        <div className="volume mx-auto w-full max-w-[240px] lg:mx-0">
-          <div className="relative aspect-3/4 w-full bg-white">
-            {b.cover ? (
-              <Image
-                src={b.cover}
-                alt={`Cover of ${b.title}`}
-                fill
-                sizes="(max-width: 1024px) 240px, 300px"
-                className="object-cover"
-              />
-            ) : (
-              <span className="eyebrow absolute inset-0 grid place-items-center">
-                Cover pending
-              </span>
-            )}
-          </div>
+        <div className="volume mx-auto w-full max-w-[260px] lg:mx-0">
+          {b.cover ? (
+            <Image
+              src={b.cover}
+              alt={`Cover of ${b.title}`}
+              width={520}
+              height={660}
+              sizes="(max-width: 1024px) 260px, 300px"
+              className="h-auto w-full"
+            />
+          ) : (
+            <div className="grid aspect-3/4 place-items-center rounded-2 border border-line-2 bg-bg-3">
+              <span className="eyebrow">Cover pending</span>
+            </div>
+          )}
         </div>
 
         {facts.length > 0 && (

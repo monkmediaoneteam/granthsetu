@@ -6,14 +6,12 @@
 import { STORE } from "@/lib/store";
 
 export default function AdminShell({
-  token,
   active,
   title,
   subtitle,
   actions,
   children,
 }: {
-  token: string;
   active: "overview" | "books";
   title: string;
   subtitle?: string;
@@ -21,8 +19,8 @@ export default function AdminShell({
   children: React.ReactNode;
 }) {
   const nav = [
-    { key: "overview", label: "Overview", href: `/admin?token=${encodeURIComponent(token)}` },
-    { key: "books", label: "Books", href: `/admin/books?token=${encodeURIComponent(token)}` },
+    { key: "overview", label: "Overview", href: "/admin" },
+    { key: "books", label: "Books", href: "/admin/books" },
   ];
 
   return (
@@ -52,7 +50,7 @@ export default function AdminShell({
             ))}
             <li className="mt-2 border-t border-line pt-2">
               <a
-                href={`/api/admin/export?token=${encodeURIComponent(token)}`}
+                href="/api/admin/export"
                 className="block rounded-2 px-3 py-2 text-[15px] text-ink-soft hover:bg-bg-3 hover:text-ink"
               >
                 Export orders (CSV)

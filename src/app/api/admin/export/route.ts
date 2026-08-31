@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { env } from "@/lib/env";
+import { isAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -26,8 +26,7 @@ function csvCell(value: unknown): string {
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const expected = env("ADMIN_TOKEN");
-  if (!expected || url.searchParams.get("token") !== expected) {
+  if (!(await isAdmin(url.searchParams.get("token") || undefined))) {
     return NextResponse.json({ error: "Not authorised." }, { status: 401 });
   }
 

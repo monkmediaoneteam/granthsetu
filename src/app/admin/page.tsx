@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db";
 import { rupees } from "@/lib/money";
-import { env } from "@/lib/env";
+import { redirect } from "next/navigation";
+import { isAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/AdminShell";
 import StatCard from "@/components/StatCard";
 
@@ -17,16 +18,8 @@ export default async function Admin({
 }: {
   searchParams: Promise<{ token?: string }>;
 }) {
-  const { token } = await searchParams;
-  const expected = env("ADMIN_TOKEN");
-
-  if (!expected || token !== expected) {
-    return (
-      <div className="wrap py-24">
-        <h1 className="title title-lg">Not authorised.</h1>
-      </div>
-    );
-  }
+  const { token = "" } = await searchParams;
+  if (!(await isAdmin(token))) redirect("/admin/login");
 
   const orders = (await sql`
     select id, name, email, phone, total, status, created_at, items
@@ -69,11 +62,10 @@ export default async function Admin({
 
   const rate = conv.started ? Math.round((totals.units / conv.started) * 100) : 0;
   const allDownloads = downloadStats.reduce((a, d) => a + d.total_downloads, 0);
-  const exportHref = "/api/admin/export?token=" + encodeURIComponent(token);
+  const exportHref = "/api/admin/export";
 
   return (
     <AdminShell
-      token={token}
       active="overview"
       title="Overview"
       subtitle="Sales, downloads and the audit trail."

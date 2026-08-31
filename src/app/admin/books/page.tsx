@@ -1,5 +1,6 @@
 import { sql, type Book } from "@/lib/db";
-import { env } from "@/lib/env";
+import { redirect } from "next/navigation";
+import { isAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/AdminShell";
 
 export const dynamic = "force-dynamic";
@@ -11,15 +12,7 @@ export default async function AdminBooks({
   searchParams: Promise<{ token?: string; saved?: string }>;
 }) {
   const { token, saved } = await searchParams;
-  const expected = env("ADMIN_TOKEN");
-
-  if (!expected || token !== expected) {
-    return (
-      <div className="wrap py-24">
-        <h1 className="title title-lg">Not authorised.</h1>
-      </div>
-    );
-  }
+  if (!(await isAdmin(token))) redirect("/admin/login");
 
   const books = (await sql`select * from books order by sort, title`) as Book[];
 
@@ -30,7 +23,7 @@ export default async function AdminBooks({
   const stats = new Map(sold.map((s) => [s.book_slug, s]));
 
   return (
-    <AdminShell token={token} active="books" title="Books"
+    <AdminShell active="books" title="Books"
       subtitle="Everything shown on the storefront is edited here.">
       {saved && (
         <p className="mb-6 rounded-2 border border-brand/30 bg-brand/5 px-4 py-3 text-[15px] text-brand">
@@ -48,7 +41,6 @@ export default async function AdminBooks({
               method="post"
               className="rounded-3 border border-line bg-bg-2 p-6"
             >
-              <input type="hidden" name="token" value={token} />
               <input type="hidden" name="slug" value={b.slug} />
 
               <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-4">

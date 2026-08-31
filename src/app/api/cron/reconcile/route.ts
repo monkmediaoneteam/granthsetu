@@ -43,8 +43,8 @@ export async function GET(req: Request) {
     where status = 'created'
       and razorpay_order_id is not null
       and razorpay_order_id not like 'nopay_%'
-      and created_at < now() - interval '10 minutes'
-      and created_at > now() - interval '24 hours'
+      and created_at < now() - interval '5 minutes'
+      and created_at > now() - interval '7 days'
     limit 50
   `) as { id: string; razorpay_order_id: string; created_at: string }[];
 

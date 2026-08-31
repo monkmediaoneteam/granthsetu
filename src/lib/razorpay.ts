@@ -85,3 +85,20 @@ export async function createPaymentLink(opts: {
   }
   return (await res.json()) as { id: string; short_url: string };
 }
+
+/** Reads a payment link's current state straight from Razorpay. */
+export async function fetchPaymentLink(linkId: string) {
+  const res = await fetch(`https://api.razorpay.com/v1/payment_links/${linkId}`, {
+    headers: { authorization: auth() },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Razorpay link lookup failed (${res.status}): ${await res.text()}`);
+  }
+  return (await res.json()) as {
+    id: string;
+    status: "created" | "partially_paid" | "expired" | "cancelled" | "paid";
+    amount_paid: number;
+    payments?: { payment_id?: string; id?: string; status?: string; method?: string }[];
+  };
+}

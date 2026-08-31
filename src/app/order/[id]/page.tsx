@@ -1,6 +1,7 @@
 import { getOrder, sql } from "@/lib/db";
 import { rupees } from "@/lib/money";
 import { mintDownloadToken } from "@/lib/token";
+import { settleFromRazorpay } from "@/lib/settle";
 import CopyLinkButton from "@/components/CopyLinkButton";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,14 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = await getOrder(id);
+  let order = await getOrder(id);
+
+  // No webhook secret yet, so the order page is the primary confirmation path:
+  // ask Razorpay directly, and re-read if that settled the order.
+  if (order && order.status === "created") {
+    const settled = await settleFromRazorpay(order);
+    if (settled) order = await getOrder(id);
+  }
 
   if (!order) {
     return (
@@ -28,6 +36,8 @@ export default async function OrderPage({
   }
 
   const paid = order.status === "paid" || order.status === "fulfilled";
+  const failed = order.status === "payment_failed";
+  const refunded = order.status === "refunded";
 
   const counts = (await sql`
     select book_slug, count from downloads where order_id = ${id}
@@ -42,18 +52,49 @@ export default async function OrderPage({
       </div>
 
 
-      {!paid ? (
+      {failed || refunded ? (
         <>
-          <h1 className="title title-lg mb-4">Waiting for payment confirmation.</h1>
-          <p className="max-w-[58ch] text-ink-soft">
-            This can take a few seconds. Refresh this page &mdash; and check your
-            email, the download link is sent there the moment payment clears. If you
-            were charged and this does not update within a few minutes, write to us
-            with your order number above.
+          <p className="mb-4 inline-flex items-center gap-2 rounded-2 bg-danger/10 px-3 py-1.5 font-mono text-[11px] font-medium tracking-[0.08em] text-danger uppercase">
+            <span aria-hidden>&times;</span>
+            {refunded ? "Refunded" : "Payment failed"}
           </p>
+          <h1 className="title title-lg mb-3">
+            {refunded ? "This order was refunded." : "That payment did not go through."}
+          </h1>
+          <hr className="gold-rule mb-6" />
+          <p className="mb-8 max-w-[58ch] text-ink-soft">
+            {refunded
+              ? "The amount has been returned to your original payment method. Bank timelines vary, so allow a few working days for it to appear."
+              : "Nothing was charged. This usually means the payment was cancelled or the link expired — you can start again from the catalogue."}
+          </p>
+          <a className="btn btn-primary" href="/#catalogue">
+            Back to the catalogue <span aria-hidden>&rarr;</span>
+          </a>
+        </>
+      ) : !paid ? (
+        <>
+          <p className="mb-4 inline-flex items-center gap-2 rounded-2 bg-gold/10 px-3 py-1.5 font-mono text-[11px] font-medium tracking-[0.08em] text-gold uppercase">
+            <span aria-hidden>&bull;</span>
+            Awaiting payment
+          </p>
+          <h1 className="title title-lg mb-3">Confirming your payment.</h1>
+          <hr className="gold-rule mb-6" />
+          <p className="mb-8 max-w-[58ch] text-ink-soft">
+            We check with the payment provider every time this page loads, so
+            refreshing is the fastest way to confirm. Your download link is emailed
+            the moment payment clears. If you were charged and this has not updated
+            after a few refreshes, write to us with the order number above.
+          </p>
+          <a className="btn btn-ghost" href={`/order/${order.id}`}>
+            Check again <span aria-hidden>&#8635;</span>
+          </a>
         </>
       ) : (
         <>
+          <p className="mb-4 inline-flex items-center gap-2 rounded-2 bg-brand/10 px-3 py-1.5 font-mono text-[11px] font-medium tracking-[0.08em] text-brand uppercase">
+            <span aria-hidden>&#10003;</span>
+            Payment received
+          </p>
           <h1 className="title title-lg mb-3">Thank you. Your copy is ready.</h1>
           <hr className="gold-rule mb-6" />
           <p className="mb-10 max-w-[58ch] text-ink-soft">
@@ -96,7 +137,7 @@ export default async function OrderPage({
       <hr className="mb-6 border-line" />
       <dl className="grid gap-2.5 text-[15px]">
         <div className="flex justify-between">
-          <dt className="eyebrow">Total paid</dt>
+          <dt className="eyebrow">{paid ? "Total paid" : "Amount"}</dt>
           <dd className="m-0 font-mono">{rupees(order.total)}</dd>
         </div>
         <div className="flex justify-between">

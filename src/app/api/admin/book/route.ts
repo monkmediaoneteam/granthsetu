@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { sql, logEvent } from "@/lib/db";
-import { env } from "@/lib/env";
+import { isAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -9,9 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const form = await req.formData();
   const token = String(form.get("token") || "");
-  const expected = env("ADMIN_TOKEN");
-
-  if (!expected || token !== expected) {
+  if (!(await isAdmin(token || undefined))) {
     return NextResponse.json({ error: "Not authorised." }, { status: 401 });
   }
 
@@ -65,7 +63,7 @@ export async function POST(req: Request) {
   revalidatePath("/");
 
   return NextResponse.redirect(
-    new URL(`/admin/books?token=${encodeURIComponent(token)}&saved=${slug}`, req.url),
+    new URL(`/admin/books?saved=${slug}`, req.url),
     303
   );
 }
