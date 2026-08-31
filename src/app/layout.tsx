@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import "./globals.css";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://books.inventayu.com";
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
@@ -43,9 +44,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <header className="sticky top-0 z-50 border-b border-line bg-bg/85 backdrop-blur-md backdrop-saturate-150">
           <nav className="wrap flex min-h-[74px] items-center justify-between gap-6">
-            <a href="/" className="font-semibold tracking-tight">
-              INVENTAYU<sup className="text-[10px]">&reg;</sup>
-              <span className="eyebrow ml-1.5">Books</span>
+            <a href="/" className="flex items-center gap-3">
+              <Image
+                src="/assets/mark.png"
+                alt=""
+                width={34}
+                height={34}
+                priority
+                className="rounded-1"
+              />
+              <span className="flex items-baseline gap-1.5">
+                <span className="text-[15px] font-semibold tracking-tight">
+                  INVENTAYU<sup className="text-[9px]">&reg;</sup>
+                </span>
+                <span className="eyebrow">Books</span>
+              </span>
+              <span className="sr-only">INVENTAYU Books, home</span>
             </a>
             <a
               className="eyebrow hover:text-ink"
@@ -62,9 +76,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <footer className="mt-24 border-t border-line py-12">
           <div className="wrap">
-            <p className="eyebrow mb-4">
-              INVENTAYU Pvt. Ltd. &middot; Registered Start-Up &middot; MSME
-            </p>
+            <div className="mb-5 flex items-center gap-3">
+              <Image src="/assets/mark.png" alt="" width={28} height={28} className="rounded-1 opacity-90" />
+              <p className="eyebrow m-0">
+                INVENTAYU Pvt. Ltd. &middot; Registered Start-Up &middot; MSME
+              </p>
+            </div>
             <ul className="flex flex-wrap gap-6 text-sm text-ink-soft">
               {LEGAL.map(([label, href]) => (
                 <li key={href}>

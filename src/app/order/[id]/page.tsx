@@ -19,7 +19,7 @@ export default async function OrderPage({
   if (!order) {
     return (
       <div className="wrap py-24">
-        <h1 className="disp h3 mb-6">Order not found.</h1>
+        <h1 className="title title-lg mb-6">Order not found.</h1>
         <a className="btn btn-ghost" href="/">
           <span aria-hidden>&larr;</span> Back to the books
         </a>
@@ -44,7 +44,7 @@ export default async function OrderPage({
 
       {!paid ? (
         <>
-          <h1 className="disp h3 mb-4">Waiting for payment confirmation.</h1>
+          <h1 className="title title-lg mb-4">Waiting for payment confirmation.</h1>
           <p className="max-w-[58ch] text-ink-soft">
             This can take a few seconds. Refresh this page &mdash; and check your
             email, the download link is sent there the moment payment clears. If you
@@ -54,7 +54,8 @@ export default async function OrderPage({
         </>
       ) : (
         <>
-          <h1 className="disp h3 mb-4">Thank you. Your copy is ready.</h1>
+          <h1 className="title title-lg mb-3">Thank you. Your copy is ready.</h1>
+          <hr className="gold-rule mb-6" />
           <p className="mb-10 max-w-[58ch] text-ink-soft">
             Links below expire in 15 minutes for safety &mdash; reopen this page any
             time for fresh ones. Bookmark it, or keep the confirmation email.

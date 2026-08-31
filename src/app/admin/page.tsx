@@ -23,7 +23,7 @@ export default async function Admin({
   if (!expected || token !== expected) {
     return (
       <div className="wrap py-24">
-        <h1 className="disp h3">Not authorised.</h1>
+        <h1 className="title title-lg">Not authorised.</h1>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export default async function Admin({
 
       {downloadStats.length > 0 && (
         <section className="mb-12">
-          <h2 className="disp mb-4 text-[20px]">Per title</h2>
+          <h2 className="title title-md mb-4">Per title</h2>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {downloadStats.map((d) => (
               <StatCard
@@ -115,7 +115,7 @@ export default async function Admin({
       )}
 
       <section className="mb-12">
-        <h2 className="disp mb-4 text-[20px]">Orders</h2>
+        <h2 className="title title-md mb-4">Orders</h2>
         <div className="overflow-x-auto rounded-3 border border-line">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">Recent orders</caption>
@@ -189,7 +189,7 @@ export default async function Admin({
       </section>
 
       <section>
-        <h2 className="disp mb-4 text-[20px]">Audit trail</h2>
+        <h2 className="title title-md mb-4">Audit trail</h2>
         <div className="overflow-x-auto rounded-3 border border-line">
           <table className="w-full border-collapse font-mono text-xs">
             <thead>

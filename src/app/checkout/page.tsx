@@ -16,7 +16,7 @@ export default async function Checkout({
   if (!book || !book.active) {
     return (
       <div className="wrap py-24">
-        <h1 className="disp h3 mb-6">That book is not available.</h1>
+        <h1 className="title title-lg mb-6">That book is not available.</h1>
         <a className="btn btn-ghost" href="/">
           <span aria-hidden>&larr;</span> Back to the books
         </a>
@@ -27,7 +27,8 @@ export default async function Checkout({
   return (
     <div className="wrap max-w-[880px] py-18">
       <p className="eyebrow mb-5">Checkout</p>
-      <h1 className="disp h3 mb-10">{book.title}</h1>
+      <h1 className="title title-lg mb-3">{book.title}</h1>
+      <hr className="gold-rule mb-10" />
 
       <div className="card mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>

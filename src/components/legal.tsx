@@ -23,7 +23,8 @@ export function Legal({
   return (
     <div className="wrap prose-legal max-w-[760px] py-18">
       <p className="eyebrow mb-5">Last updated {updated}</p>
-      <h1 className="disp h3 mb-10">{title}</h1>
+      <h1 className="title title-lg mb-3">{title}</h1>
+      <hr className="gold-rule mb-10" />
       {children}
       <hr className="mt-12 mb-5 border-line" />
       <address className="text-sm not-italic text-ink-soft">

@@ -73,7 +73,7 @@ export default function AdminShell({
       <main className="min-w-0 px-5 py-8 lg:px-10">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="disp text-[30px]">{title}</h1>
+            <h1 className="title title-lg">{title}</h1>
             {subtitle && <p className="mt-1.5 text-[15px] text-ink-soft">{subtitle}</p>}
           </div>
           {actions}

@@ -76,70 +76,55 @@ export default async function Home() {
       <Reveal />
       <StickyBuyBar />
 
-      {/* ── hero: the shelf is the thesis ───────────────────────────── */}
-      <header className="wrap grid items-center gap-14 pt-20 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:gap-20 lg:pt-28">
-        <div>
-          <p className="eyebrow mb-8 flex items-center gap-2.5">
-            <span className="dot" />
-            INVENTAYU Press · Digital editions
-          </p>
+      {/* ── hero ────────────────────────────────────────────────── */}
+      <header className="wrap pt-20 pb-16 lg:pt-28">
+        <p className="eyebrow mb-8 flex items-center gap-2.5">
+          <span className="dot" />
+          INVENTAYU Press &middot; Digital editions
+        </p>
 
-          <h1 className="title title-xl mb-7 max-w-[15ch] text-balance">
-            The literature of{" "}
-            <span className="text-brand">Ayurveda research</span>, in full.
-          </h1>
+        <h1 className="disp h1 mb-8 max-w-[13ch] text-balance">
+          Five decades,
+          <br />
+          <span className="text-brand">written down.</span>
+        </h1>
 
-          <hr className="gold-rule mb-7" />
+        <hr className="gold-rule mb-8" />
 
-          <p className="mb-9 max-w-[52ch] text-[19px] leading-relaxed text-ink-soft">
-            Reference volumes on methodology, standardization and the regulation of
-            Ayurvedic and natural products — written and edited by the researchers
-            who work on them. Delivered as PDFs, the moment you pay.
-          </p>
+        <p className="mb-10 max-w-[56ch] text-xl leading-relaxed text-ink-soft">
+          Books on Ayurveda research methodology, integrative perspectives and the
+          translation of classical knowledge into validated science &mdash; drawn from
+          careers across academia, industry, clinic and research.
+        </p>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <a className="btn btn-primary" href="#catalogue">
-              Browse the catalogue <span aria-hidden>↓</span>
-            </a>
-            <p className="eyebrow">{books.length} volumes available</p>
-          </div>
-        </div>
-
-        {/* Books as objects, on a shelf — a bookshop leads with its stock. */}
-        <div className="relative">
-          <div className="flex items-end justify-center gap-5 sm:gap-7">
-            {books.slice(0, 2).map((b, i) => (
-              <a
-                key={b.slug}
-                href={`#book-${b.slug}`}
-                className="volume block w-[42%] max-w-[190px] shrink-0"
-                style={{ marginBottom: i === 0 ? 22 : 0 }}
-                aria-label={`Jump to ${b.title}`}
-              >
-                <span className="relative block aspect-3/4 w-full bg-white">
-                  {b.cover && (
-                    <Image
-                      src={b.cover}
-                      alt={`Cover of ${b.title}`}
-                      fill
-                      priority={i === 0}
-                      sizes="(max-width: 640px) 42vw, 190px"
-                      className="object-cover"
-                    />
-                  )}
-                </span>
-              </a>
-            ))}
-          </div>
-
-          {/* The shelf the volumes stand on. */}
-          <div className="mx-auto mt-1 h-px w-[86%] bg-line-2" />
-          <div className="mx-auto h-4 w-[80%] rounded-b-2 bg-gradient-to-b from-ink/8 to-transparent" />
+        <div className="flex flex-wrap items-center gap-5">
+          <a className="btn btn-primary" href="#catalogue">
+            Browse the catalogue <span aria-hidden>&darr;</span>
+          </a>
+          <p className="eyebrow">{books.length} volumes available</p>
         </div>
       </header>
 
+      {/* ── provenance: sits immediately under the hero ─────────── */}
+      <section className="reveal border-y border-line bg-bg-2">
+        <div className="wrap py-12">
+          <p className="eyebrow mb-8">Behind the list</p>
+          <dl className="grid gap-10 sm:grid-cols-3 sm:gap-8">
+            {PROVENANCE.map((c) => (
+              <div key={c.k} className="sm:border-l sm:border-line-2 sm:pl-6 sm:first:border-l-0 sm:first:pl-0">
+                <dd className="title m-0 text-[46px] leading-none text-ink">{c.v}</dd>
+                <dt className="eyebrow mt-3 mb-1.5">{c.k}</dt>
+                <dd className="m-0 max-w-[34ch] text-[14px] leading-relaxed text-ink-soft">
+                  {c.l}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       {/* ── catalogue ───────────────────────────────────────────────── */}
-      <section id="catalogue" className="wrap pb-8">
+      <section id="catalogue" className="wrap pt-24 pb-8">
         <div className="mb-14 flex flex-wrap items-end justify-between gap-6 border-b border-ink pb-5">
           <h2 className="title title-lg m-0">The catalogue</h2>
           <p className="eyebrow">Digital editions · INR · Instant delivery</p>
@@ -159,22 +144,6 @@ export default async function Home() {
           {books.map((b, i) => (
             <Entry key={b.slug} book={b} index={i + 1} total={books.length} />
           ))}
-        </div>
-      </section>
-
-      {/* ── provenance ──────────────────────────────────────────────── */}
-      <section className="wrap reveal pt-24 pb-20">
-        <div className="rounded-3 border border-line bg-bg-2 p-8 sm:p-12">
-          <p className="eyebrow mb-8">Behind the list</p>
-          <dl className="grid gap-10 sm:grid-cols-3">
-            {PROVENANCE.map((c) => (
-              <div key={c.k}>
-                <dd className="title m-0 text-[52px] leading-none text-ink">{c.v}</dd>
-                <dt className="eyebrow mt-3 mb-1.5">{c.k}</dt>
-                <dd className="m-0 text-[14px] leading-relaxed text-ink-soft">{c.l}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
 

@@ -16,7 +16,7 @@ export default async function AdminBooks({
   if (!expected || token !== expected) {
     return (
       <div className="wrap py-24">
-        <h1 className="disp h3">Not authorised.</h1>
+        <h1 className="title title-lg">Not authorised.</h1>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default async function AdminBooks({
               <input type="hidden" name="slug" value={b.slug} />
 
               <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-4">
-                <h2 className="disp text-[22px]">{b.title}</h2>
+                <h2 className="title title-md">{b.title}</h2>
                 <p className="eyebrow">
                   {s
                     ? `${s.orders} orders · ${s.downloads} downloads`

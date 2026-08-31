@@ -29,8 +29,6 @@
 
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
-  /* Book titles get a literary serif; UI stays Geist, data stays mono. */
-  --font-serif: "Newsreader", ui-serif, Georgia, serif;
 
   --radius-1: 4px;
   --radius-2: 10px;
@@ -235,22 +233,24 @@
    ============================================================ */
 
 @layer components {
-  /* Book titles: literary serif, optical sizing on. */
+  /* Titles use the same Geist display treatment as inventayu.com, so the two
+     properties read as one brand. Scale below .disp, which stays the hero. */
   .title {
-    font-family: var(--font-serif);
-    font-optical-sizing: auto;
+    font-family: var(--font-sans);
     font-weight: 500;
-    letter-spacing: -0.015em;
-    line-height: 1.05;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    font-feature-settings: "ss01";
   }
 
-  .title-xl { font-size: clamp(40px, 5.6vw, 78px); }
-  .title-lg { font-size: clamp(28px, 3.4vw, 44px); }
+  .title-xl { font-size: clamp(38px, 5vw, 68px); }
+  .title-lg { font-size: clamp(26px, 3vw, 40px); }
+  .title-md { font-size: clamp(20px, 2.1vw, 27px); letter-spacing: -0.025em; }
 
   .subtitle {
-    font-family: var(--font-serif);
-    font-style: italic;
+    font-family: var(--font-sans);
     font-weight: 400;
+    letter-spacing: -0.01em;
     color: var(--color-ink-soft);
   }
 
