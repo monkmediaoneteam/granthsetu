@@ -42,10 +42,12 @@ const run = async () => {
   for (const b of BOOKS) {
     await sql`
       insert into books (slug, title, subtitle, description, long_description, highlights,
-                         cover, price_inr, publisher, pages, year, sort, file_format, file_url)
+                         cover, price_inr, publisher, pages, year, sort, file_format, file_url,
+                         facts, authorship)
       values (${b.slug}, ${b.title}, ${b.subtitle}, ${b.description}, ${b.long_description},
               ${JSON.stringify(b.highlights)}::jsonb, ${b.cover}, ${b.price_inr},
-              ${b.publisher}, ${b.pages}, ${b.year}, ${b.sort}, 'PDF', '/sample.pdf')
+              ${b.publisher}, ${b.pages}, ${b.year}, ${b.sort}, 'PDF', ${b.file_url},
+              ${JSON.stringify(b.facts)}::jsonb, ${b.authorship})
       on conflict (slug) do update set
         title = excluded.title,
         subtitle = excluded.subtitle,
@@ -55,7 +57,9 @@ const run = async () => {
         cover = excluded.cover,
         publisher = excluded.publisher,
         sort = excluded.sort,
-        file_url = coalesce(books.file_url, excluded.file_url)
+        file_url = excluded.file_url,
+        facts = excluded.facts,
+        authorship = excluded.authorship
     `;
     console.log("  seeded", b.slug);
   }

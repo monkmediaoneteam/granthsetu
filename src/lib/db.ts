@@ -20,6 +20,8 @@ export type Book = {
   description: string | null;
   long_description: string | null;
   highlights: string[];
+  facts: Record<string, string>;
+  authorship: string | null;
   cover: string | null;
   price_inr: number;
   file_url: string | null;

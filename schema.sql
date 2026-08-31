@@ -65,3 +65,7 @@ create unique index if not exists orders_link_idx on orders (razorpay_link_id);
 
 alter table books add column if not exists long_description text;
 alter table books add column if not exists highlights jsonb default '[]'::jsonb;
+
+-- ── bibliographic facts shown as a catalogue table (31 Aug 2026) ──────────
+alter table books add column if not exists facts jsonb default '{}'::jsonb;
+alter table books add column if not exists authorship text;

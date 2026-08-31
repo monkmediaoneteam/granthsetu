@@ -1,61 +1,67 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 /**
- * Long book copy behind a disclosure. Native <details> would be lazier, but the
- * fade-out on the collapsed state needs a height cap that <details> cannot do
- * without JS anyway.
+ * Long book copy behind a disclosure. The short line and the long copy say
+ * different things by design — the long copy never restates the summary.
  */
 export default function BookCopy({
-  short,
   long,
   highlights,
 }: {
-  short: string | null;
   long: string | null;
   highlights: string[];
 }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
+
   const paras = (long || "").split("\n\n").filter(Boolean);
-  const hasMore = paras.length > 0 || highlights.length > 0;
+  if (paras.length === 0 && highlights.length === 0) return null;
 
   return (
-    <div className="mb-7">
-      {short && <p className="mb-4 max-w-[62ch] text-ink-soft">{short}</p>}
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={id}
+        className="group inline-flex items-center gap-2 font-mono text-[11px] font-medium tracking-[0.08em] text-brand uppercase transition-colors hover:text-brand-deep"
+      >
+        <span
+          aria-hidden
+          className={
+            "inline-block h-px w-6 bg-current transition-all duration-300 " +
+            (open ? "w-3" : "group-hover:w-9")
+          }
+        />
+        {open ? "Close" : "Inside the book"}
+      </button>
 
-      {open && (
-        <div className="mb-5 max-w-[62ch]">
-          {paras.map((p, i) => (
-            <p key={i} className="mb-4 text-ink-soft">
-              {p}
-            </p>
-          ))}
+      <div
+        id={id}
+        hidden={!open}
+        className="mt-6 grid gap-5 border-l border-line-2 pl-6"
+      >
+        {paras.map((p, i) => (
+          <p key={i} className="m-0 max-w-[64ch] text-[17px] leading-relaxed text-ink-soft">
+            {p}
+          </p>
+        ))}
 
-          {highlights.length > 0 && (
-            <ul className="mt-5 grid gap-2 border-l-2 border-brand/30 pl-4">
-              {highlights.map((h) => (
-                <li key={h} className="text-[15px] text-ink-soft">
-                  {h}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          className="eyebrow inline-flex items-center gap-1.5 text-brand hover:text-brand-deep"
-        >
-          {open ? "Show less" : "View more about this book"}
-          <span aria-hidden className={open ? "rotate-180 transition-transform" : "transition-transform"}>
-            &darr;
-          </span>
-        </button>
-      )}
+        {highlights.length > 0 && (
+          <ul className="mt-1 grid gap-2.5">
+            {highlights.map((h) => (
+              <li
+                key={h}
+                className="flex gap-3 font-mono text-[12px] leading-relaxed tracking-[0.01em] text-ink-mute"
+              >
+                <span aria-hidden className="mt-2 h-px w-3 shrink-0 bg-gold" />
+                {h}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

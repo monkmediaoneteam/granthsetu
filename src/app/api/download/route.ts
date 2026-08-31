@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { sql, getBook, getOrder, logEvent } from "@/lib/db";
 import { verifyDownloadToken } from "@/lib/token";
 import { stampPdf } from "@/lib/pdf";
@@ -48,15 +50,42 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "File not available yet." }, { status: 503 });
   }
 
-  // file_url may be relative (the placeholder sample lives in /public).
-  const fileUrl = book.file_url.startsWith("http")
-    ? book.file_url
-    : new URL(book.file_url, req.url).toString();
+  /**
+   * Book files live in /private, NEVER in /public — anything under /public is
+   * served statically by Next and cannot be gated, so a file there is a free
+   * download for anyone who guesses the filename.
+   *
+   * `private:<name>` reads from the bundled /private/books directory. A plain
+   * https:// url is still supported for files kept in object storage.
+   */
+  let rawBytes: ArrayBuffer;
 
-  const upstream = await fetch(fileUrl);
-  if (!upstream.ok) {
-    console.error("[download] upstream failed", fileUrl, upstream.status);
-    return NextResponse.json({ error: "Could not fetch the file." }, { status: 502 });
+  if (book.file_url.startsWith("private:")) {
+    const name = book.file_url.slice("private:".length);
+
+    // Defeat path traversal: keep only the basename, then verify the resolved
+    // path is still inside the books directory.
+    const safe = path.basename(name);
+    const dir = path.join(process.cwd(), "private", "books");
+    const full = path.join(dir, safe);
+    if (!full.startsWith(dir + path.sep)) {
+      return NextResponse.json({ error: "Bad file reference." }, { status: 400 });
+    }
+
+    try {
+      const buf = await readFile(full);
+      rawBytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+    } catch (err) {
+      console.error("[download] private file missing", safe, err);
+      return NextResponse.json({ error: "File not available yet." }, { status: 503 });
+    }
+  } else {
+    const upstream = await fetch(book.file_url);
+    if (!upstream.ok) {
+      console.error("[download] upstream failed", book.file_url, upstream.status);
+      return NextResponse.json({ error: "Could not fetch the file." }, { status: 502 });
+    }
+    rawBytes = await upstream.arrayBuffer();
   }
 
   await sql`
@@ -75,12 +104,11 @@ export async function GET(req: Request) {
 
   let body: BodyInit;
   if (format === "pdf") {
-    const rawBytes = await upstream.arrayBuffer();
     const stampText = `Licensed to ${order.email} · Order #${order.id} · INVENTAYU® Books`;
     const stamped = await stampPdf(rawBytes, stampText);
     body = Buffer.from(stamped);
   } else {
-    body = (await upstream.blob()) as unknown as BodyInit;
+    body = Buffer.from(rawBytes);
   }
 
   return new NextResponse(body, {

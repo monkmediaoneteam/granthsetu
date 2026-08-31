@@ -141,6 +141,32 @@ export default async function AdminBooks({
                   />
                 </div>
                 <div>
+                  <label className="field-label" htmlFor={`${b.slug}-auth`}>
+                    Authorship line (shown under the title)
+                  </label>
+                  <input
+                    id={`${b.slug}-auth`}
+                    name="authorship"
+                    className="field-input"
+                    defaultValue={b.authorship ?? ""}
+                    placeholder="41 contributors, edited under IASTAM"
+                  />
+                </div>
+                <div>
+                  <label className="field-label" htmlFor={`${b.slug}-facts`}>
+                    Catalogue facts (one per line, Key: Value)
+                  </label>
+                  <textarea
+                    id={`${b.slug}-facts`}
+                    name="facts"
+                    rows={5}
+                    className="field-input resize-y font-mono text-[13px]"
+                    defaultValue={Object.entries(b.facts ?? {})
+                      .map(([k, v]) => k + ": " + v)
+                      .join("\n")}
+                  />
+                </div>
+                <div>
                   <label className="field-label" htmlFor={`${b.slug}-hl`}>
                     Highlights (one per line)
                   </label>

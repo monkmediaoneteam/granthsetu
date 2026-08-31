@@ -28,6 +28,16 @@ export async function POST(req: Request) {
     .map((l) => l.trim())
     .filter(Boolean);
 
+  // "Key: Value" per line -> jsonb object, order preserved.
+  const facts: Record<string, string> = {};
+  for (const line of String(form.get("facts") || "").split("\n")) {
+    const i = line.indexOf(":");
+    if (i < 1) continue;
+    const k = line.slice(0, i).trim();
+    const v = line.slice(i + 1).trim();
+    if (k && v) facts[k] = v;
+  }
+
   const pages = Number(form.get("pages")) || null;
   const year = Number(form.get("year")) || null;
 
@@ -38,6 +48,8 @@ export async function POST(req: Request) {
       description      = ${String(form.get("description") || "") || null},
       long_description = ${String(form.get("long_description") || "") || null},
       highlights       = ${JSON.stringify(highlights)}::jsonb,
+      facts            = ${JSON.stringify(facts)}::jsonb,
+      authorship       = ${String(form.get("authorship") || "") || null},
       price_inr        = ${Math.round(priceRupees * 100)},
       publisher        = ${String(form.get("publisher") || "") || null},
       isbn             = ${String(form.get("isbn") || "") || null},
