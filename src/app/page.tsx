@@ -3,8 +3,8 @@ import { getBooks, type Book } from "@/lib/db";
 import { rupees } from "@/lib/money";
 import Reveal from "@/components/Reveal";
 import { STORE } from "@/lib/store";
-import StickyBuyBar from "@/components/StickyBuyBar";
 import BookCopy from "@/components/BookCopy";
+import Hero from "@/components/Hero";
 
 export const dynamic = "force-dynamic";
 
@@ -65,36 +65,16 @@ export default async function Home() {
         }}
       />
       <Reveal />
-      <StickyBuyBar />
 
-      {/* ── masthead: two lines, then straight into the books. A viewport-tall
-           statement would be filler in front of a short catalogue. ── */}
-      <section className="border-b border-line bg-bg-2">
-        <div className="wrap flex flex-wrap items-end justify-between gap-x-10 gap-y-5 py-9">
-          <div>
-            <p className="eyebrow mb-2.5 flex items-center gap-2.5">
-              <span className="dot" />
-              {STORE.kicker}
-            </p>
-            <p className="max-w-[54ch] text-[17px] leading-relaxed text-ink-soft">
-              {STORE.tagline}
-            </p>
-          </div>
-          <dl className="flex gap-8">
-            <div>
-              <dt className="eyebrow mb-1">Titles</dt>
-              <dd className="title m-0 text-[28px]">{books.length}</dd>
-            </div>
-            <div>
-              <dt className="eyebrow mb-1">Delivery</dt>
-              <dd className="title m-0 text-[28px]">Instant</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
+      <Hero books={books} />
 
       {/* ── catalogue ── */}
-      <section id="catalogue" className="wrap pt-14 pb-8">
+      <section id="catalogue" className="wrap pt-24 pb-8">
+        <div className="reveal mb-12">
+          <h2 className="title title-lg mb-4">The catalogue</h2>
+          <div className="rule-grow h-px w-full bg-line" />
+        </div>
+
         {books.length === 0 && (
           <div className="card">
             <p className="eyebrow mb-3">Nothing listed yet</p>
@@ -113,8 +93,9 @@ export default async function Home() {
       </section>
 
       {/* ── faq ─────────────────────────────────────────────────────── */}
-      <section className="wrap reveal pb-16">
-        <h2 className="title title-lg mb-10">Before you buy</h2>
+      <section id="faq" className="wrap reveal scroll-mt-24 pb-16">
+        <h2 className="title title-lg mb-4">Before you buy</h2>
+        <div className="rule-grow mb-10 h-px w-full bg-line" />
         <dl className="grid gap-x-16 gap-y-9 md:grid-cols-2">
           {FAQ.map(([q, a]) => (
             <div key={q} className="border-t border-line pt-5">
@@ -142,7 +123,8 @@ function Entry({ book: b, index, total }: { book: Book; index: number; total: nu
   return (
     <article
       id={`book-${b.slug}`}
-      className="reveal scroll-mt-24 overflow-hidden rounded-3 border border-line bg-bg-2"
+      className="reveal lift scroll-mt-24 overflow-hidden rounded-3 border border-line bg-bg-2"
+      style={{ ["--i" as string]: index - 1 }}
     >
       <div className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)] lg:gap-14">
         <div>
