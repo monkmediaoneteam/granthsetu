@@ -16,9 +16,9 @@ export default async function Checkout({
   if (!book || !book.active) {
     return (
       <div className="wrap py-24">
-        <h1 className="title title-lg mb-6">That book is not available.</h1>
+        <h1 className="title title-lg mb-6">That title is not available.</h1>
         <a className="btn btn-ghost" href="/">
-          <span aria-hidden>&larr;</span> Back to the books
+          <span aria-hidden>&larr;</span> Back to the catalogue
         </a>
       </div>
     );

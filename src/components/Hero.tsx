@@ -20,29 +20,40 @@ export default function Hero({ books }: { books: Book[] }) {
             {STORE.kicker}
           </span>
 
-          <h1 className="disp mt-7 mb-6 text-[clamp(38px,4.8vw,62px)] leading-[1.02]">
-            The research behind
-            <br className="hidden sm:block" />{" "}
+          <h1 className="disp mt-7 mb-6 text-[clamp(36px,4.6vw,60px)] leading-[1.03]">
+            The reference shelf for{" "}
             <span className="bg-gradient-to-br from-brand via-brand-deep to-gold bg-clip-text text-transparent">
-              the medicine
+              Ayurvedic research
             </span>
             .
           </h1>
 
           <p className="mb-9 max-w-[50ch] text-[19px] leading-relaxed text-ink-soft">
-            Reference volumes on Ayurvedic methodology, standardization and
-            natural-product pharmacology — written by the people who do the work.
-            Pay once, download straight away.
+            {STORE.tagline} Every title is a digital edition: pay once, download
+            straight away, keep it for good.
           </p>
 
           <div className="mb-11 flex flex-wrap items-center gap-3.5">
             <a className="btn btn-primary" href="#catalogue">
-              Browse {books.length} titles <span aria-hidden>→</span>
+              Browse the catalogue <span aria-hidden>→</span>
             </a>
             <a className="btn btn-ghost" href="#faq">
               How delivery works
             </a>
           </div>
+
+          <dl className="mb-9 flex gap-8 lg:hidden">
+            {[
+              ["Titles", String(books.length)],
+              ["Format", "PDF"],
+              ["Delivery", "Instant"],
+            ].map(([k, v]) => (
+              <div key={k}>
+                <dt className="eyebrow mb-1.5">{k}</dt>
+                <dd className="disp m-0 text-[24px]">{v}</dd>
+              </div>
+            ))}
+          </dl>
 
           <ul className="flex flex-wrap gap-x-8 gap-y-3">
             {[
@@ -64,7 +75,7 @@ export default function Hero({ books }: { books: Book[] }) {
         </div>
 
         {/* The products, as the cards the buyer will actually click. */}
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="hidden gap-5 lg:grid lg:grid-cols-2">
           {shown.map((b, i) => (
             <a
               key={b.slug}

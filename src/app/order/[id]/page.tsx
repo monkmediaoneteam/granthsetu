@@ -29,7 +29,7 @@ export default async function OrderPage({
       <div className="wrap py-24">
         <h1 className="title title-lg mb-6">Order not found.</h1>
         <a className="btn btn-ghost" href="/">
-          <span aria-hidden>&larr;</span> Back to the books
+          <span aria-hidden>&larr;</span> Back to the catalogue
         </a>
       </div>
     );
