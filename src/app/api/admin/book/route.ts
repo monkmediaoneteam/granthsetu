@@ -46,7 +46,12 @@ export async function POST(req: Request) {
       description      = ${String(form.get("description") || "") || null},
       long_description = ${String(form.get("long_description") || "") || null},
       highlights       = ${JSON.stringify(highlights)}::jsonb,
-      facts            = ${JSON.stringify(facts)}::jsonb,
+      -- Merge, so internal "_" keys (e.g. a saved test price) survive an edit.
+      facts            = (
+        select coalesce(jsonb_object_agg(k, v), '{}'::jsonb)
+        from jsonb_each(coalesce(books.facts, '{}'::jsonb)) as t(k, v)
+        where k like '\_%'
+      ) || ${JSON.stringify(facts)}::jsonb,
       authorship       = ${String(form.get("authorship") || "") || null},
       price_inr        = ${Math.round(priceRupees * 100)},
       publisher        = ${String(form.get("publisher") || "") || null},

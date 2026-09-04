@@ -129,7 +129,8 @@ export default async function Home() {
 /** One catalogue entry: the book, its apparatus, and the buy action. */
 function Entry({ book: b, index, total }: { book: Book; index: number; total: number }) {
   const facts: [string, string][] = [
-    ...Object.entries(b.facts ?? {}),
+    // Keys starting with "_" are internal bookkeeping, never shown.
+    ...Object.entries(b.facts ?? {}).filter(([k]) => !k.startsWith("_")),
     ...(b.pages ? ([["Pages", String(b.pages)]] as [string, string][]) : []),
     ...(b.year ? ([["Year", String(b.year)]] as [string, string][]) : []),
     ...(b.isbn ? ([["ISBN", b.isbn]] as [string, string][]) : []),

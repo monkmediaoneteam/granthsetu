@@ -154,6 +154,7 @@ export default async function AdminBooks({
                     rows={5}
                     className="field-input resize-y font-mono text-[13px]"
                     defaultValue={Object.entries(b.facts ?? {})
+                      .filter(([k]) => !k.startsWith("_"))
                       .map(([k, v]) => k + ": " + v)
                       .join("\n")}
                   />
