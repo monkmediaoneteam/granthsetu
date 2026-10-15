@@ -312,13 +312,17 @@ async function checkHomepage() {
   assert.doesNotMatch(urls, /books\/unapproved/);
   assert.match(urls, /category\/science/);
   const Header = load("components/StoreHeader.tsx", { "next/navigation": { usePathname: () => "/", useRouter: () => ({ push() {} }) } }).default;
-  const header = renderToStaticMarkup(React.createElement(Header, { name: "Reading Room by INVENTAYU", nav,
+  const previews = { fiction: [{ slug: "real-book", title: "Actual title", cover: "/assets/book1.png" }] };
+  const header = renderToStaticMarkup(React.createElement(Header, { name: "Reading Room by INVENTAYU", nav, previews,
     announcement: { title: "Festive reads: up to 20% off", link_url: "/search?offer=1" } }));
   assert.match(header, /Festive reads: up to 20% off/);
   assert.match(header, /href="\/category\/fiction"/);
   assert.match(header, /href="\/category\/crime"/);
   assert.match(header, /<form[^>]+action="\/search"/);
-  assert.doesNotMatch(renderToStaticMarkup(React.createElement(Header, { name: "x", nav, announcement: null })), /announcement-bar/);
+  assert.match(header, /id="bag-target"/);
+  assert.match(header, /Cover of Actual title/, "category panels preview real covers");
+  assert.doesNotMatch(header, /अ|logo-mark/, "no Akshara mark");
+  assert.doesNotMatch(renderToStaticMarkup(React.createElement(Header, { name: "x", nav, announcement: null, previews: {} })), /announcement-bar/);
   const Shell = load("components/AdminShell.tsx").default;
   const shell = renderToStaticMarkup(React.createElement(Shell, { active: "orders", title: "Orders" }, "body"));
   for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/platform/modules?type=banner", "/admin/platform/delivery"])
