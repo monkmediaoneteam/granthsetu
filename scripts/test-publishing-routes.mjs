@@ -39,7 +39,8 @@ async function load(path) {
   let js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   js = js.replace(/import \{([^}]+)\} from ["']([^"']+)["'];?/g, (statement, names, name) => name.startsWith('node:') ? statement : `const {${names.replace(/\bas\b/g, ':')}} = globalThis.publishingRouteDependencies[${JSON.stringify(name === './db' ? '@/lib/db' : name)}];`)
     .replace(/import AdminShell from "@\/components\/AdminShell";/, 'const AdminShell = globalThis.publishingRouteDependencies["@/components/AdminShell"].default;')
-    .replace(/import sharp from "sharp";/, 'const sharp = globalThis.publishingRouteDependencies.sharp.default;');
+    .replace(/import sharp from "sharp";/, 'const sharp = globalThis.publishingRouteDependencies.sharp.default;')
+    .replace(/import (\w+) from "(\.[^"]+)";/g, (statement, name, from) => `const ${name} = globalThis.publishingRouteDependencies[${JSON.stringify(from)}].default;`);
   return import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
 }
 const json = (path, body, extraHeaders = {}, requestOrigin = origin) => new Request(`${origin}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(requestOrigin ? { Origin: requestOrigin } : {}), ...extraHeaders }, body: JSON.stringify(body) });
@@ -52,6 +53,9 @@ try {
   dependencies['@/lib/db'] = { sql: async (parts, ...values) => (await db.query(parts.reduce((sql, part, i) => sql + (i ? `$${i}` : '') + part, ''), values)).rows };
   dependencies['@/lib/submissions'] = await load('../src/lib/submissions.ts');
   dependencies['@/lib/content'] = await load('../src/lib/content.ts');
+  dependencies['@/lib/admin-catalogue'] = await load('../src/lib/admin-catalogue.ts');
+  dependencies['@/lib/money'] = await load('../src/lib/money.ts');
+  dependencies['./BookForm'] = await load('../src/app/admin/books/BookForm.tsx');
   const authorRoute = await load('../src/app/api/submissions/route.ts');
   const uploads = await load('../src/app/api/submissions/uploads/route.ts');
   const scanner = await load('../src/app/api/submissions/scan/route.ts');
@@ -181,7 +185,7 @@ try {
   const adminMarkup = renderToStaticMarkup(await adminBooksPage.default({ searchParams: Promise.resolve({}) }));
   assert.equal(adminMarkup.includes('name="file_url"'), false);
   assert.equal((adminMarkup.match(/name="action" value="release"/g) ?? []).length, 1);
-  assert.equal((adminMarkup.match(/<form\b/g) ?? []).length, 3);
+  assert.equal((adminMarkup.match(/<form\b/g) ?? []).length, 6); // create, search, offer, details, release, archive
   assert.ok(adminMarkup.includes('id="existing-firstparty-release-submission"'));
   assert.ok(adminMarkup.includes('name="reason"'));
   assert.ok(adminMarkup.includes('name="confirmed"'));
