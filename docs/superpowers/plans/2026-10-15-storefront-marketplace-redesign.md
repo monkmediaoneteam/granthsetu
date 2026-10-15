@@ -39,116 +39,46 @@
 
 # Part A — Admin and data
 
-### Task A1: Local admin access and dev magic links
+### Task A1: Local admin access in the isolated preview
+
+**Already done (do not repeat):** development magic links shipped in commit `4e22a14`. `src/lib/auth.ts` exports `deliverMagicLink(email: string, url: string): Promise<void>` (positional arguments). Outside production it `console.info`s `[auth] Development sign-in link for <email>: <url>` and swallows a missing `RESEND_API_KEY` or a rejected Resend response with a `console.warn`; in production it never logs the link and throws when the key is missing or delivery fails. Its test is `scripts/test-magic-link.mjs`, registered in `scripts/test-all.mjs` after `scripts/test-auth.mjs`. `.claude/launch.json` has a `dev` entry (`npm run dev`, port 3000) next to `isolated-preview`. No later task calls `deliverMagicLink`.
+
+This task only makes admin reachable in the isolated preview, which currently blanks `ADMIN_TOKEN` and `ADMIN_EMAIL`.
 
 **Files:**
-- Modify: `src/lib/auth.ts` (extract the `sendMagicLink` body)
 - Modify: `scripts/dev-preview.mjs`
-- Create: `scripts/test-dev-access.mjs`
-- Modify: `scripts/test-all.mjs` (register the new check)
 
 **Interfaces:**
-- Produces: `export async function deliverMagicLink({ email, url }: { email: string; url: string }): Promise<void>` in `src/lib/auth.ts`.
-- Produces: preview prints `Admin token: <64 hex>` and honours an `ADMIN_TOKEN` env override (used by Task A10's `scripts/check-admin.mjs`).
+- Produces: the preview prints `Admin token (this run only): <64 hex>` and honours an `ADMIN_TOKEN` env override (used by Task A10's `scripts/check-admin.mjs`).
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Implement**
 
-Create `scripts/test-dev-access.mjs`:
-
-```js
-import assert from 'node:assert/strict';
-import { load } from './test-commerce.mjs';
-
-const auth = load('src/lib/auth.ts', {
-  'better-auth': { betterAuth: () => ({}) }, 'better-auth/plugins': { magicLink: () => ({}) },
-  'better-auth/next-js': { nextCookies: () => ({}) }, kysely: { PostgresDialect: class {} }, pg: { Pool: class {} },
-  './local-db': { localDatabase: () => null },
-});
-const logged = [];
-const originalLog = console.log, originalFetch = globalThis.fetch;
-console.log = (...args) => logged.push(args.join(' '));
-try {
-  Object.assign(process.env, { NODE_ENV: 'development', RESEND_API_KEY: '' });
-  globalThis.fetch = () => { throw new Error('No email provider may be called in development fallback.'); };
-  await auth.deliverMagicLink({ email: 'reader@example.com', url: 'http://localhost:3100/api/auth/magic-link/verify?token=abc' });
-  assert.ok(logged.some(line => line.includes('reader@example.com') && line.includes('token=abc')));
-
-  Object.assign(process.env, { NODE_ENV: 'production', RESEND_API_KEY: '' });
-  await assert.rejects(auth.deliverMagicLink({ email: 'reader@example.com', url: 'https://example.com/x' }), /Transactional email/);
-
-  let sent;
-  Object.assign(process.env, { NODE_ENV: 'production', RESEND_API_KEY: 're_test', MAIL_FROM: 'Books <books@example.com>' });
-  globalThis.fetch = async (url, options) => { sent = { url, body: JSON.parse(options.body) }; return new Response('{}', { status: 200 }); };
-  await auth.deliverMagicLink({ email: 'reader@example.com', url: 'https://example.com/verify' });
-  assert.equal(sent.url, 'https://api.resend.com/emails');
-  assert.equal(sent.body.to, 'reader@example.com');
-} finally { console.log = originalLog; globalThis.fetch = originalFetch; }
-console.log('Dev access checks passed: dev magic links log locally, production still requires Resend.');
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `node --import tsx scripts/test-dev-access.mjs`
-Expected: FAIL with `auth.deliverMagicLink is not a function`.
-
-- [ ] **Step 3: Implement**
-
-In `src/lib/auth.ts`, add above `createAuthentication`:
-
-```ts
-// Development without Resend logs the link instead of failing; production always sends email.
-export async function deliverMagicLink({ email, url }: { email: string; url: string }) {
-  if (process.env.NODE_ENV !== 'production' && !process.env.RESEND_API_KEY) {
-    console.log(`[dev] Sign-in link for ${email}: ${url}`);
-    return;
-  }
-  const key = requireEnv('RESEND_API_KEY', 'Transactional email must be configured.');
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ from: requireEnv('MAIL_FROM', 'Configure a verified sender.'), to: email,
-      subject: `Your ${STORE.name} sign-in link`,
-      text: `Sign in to your library and publishing workspace: ${url}\nThis link expires in 15 minutes. Ignore this email if you did not request it.` }),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!response.ok) throw new Error('Sign-in email could not be delivered.');
-}
-```
-
-Replace the plugin's `async sendMagicLink({ email, url }) { … }` body with:
-
-```ts
-      async sendMagicLink({ email, url }) { await deliverMagicLink({ email, url }); },
-```
-
-In `scripts/dev-preview.mjs` add `import { randomBytes } from 'node:crypto';` is already present; before `spawn`, add:
+In `scripts/dev-preview.mjs` (`randomBytes` is already imported), before `spawn`, add:
 
 ```js
 const adminToken = process.env.ADMIN_TOKEN || randomBytes(32).toString('hex');
+if (!/^[a-f0-9]{64}$/.test(adminToken)) throw new Error('ADMIN_TOKEN for the preview must be 64 lowercase hex characters.');
 ```
 
-and change `ADMIN_TOKEN: ''` to `ADMIN_TOKEN: adminToken`. After the existing `console.log`, add:
+Change `ADMIN_TOKEN: ''` to `ADMIN_TOKEN: adminToken` in the spawned environment (leave `ADMIN_EMAIL: ''`). After the existing `console.log`, add:
 
 ```js
 console.log(`Admin token (this run only): ${adminToken}  ->  http://localhost:${port}/admin/login`);
 console.log('Sign-in links are printed in this terminal because email is disabled.');
 ```
 
-Add `'scripts/test-dev-access.mjs'` to the `checks` array in `scripts/test-all.mjs` after `'scripts/test-auth.mjs'`.
+- [ ] **Step 2: Verify**
 
-- [ ] **Step 4: Run tests**
+Run: `npm test && npx tsc --noEmit --incremental false`
+Expected: PASS (including the existing `scripts/test-magic-link.mjs`).
 
-Run: `node --import tsx scripts/test-dev-access.mjs && npm test && npx tsc --noEmit --incremental false`
-Expected: PASS, "Dev access checks passed…", "All offline regression suites passed."
+Run `npm run preview:isolated -- 3100` in the background. Expected: the terminal prints `Admin token (this run only): <64 hex>`. Open `http://localhost:3100/admin/login`, paste the token, sign in. Expected: redirected to `/admin`. Then run `ADMIN_TOKEN=abc npm run preview:isolated -- 3101`. Expected: it exits with "ADMIN_TOKEN for the preview must be 64 lowercase hex characters."
 
-- [ ] **Step 5: Manual check**
-
-Run `npm run preview:isolated -- 3100` in the background, copy the printed token, open `http://localhost:3100/admin/login`, sign in. Expected: redirected to `/admin`. Then open `/login`, request a link for any email; the terminal prints `[dev] Sign-in link for …`; opening it signs in.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add src/lib/auth.ts scripts/dev-preview.mjs scripts/test-dev-access.mjs scripts/test-all.mjs
-git commit -m "Make admin and email sign-in usable in the isolated preview"
+git add scripts/dev-preview.mjs
+git commit -m "Print a per-run admin token in the isolated preview"
 ```
 
 ---
