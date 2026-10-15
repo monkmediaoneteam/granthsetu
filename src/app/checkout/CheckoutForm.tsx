@@ -36,7 +36,7 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
   const cart = useCart();
   const slugs = initialSlug ? [initialSlug] : cart.slugs;
   const selected = slugs.flatMap((slug) => books.filter((book) => book.slug === slug));
-  const totals = selected.every((book) => book.saleable) ? cartTotals(selected) : null;
+  const totals = selected.every((book) => book.saleable) ? cartTotals(selected.map((book) => ({ price_inr: book.price }))) : null;
   const totalLabel = totals ? rupees(totals.total) : "Not yet on sale";
   const unavailable = !totals || selected.length !== slugs.length || selected.some((book) => !book.saleable) || slugs.length > 20;
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
@@ -87,12 +87,12 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
   }
 
   if (!initialSlug && !cart.ready) return <p role="status">Loading your selection...</p>;
-  if (!slugs.length) return <div className="empty-state"><h2>Your cart is empty.</h2><p>Choose a digital edition before checking out.</p><Link className="btn btn-primary" href="/catalogue">Explore the books <ArrowRight size={17} aria-hidden="true" /></Link></div>;
+  if (!slugs.length) return <div className="empty-state"><h2>Your bag is empty.</h2><p>Choose a digital edition before checking out.</p><Link className="btn btn-primary" href="/search">Explore the books <ArrowRight size={17} aria-hidden="true" /></Link></div>;
   return <>
     <div className="checkout-layout">
       <form onSubmit={pay} className="checkout-form" aria-label="Customer details">
-        {!enabled && <p className="purchase-paused">Online ordering is currently unavailable. <Link className="underline" href="/catalogue">Continue browsing</Link> or return later.</p>}
-        {enabled && unavailable && <p className="purchase-paused">{slugs.length > 20 ? "Choose up to twenty titles per checkout." : "A selected edition is not currently available to buy."} <Link className="underline" href={initialSlug ? `/books/${encodeURIComponent(initialSlug)}` : "/cart"}>{initialSlug ? "View book details" : "Review your cart"}</Link>.</p>}
+        {!enabled && <p className="purchase-paused">Online ordering is currently unavailable. <Link className="underline" href="/search">Continue browsing</Link> or return later.</p>}
+        {enabled && unavailable && <p className="purchase-paused">{slugs.length > 20 ? "Choose up to twenty titles per checkout." : "A selected edition is not currently available to buy."} <Link className="underline" href={initialSlug ? `/books/${encodeURIComponent(initialSlug)}` : "/cart"}>{initialSlug ? "View book details" : "Review your bag"}</Link>.</p>}
         {([{ key: "name", label: "Full name", type: "text", autoComplete: "name", maxLength: 100 },
           { key: "email", label: "Email address", type: "email", autoComplete: "email", maxLength: 254 },
           { key: "phone", label: "Indian mobile number", type: "tel", autoComplete: "tel", maxLength: 32 }] as const).map((field) => <div key={field.key}>
@@ -112,7 +112,7 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
         <noscript><p className="small">JavaScript is required to complete checkout.</p></noscript>
         <p className="checkout-policy">By continuing, you agree to our <Link href="/terms">terms</Link> and <Link href="/refund-policy">refund policy</Link>. Digital editions are licensed for personal use.</p>
       </form>
-      <aside className="order-summary"><h2>Your editions</h2>{selected.map((book) => <div className="summary-line" key={book.slug}><span>{book.title}</span><span>{book.saleable && book.price_inr > 0 ? rupees(book.price_inr) : "Not yet on sale"}</span></div>)}
+      <aside className="order-summary"><h2>Your editions</h2>{selected.map((book) => <div className="summary-line" key={book.slug}><span>{book.title}</span><span>{book.saleable && book.price > 0 ? rupees(book.price) : "Not yet on sale"}</span></div>)}
         {totals && totals.tax > 0 && <div className="summary-line"><span>Tax</span><span>{rupees(totals.tax)}</span></div>}
         <div className="summary-line summary-total"><span>Total</span><span>{totalLabel}</span></div>
         <p className="small muted mt-4">Prices and availability are checked again before payment. <Link href="/delivery-policy" className="underline">Delivery details</Link></p>

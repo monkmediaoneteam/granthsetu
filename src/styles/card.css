@@ -1,0 +1,69 @@
+@layer components {
+  .product-card { position: relative; display: flex; flex-direction: column; height: 100%; background: var(--card); border-radius: var(--radius-card); padding: 12px; transition: transform .2s, box-shadow .2s; }
+  .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+  .card-cover { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 4; border-radius: 8px; background: #fff; overflow: hidden; }
+  .card-cover img { width: 100%; height: 100%; object-fit: contain; }
+  .cover-fallback { display: grid; place-items: center; width: 100%; height: 100%; padding: 16px; background: var(--page); font: 750 16px/1.3 var(--font-head); text-align: center; }
+  .card-flag { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; border-radius: 6px; background: var(--ink); color: #fff; font: 700 11px/1.4 var(--font-body); }
+  .card-body { display: flex; flex-direction: column; gap: 4px; flex: 1; padding-top: 12px; }
+  .card-body h3 { font: 650 14px/1.35 var(--font-body); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.7em; }
+  .card-body h3 a:hover { text-decoration: underline; }
+  .card-author { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .price-block { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-height: 24px; margin-top: auto; padding-top: 4px; }
+  .price-regular { color: var(--muted); font-size: 13px; }
+  .price-now { font: 800 17px/1.2 var(--font-body); }
+  .price-block.price-page .price-now { font-size: 32px; }
+  .price-block.price-page .price-regular { font-size: 18px; }
+  .soon-chip { padding: 3px 8px; border-radius: 6px; background: #E0F2FE; color: #075985; font: 700 12px/1.4 var(--font-body); }
+  .card-add { width: 100%; margin-top: 8px; }
+  .cart-control { width: 100%; }
+  .carousel-track { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, calc((100% - 5 * 16px) / 6)); gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 4px 20px; margin: -4px; }
+  .carousel-track > li { scroll-snap-align: start; min-width: 0; }
+  @media (max-width: 1024px) { .carousel-track { grid-auto-columns: minmax(170px, calc((100% - 3 * 16px) / 4)); } }
+  @media (max-width: 640px) { .carousel-track { grid-auto-columns: 44%; gap: 12px; } .product-card { padding: 8px; } }
+  .grid-books { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+  @media (max-width: 640px) { .grid-books { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+}
+@layer components {
+  .heart-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .heart-btn[aria-pressed="true"] { color: var(--sale); border-color: var(--sale); }
+  .heart-btn.card { position: absolute; top: 18px; right: 18px; z-index: 2; }
+  .heart-btn.page { width: 40px; height: 40px; }
+}
+@layer components {
+  .quick-view-btn { position: absolute; left: 50%; top: 40%; transform: translate(-50%, 0); display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
+    border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: 650 12px/1 var(--font-body); opacity: 0; transition: opacity .15s; z-index: 2; }
+  .product-card:hover .quick-view-btn, .quick-view-btn:focus-visible { opacity: 1; }
+  @media (hover: none) { .quick-view-btn { display: none; } }
+  .quick-view { width: min(760px, calc(100vw - 32px)); padding: 28px; border: 0; border-radius: 20px; box-shadow: var(--shadow-lift); }
+  .quick-view::backdrop { background: rgb(0 0 0 / 45%); }
+  .qv-close { position: absolute; top: 14px; right: 14px; }
+  .qv-grid { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; }
+  .qv-cover { background: var(--page); border-radius: 12px; padding: 16px; }
+  .qv-info { display: grid; align-content: start; gap: 10px; }
+  .qv-info h2 { font-size: 24px; padding-right: 40px; }
+  .qv-blurb { color: var(--ink-2); font-size: 14px; }
+  .qv-actions { display: flex; gap: 10px; align-items: center; } .qv-actions .cart-control { flex: 1; }
+  @media (max-width: 640px) { .qv-grid { grid-template-columns: 1fr; } .qv-cover { max-width: 200px; } }
+}
+@layer components {
+  .cart-drawer { position: fixed; inset: 0 0 0 auto; margin: 0; width: min(420px, 100vw); height: 100dvh; max-height: none; padding: 0; border: 0; display: none; flex-direction: column; background: var(--card); }
+  .cart-drawer[open] { display: flex; animation: drawer-in .25s ease-out; }
+  .cart-drawer::backdrop { background: rgb(0 0 0 / 40%); }
+  @keyframes drawer-in { from { transform: translateX(100%); } to { transform: none; } }
+  .drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+  .drawer-head h2 { font-size: 20px; }
+  .drawer-added { display: flex; align-items: center; gap: 8px; margin: 12px 20px 0; padding: 10px 12px; border-radius: 8px; background: var(--offer-bg); color: var(--offer); font-weight: 650; font-size: 14px; }
+  .drawer-lines { flex: 1; overflow-y: auto; padding: 8px 20px; }
+  .drawer-lines li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding-block: 12px; border-bottom: 1px solid var(--line); }
+  .drawer-cover { width: 56px; height: 76px; background: var(--page); border-radius: 4px; overflow: hidden; } .drawer-cover img { width: 100%; height: 100%; object-fit: contain; }
+  .drawer-text { display: grid; gap: 4px; font-size: 14px; } .drawer-text a { font-weight: 650; } .drawer-text s { color: var(--muted); }
+  .icon-plain { border: 0; background: none; padding: 8px; color: var(--muted); } .icon-plain:hover { color: var(--sale); }
+  .drawer-foot { padding: 16px 20px 20px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+  .drawer-subtotal { display: flex; justify-content: space-between; font-size: 17px; }
+  .drawer-note { padding-inline: 20px; font-size: 13px; color: var(--muted); } .drawer-foot .drawer-note { padding: 0; }
+  .drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+@layer components {
+  .recent-title { font-weight: 650; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+}

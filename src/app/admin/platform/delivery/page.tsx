@@ -9,7 +9,7 @@ export default async function DeliveryPage() {
     left join email_delivery e on e.order_id=o.id where o.status in ('created','paid','fulfilled')
     and (e.state in ('pending','manual','sending') or o.status in ('created','paid')
       or exists(select 1 from jsonb_array_elements(o.items) i where coalesce(i->>'file_url','')='')) order by o.created_at limit 100`;
-  return <section><h1 className="title title-lg">Delivery recovery</h1>
+  return <section>
     <p className="mt-4 mb-8 text-ink-soft">Provider reconciliation never creates another charge. Restore a legacy snapshot only after verifying that the approved file is the edition originally purchased.</p>
     {rows.length === 0 && <p>No orders need delivery recovery.</p>}
     {rows.map(row => <article key={row.id} className="border-b border-line py-6">

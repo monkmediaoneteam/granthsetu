@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { env } from './env';
 import { sql } from './db';
 import { getReader } from './reader-auth';
+import { consumeLimit, clientKey } from './rate-limit';
 
 const COOKIE = 'admin_session';
 const hash = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
@@ -29,13 +30,8 @@ export async function signIn(token: string): Promise<boolean> {
   const expected = env('ADMIN_TOKEN');
   if (!expected || token.length > 256) return false;
   const requestHeaders = await headers();
-  const key = hash(`admin:${requestHeaders.get('x-vercel-forwarded-for') || 'local'}`);
-  const attempts = await sql`insert into request_limits (key, count, expires_at)
-    values (${key}, 1, now() + interval '1 hour') on conflict (key) do update set
-    count = case when request_limits.expires_at < now() then 1 else request_limits.count + 1 end,
-    expires_at = case when request_limits.expires_at < now() then now() + interval '1 hour' else request_limits.expires_at end
-    returning count`;
-  if (attempts[0].count > 5 || !crypto.timingSafeEqual(Buffer.from(hash(token)), Buffer.from(hash(expected)))) return false;
+  const allowed = await consumeLimit(clientKey(new Request('http://admin', { headers: requestHeaders }), 'admin'), 5, 3600);
+  if (!allowed || !crypto.timingSafeEqual(Buffer.from(hash(token)), Buffer.from(hash(expected)))) return false;
   const session = crypto.randomBytes(32).toString('hex');
   await sql`insert into admin_sessions (token_hash, expires_at) values (${hash(session)}, now() + interval '7 days')`;
   (await cookies()).set(COOKIE, session, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 604800 });

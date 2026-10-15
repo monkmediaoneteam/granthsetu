@@ -1,5 +1,5 @@
 import { getOrder, sql } from "@/lib/db";
-import { rupees } from "@/lib/money";
+import { orderSavings, rupees } from "@/lib/money";
 import { mintDownloadToken } from "@/lib/token";
 import { settleFromRazorpay } from "@/lib/settle";
 import CopyLinkButton from "@/components/CopyLinkButton";
@@ -145,6 +145,7 @@ export default async function OrderPage({
         <div className="flex justify-between">
           <dt className="eyebrow">{paid ? "Total paid" : "Amount"}</dt>
           <dd className="m-0 font-mono">{rupees(order.total)}</dd>
+          {orderSavings(order) > 0 && <><dt className="text-offer">You saved</dt><dd className="m-0 font-mono">{rupees(orderSavings(order))}</dd></>}
         </div>
         <div className="flex justify-between">
           <dt className="eyebrow">Sent to</dt>

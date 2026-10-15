@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // A profile appears once published by admin, or as a plain bibliography for an attributed author.
 async function load(id: string) {
   const [records, content] = await Promise.all([getBooks(), getPublicContent()]);
-  const books = records.filter((book) => book.author_slug === id && visibleBook(book)).map(publicBook);
+  const books = records.filter((book) => book.author_slug === id && visibleBook(book)).map((book) => publicBook(book));
   const profile = content.authors.find((author) => author.id === id);
   const name = profile?.name || books[0]?.authorship;
   return name ? { profile, books, name } : null;
@@ -38,7 +38,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ id: str
     ...(author.profile?.bio && { description: author.profile.bio }), ...(photo && { image: photo.startsWith("/") ? `${siteUrl()}${photo}` : photo }) };
   return <div className="wrap section">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
-    <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Reading room</Link><span aria-hidden="true">/</span><Link href="/catalogue">Catalogue</Link><span aria-hidden="true">/</span><span aria-current="page">{author.name}</span></nav>
+    <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><Link href="/search">All books</Link><span aria-hidden="true">/</span><span aria-current="page">{author.name}</span></nav>
     <header className="author-hero">
       {photo && <img src={photo} alt={`Portrait of ${author.name}`} className="author-photo" />}
       <div><p className="eyebrow">Author</p><h1>{author.name}</h1>
