@@ -110,6 +110,10 @@ assert.deepEqual(JSON.parse(jsonLdHtml(hostile)), hostile);
 assert.equal("offers" in bookJsonLd({ ...record, cover: "/assets/c.png" }, "https://store.example/books/real-book", false), false);
 assert.equal(bookJsonLd({ ...record, cover: "/assets/c.png" }, "u", true).offers.price, "1500.00");
 assert.equal(bookJsonLd({ ...record, cover: "/assets/c.png" }, "u", true).image, "https://store.example/assets/c.png");
+const ld = bookJsonLd({ ...record, cover: "/assets/c.png", price_inr: 29900, sale_price_inr: 25200, sale_ends_at: "2026-10-20T00:00:00+05:30" }, "u", true, new Date("2026-10-15T00:00:00Z"));
+assert.equal(ld.offers.price, "252.00");
+assert.equal(ld.offers.priceValidUntil, "2026-10-19");
+assert.equal(bookJsonLd({ ...record, price_inr: 29900, sale_price_inr: 25200, sale_ends_at: "2026-10-01T00:00:00Z" }, "u", true, new Date("2026-10-15T00:00:00Z")).offers.price, "299.00");
 assert.equal(publicBook({ ...record, third_party: true, release_approved: false }).saveable, false);
 
 const CheckoutForm = load("app/checkout/CheckoutForm.tsx").default;

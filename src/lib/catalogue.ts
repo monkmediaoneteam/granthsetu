@@ -1,12 +1,15 @@
 import type { Book } from "./db";
 import { siteUrl } from "./store";
 import { saleable } from './access-policy';
+import { currentPrice } from './money';
 export const isSaleable = saleable;
 
 const absolute = (url: string) => url.startsWith("/") ? `${siteUrl()}${url}` : url;
 
 // Structured data states only what the record holds; an offer appears only for a title on sale.
-export function bookJsonLd(book: Book, url: string, saleable: boolean) {
+export function bookJsonLd(book: Book, url: string, saleable: boolean, now: Date = new Date()) {
+  const p = currentPrice(book, now);
+  const until = p.onSale && book.sale_ends_at ? new Date(Date.parse(String(book.sale_ends_at)) - 1).toISOString().slice(0, 10) : null;
   return {
     "@context": "https://schema.org", "@type": "Book", "@id": url, url, name: book.title,
     ...(book.subtitle && { alternativeHeadline: book.subtitle }),
@@ -20,8 +23,8 @@ export function bookJsonLd(book: Book, url: string, saleable: boolean) {
     ...(book.language && { inLanguage: book.language }),
     ...(book.edition && { bookEdition: book.edition }),
     bookFormat: "https://schema.org/EBook",
-    ...(saleable && book.price_inr > 0 && { offers: { "@type": "Offer", url, priceCurrency: "INR",
-      price: (book.price_inr / 100).toFixed(2), availability: "https://schema.org/InStock" } }),
+    ...(saleable && p.price > 0 && { offers: { "@type": "Offer", url, priceCurrency: "INR", price: (p.price / 100).toFixed(2),
+      ...(until && { priceValidUntil: until }), availability: "https://schema.org/InStock" } }),
   };
 }
 

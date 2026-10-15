@@ -5,6 +5,7 @@
 @import "../styles/card.css";
 @import "../styles/home.css";
 @import "../styles/listing.css";
+@import "../styles/product.css";
 
 /* Tailwind utilities used by admin and legacy pages, mapped onto the retail palette. */
 @theme {
