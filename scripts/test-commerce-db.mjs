@@ -111,6 +111,23 @@ try {
     assert.equal(order.items[0].file_sha256, pdfHash);
     assert.equal(order.reader_id, 'reader1');
   });
+  await check('checkout charges the sale price only inside its window and snapshots the regular price', async () => {
+    const a = books.get('book-a');
+    Object.assign(a, { sale_price_inr: 15900, sale_starts_at: new Date(Date.now() - 60000).toISOString(), sale_ends_at: new Date(Date.now() + 3600000).toISOString() });
+    try {
+      const inWindow = await checkout.POST(request('checkout-sale-0001', { slugs: ['book-a'] }));
+      assert.equal(inWindow.status, 200);
+      const order = await getOrder((await inWindow.json()).orderId);
+      assert.equal(order.total, 15900);
+      assert.equal(order.items[0].price, 15900);
+      assert.equal(order.items[0].list_price, 19900);
+      a.sale_ends_at = new Date(Date.now() - 1).toISOString();
+      const retried = await checkout.POST(request('checkout-sale-0001', { slugs: ['book-a'] }));
+      assert.equal((await getOrder((await retried.json()).orderId)).total, 15900, 'a retry keeps the snapshot price');
+      const after = await checkout.POST(request('checkout-sale-0002', { slugs: ['book-a'] }));
+      assert.equal((await getOrder((await after.json()).orderId)).total, 19900, 'expired sale charges the regular price');
+    } finally { delete a.sale_price_inr; delete a.sale_starts_at; delete a.sale_ends_at; }
+  });
   await check('same checkout key creates no second payment link', async () => {
     const before = creations;
     const responses = await Promise.all([checkout.POST(request('checkout-main-0001')), checkout.POST(request('checkout-main-0001'))]);

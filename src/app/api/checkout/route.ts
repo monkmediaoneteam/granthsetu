@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { sql, getBook, type Order } from "@/lib/db";
-import { computeTotals } from "@/lib/money";
+import { computeTotals, currentPrice } from "@/lib/money";
 import { checkoutConfiguration, createPaymentLink, PaymentLinkCreationRejected } from "@/lib/razorpay";
 import { fulfilOrder } from "@/lib/fulfil";
 import { isSaleable } from "@/lib/catalogue";
@@ -118,8 +118,9 @@ export async function POST(req: Request) {
           return reply("Purchased file storage is not configured.", 503);
       }
     }
+    const now = new Date();
     const items = books.map(book => ({
-      slug: book!.slug, title: book!.title, price: book!.price_inr,
+      slug: book!.slug, title: book!.title, price: currentPrice(book!, now).price, list_price: book!.price_inr,
       file_url: book!.file_url, file_format: book!.file_format, file_sha256: book!.file_sha256,
       edition: book!.edition || null,
     }));

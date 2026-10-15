@@ -48,6 +48,7 @@
   .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 5px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-size: 13px; font-weight: 550; }
   .chip:hover, .chip[aria-current] { border-color: var(--ink); }
   .chip[aria-current] { background: var(--ink); color: #fff; }
+  .text-offer { color: var(--offer); }
   .pill-offer { display: inline-flex; padding: 2px 8px; border-radius: 6px; background: var(--offer-bg); color: var(--offer); font: 700 12px/1.5 var(--font-body); white-space: nowrap; }
   .field-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
   .field-input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-btn); background: var(--card); font-size: 16px; }

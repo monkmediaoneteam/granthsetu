@@ -18,4 +18,6 @@ assert.equal(currentPrice(windowed, at('2026-10-19T18:30:00.000Z')).onSale, fals
 for (const sale of [0, -1, 29900, 40000, 1.5, null, undefined, NaN])
   assert.equal(currentPrice({ price_inr: 29900, sale_price_inr: sale }).price, 29900);
 assert.equal(currentPrice({ ...book, sale_starts_at: 'not a date' }).onSale, false);
+const { orderSavings } = load('src/lib/money.ts');
+assert.equal(orderSavings({ items: [{ price: 25200, list_price: 29900 }, { price: 100 }, { price: 500, list_price: 400 }] }), 4700);
 console.log('Pricing checks passed: sale windows (inclusive start, exclusive end), invalid sales ignored, percent off.');

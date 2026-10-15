@@ -31,3 +31,7 @@ export function currentPrice(book: Priced, now: Date = new Date()): CurrentPrice
 }
 
 export const percentOff = (p: CurrentPrice) => p.onSale ? Math.round((p.saving / p.regular) * 100) : 0;
+
+export function orderSavings(order: { items: { price: number; list_price?: number }[] }) {
+  return order.items.reduce((sum, item) => sum + (typeof item.list_price === "number" && item.list_price > item.price ? item.list_price - item.price : 0), 0);
+}
