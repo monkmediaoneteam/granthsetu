@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight, FileCheck2, Library, ShieldCheck, Zap } from "lucide-react";
 import { getBook, getBooks } from "@/lib/db";
-import { bookJsonLd } from "@/lib/catalogue";
+import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { getPublicContent, safeUrl } from "@/lib/content";
 import { rupees } from "@/lib/money";
 import { siteUrl } from "@/lib/store";
@@ -40,7 +40,7 @@ export default async function BookDetail({ params }: { params: Promise<{ slug: s
     if (value) facts.set(label, String(value));
   }
   return <div className="wrap section">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bookJsonLd(book, url, view.saleable)).replace(/</g, "\\u003c") }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(bookJsonLd(book, url, view.saleable)) }} />
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Reading room</Link><span aria-hidden="true">/</span><Link href="/catalogue">Catalogue</Link>
       {view.subject && <><span aria-hidden="true">/</span><Link href={`/catalogue?subject=${encodeURIComponent(view.subject)}`}>{view.subject}</Link></>}
       <span aria-hidden="true">/</span><span aria-current="page">{book.title}</span></nav>

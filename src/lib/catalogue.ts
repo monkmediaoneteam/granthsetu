@@ -24,3 +24,8 @@ export function bookJsonLd(book: Book, url: string, saleable: boolean) {
       price: (book.price_inr / 100).toFixed(2), availability: "https://schema.org/InStock" } }),
   };
 }
+
+// Inline <script> JSON must not be able to close its tag, start a comment, or end a JS line.
+export function jsonLdHtml(data: unknown) {
+  return JSON.stringify(data).replace(/[<>&\u2028\u2029]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+}

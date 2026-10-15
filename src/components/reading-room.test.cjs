@@ -56,6 +56,15 @@ assert.equal(publicBook({ ...record, facts: { Subject: "Research methodology", L
 const pendingBook = publicBook({ ...record, price_inr: 0, release_approved: false });
 assert.equal(pendingBook.saveable, true);
 assert.equal(pendingBook.saleable, false);
+
+// Author names and book text are author-supplied; inline JSON-LD must never close its <script>.
+const { jsonLdHtml, bookJsonLd } = load("lib/catalogue.ts", { "./access-policy": load("lib/access-policy.ts"), "./store": { siteUrl: () => "https://store.example" } });
+const hostile = { name: "</script><script>alert(1)</script> & <!-- \u2028\u2029" };
+assert.doesNotMatch(jsonLdHtml(hostile), /[<>&\u2028\u2029]/);
+assert.deepEqual(JSON.parse(jsonLdHtml(hostile)), hostile);
+assert.equal("offers" in bookJsonLd({ ...record, cover: "/assets/c.png" }, "https://store.example/books/real-book", false), false);
+assert.equal(bookJsonLd({ ...record, cover: "/assets/c.png" }, "u", true).offers.price, "1500.00");
+assert.equal(bookJsonLd({ ...record, cover: "/assets/c.png" }, "u", true).image, "https://store.example/assets/c.png");
 assert.equal(publicBook({ ...record, third_party: true, release_approved: false }).saveable, false);
 
 const CheckoutForm = load("app/checkout/CheckoutForm.tsx").default;

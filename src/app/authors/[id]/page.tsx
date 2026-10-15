@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getBooks } from "@/lib/db";
 import { getPublicContent, safeUrl } from "@/lib/content";
 import { siteUrl } from "@/lib/store";
+import { jsonLdHtml } from "@/lib/catalogue";
 import { publicBook, visibleBook } from "@/components/book-data";
 import BookCard from "@/components/BookCard";
 
@@ -36,7 +37,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ id: str
   const jsonLd = { "@context": "https://schema.org", "@type": "Person", "@id": url, url, name: author.name,
     ...(author.profile?.bio && { description: author.profile.bio }), ...(photo && { image: photo.startsWith("/") ? `${siteUrl()}${photo}` : photo }) };
   return <div className="wrap section">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\u003c") }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Reading room</Link><span aria-hidden="true">/</span><Link href="/catalogue">Catalogue</Link><span aria-hidden="true">/</span><span aria-current="page">{author.name}</span></nav>
     <header className="author-hero">
       {photo && <img src={photo} alt={`Portrait of ${author.name}`} className="author-photo" />}
