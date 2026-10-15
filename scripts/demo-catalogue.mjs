@@ -28,27 +28,26 @@ const LANGUAGES = ['English', 'English', 'English', 'Hindi', 'Marathi', 'Tamil',
 const slugify = value => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const escapeXml = value => value.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);
 
-// Each title gets its own colour and abstract composition so demo shelves show real variety.
-const COVER_COLOURS = ['#C2410C', '#166534', '#1F2937', '#1D4ED8', '#BE185D', '#B45309', '#4338CA', '#0F766E', '#7C2D12', '#D97706', '#3F6212', '#9F1239', '#0E7490', '#6D28D9', '#15803D'];
+// Demo covers (isolated preview only) use the theme palette: deep greens and ink with cream type and gold rules.
+const COVER_COLOURS = ['#0b2416', '#123a24', '#1f5a3a', '#2f7a4d', '#1b201e', '#3f4743', '#7a5a1e'];
 const COVER_SHAPES = [
-  '<circle cx="240" cy="330" r="120" fill="#fff" opacity=".14"/><circle cx="240" cy="330" r="70" fill="#fff" opacity=".14"/>',
-  '<path d="M0 300 Q150 220 300 300 V450 H0Z" fill="#fff" opacity=".16"/><path d="M0 345 Q150 275 300 345 V450 H0Z" fill="#fff" opacity=".12"/>',
-  '<rect x="40" y="200" width="220" height="190" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2"/><rect x="80" y="240" width="140" height="110" fill="#fff" opacity=".1"/>',
-  '<g stroke="#fff" stroke-opacity=".24" stroke-width="2">' + Array.from({ length: 9 }, (_, k) => `<line x1="${k * 40}" y1="450" x2="${k * 40 + 160}" y2="200"/>`).join('') + '</g>',
-  '<circle cx="60" cy="380" r="150" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/><circle cx="60" cy="380" r="100" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/><circle cx="60" cy="380" r="50" fill="#fff" opacity=".12"/>',
+  '<rect x="28" y="300" width="244" height="1" fill="#b9852e"/><rect x="28" y="306" width="120" height="1" fill="#b9852e"/>',
+  '<circle cx="230" cy="340" r="78" fill="none" stroke="#b9852e" stroke-opacity=".7" stroke-width="1.5"/><circle cx="230" cy="340" r="46" fill="none" stroke="#e9d8ae" stroke-opacity=".35"/>',
+  '<path d="M28 360 Q150 300 272 360" fill="none" stroke="#b9852e" stroke-width="1.5"/><path d="M28 380 Q150 320 272 380" fill="none" stroke="#e9d8ae" stroke-opacity=".4"/>',
+  '<rect x="28" y="230" width="244" height="150" fill="none" stroke="#e9d8ae" stroke-opacity=".35"/><rect x="44" y="246" width="212" height="118" fill="none" stroke="#b9852e" stroke-opacity=".7"/>',
 ];
 export function demoCover(title, author, seed = 0) {
   const words = title.split(' ');
   const lines = [];
   for (const word of words) {
     const last = lines.at(-1);
-    if (last && (last + ' ' + word).length <= 13) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
+    if (last && (last + ' ' + word).length <= 14) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
   }
-  const colour = COVER_COLOURS[(seed * 7) % COVER_COLOURS.length];
-  const text = lines.map((line, i) => `<text x="28" y="${84 + i * 36}" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="700" letter-spacing="-1" fill="#ffffff">${escapeXml(line)}</text>`).join('');
+  const colour = COVER_COLOURS[(seed * 5) % COVER_COLOURS.length];
+  const text = lines.map((line, i) => `<text x="28" y="${86 + i * 34}" font-family="Helvetica,Arial,sans-serif" font-size="28" font-weight="500" letter-spacing="-1" fill="#f4f1e6">${escapeXml(line)}</text>`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">`
     + `<rect width="300" height="450" fill="${colour}"/>${COVER_SHAPES[seed % COVER_SHAPES.length]}${text}`
-    + `<text x="28" y="418" font-family="Arial,Helvetica,sans-serif" font-size="17" fill="#ffffff" fill-opacity=".88">${escapeXml(author)}</text></svg>`;
+    + `<text x="28" y="418" font-family="Menlo,Consolas,monospace" font-size="12" letter-spacing="1.5" fill="#e9d8ae">${escapeXml(author.toUpperCase())}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
