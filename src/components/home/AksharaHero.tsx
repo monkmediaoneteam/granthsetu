@@ -48,7 +48,7 @@ export default function AksharaHero({ languages, covers }: { languages: string[]
   return <section className={`akshara-hero wrap${ready ? " ready" : ""}`}>
     <div className="hero-copy">
       <h1>Books from India&apos;s independent writers.</h1>
-      <p>Science, Ayurveda, stories and research in digital editions you keep forever. Read in English, Hindi, Tamil and more.</p>
+      <p>Science, Ayurveda, stories and research in digital editions you keep forever.{list.length > 1 && ` Read in ${list.slice(0, 3).join(", ")}${list.length > 3 ? " and more" : ""}.`}</p>
       <div className="hero-actions"><Link className="btn btn-neel" href="/search">Browse all books</Link><Link className="btn btn-outline" href="/publish">Publish your book</Link></div>
       {list.length > 1 && <div className="hero-langs" role="group" aria-label="Show the letter of a language">
         {list.map((l, i) => <button key={l} type="button" aria-pressed={i === index} lang={l === "English" ? "en" : undefined}

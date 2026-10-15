@@ -27,7 +27,8 @@ export default async function Home() {
   const featured = [...(home.rails.find((r) => r.key === "bestsellers")?.books ?? []), ...books]
     .filter((b, i, all) => b.cover && all.findIndex((x) => x.slug === b.slug) === i).slice(0, 21)
     .map(({ slug, title, cover }) => ({ slug, title, cover }));
-  const heroSets = Array.from({ length: Math.floor(featured.length / 3) }, (_, i) => featured.slice(i * 3, i * 3 + 3));
+  // A small catalogue still shows what it has: one partial set rather than an empty stage.
+  const heroSets = featured.length < 3 ? (featured.length ? [featured] : []) : Array.from({ length: Math.floor(featured.length / 3) }, (_, i) => featured.slice(i * 3, i * 3 + 3));
   const offerCovers = books.filter((b) => b.onSale && b.cover).map(({ slug, title, cover }) => ({ slug, title, cover }));
   return <>
     <AksharaHero languages={home.languages.map((l) => l.name)} covers={heroSets} />
