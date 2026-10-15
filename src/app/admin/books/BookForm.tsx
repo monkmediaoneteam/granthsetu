@@ -1,7 +1,6 @@
 import type { Book } from "@/lib/db";
 import { currentPrice } from "@/lib/money";
 import { releaseChecklist } from "@/lib/admin-catalogue";
-import { publicBook } from "@/components/book-data";
 
 const input = "field-input mt-1";
 const toLocal = (value: string | null | undefined) => {
@@ -42,7 +41,7 @@ export default function BookForm({ book, categories, authors }: { book: Book; ca
       <label className="text-sm">Format<select name="file_format" className={input} defaultValue={book.file_format ?? "PDF"}><option>PDF</option><option>EPUB</option></select></label>
       {field("edition", "Edition", { maxLength: 120 })}
       {field("price_inr", "Regular price (₹)", { required: true, inputMode: "decimal", defaultValue: (book.price_inr / 100).toFixed(2) })}
-      <label className="text-sm">Release date<input name="release_date" type="date" className={input} defaultValue={publicBook(book).release_date ?? ""} /></label>
+      <label className="text-sm">Release date<input name="release_date" type="date" className={input} defaultValue={book.release_date ? new Date(book.release_date).toISOString().slice(0, 10) : ""} /></label>
       {field("publisher", "Publisher", { maxLength: 200 })}
       {field("isbn", "ISBN", { maxLength: 32 })}
       {field("pages", "Pages", { inputMode: "numeric" })}
