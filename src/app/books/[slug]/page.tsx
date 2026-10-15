@@ -31,7 +31,7 @@ export default async function BookDetail({ params }: { params: Promise<{ slug: s
   const author = book.author_slug ? content.authors.find((item) => item.id === book.author_slug) : undefined;
   let authorPhoto: string | null = null;
   try { authorPhoto = safeUrl(author?.photo_url); } catch { /* An unusable photo is omitted. */ }
-  const others = records.filter((item) => item.slug !== book.slug && visibleBook(item)).map(publicBook);
+  const others = records.filter((item) => item.slug !== book.slug && visibleBook(item)).map((book) => publicBook(book));
   const related = [...others.filter((item) => view.subject && item.subject === view.subject), ...others.filter((item) => !view.subject || item.subject !== view.subject)].slice(0, 8);
   let sample: string | null = null;
   try { sample = safeUrl(book.sample_url); } catch { /* A malformed sample is not a download link. */ }

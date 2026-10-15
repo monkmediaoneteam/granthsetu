@@ -17,11 +17,11 @@ function load(relative, overrides = {}) {
   const module = { exports: {} };
   const dependency = (name) => {
     if (Object.hasOwn(overrides, name)) return overrides[name];
-    if (name === "@/components/CartProvider") return { ...load("components/CartProvider.tsx"), useCart: () => cart };
-    if (name === "@/lib/catalogue") return { isSaleable: load("lib/access-policy.ts").saleable };
-    if (name === "@/lib/money") return load("lib/money.ts");
-    if (name === "@/lib/store") return load("lib/store.ts");
-    if (name === "./MotionBookLink") return load("components/MotionBookLink.tsx");
+    if (name === "@/components/CartProvider" || name === "./CartProvider") return { ...load("components/CartProvider.tsx"), useCart: () => cart };
+    if (name.startsWith("@/") || name.startsWith(".")) {
+      const base = name.startsWith("@/") ? name.slice(2) : path.relative(root, path.resolve(path.dirname(filename), name)).split(path.sep).join("/");
+      for (const ext of [".tsx", ".ts"]) if (fs.existsSync(path.join(root, base + ext))) return load(base + ext, overrides);
+    }
     return require(name);
   };
   new Function("require", "module", "exports", source)(dependency, module, module.exports);
@@ -53,6 +53,14 @@ assert.equal(publicBook({ ...record, third_party: true, rights_approved: false }
 assert.equal(visibleBook({ ...record, price_inr: 0, release_approved: false }), true);
 assert.equal(visibleBook({ ...record, third_party: true, rights_approved: false }), false);
 assert.equal(publicBook({ ...record, facts: { Subject: "Research methodology", Language: "English" } }).subject, "Research methodology");
+const onSale = publicBook({ ...record, sale_price_inr: 120000 });
+assert.equal(onSale.price, 120000);
+assert.equal(onSale.regular, 150000);
+assert.equal(onSale.onSale, true);
+assert.equal(publicBook({ ...record, release_date: "2999-01-01" }).comingSoon, true);
+assert.equal(publicBook({ ...record, release_date: "2000-01-01" }).comingSoon, false);
+assert.doesNotThrow(() => [record].map((book) => publicBook(book)));
+assert.equal(publicBook(record, new Date("2026-10-15T00:00:00Z")).comingSoon, false);
 const pendingBook = publicBook({ ...record, price_inr: 0, release_approved: false });
 assert.equal(pendingBook.saveable, true);
 assert.equal(pendingBook.saleable, false);
@@ -227,7 +235,7 @@ async function checkHomepage() {
     { ...record, slug: "natural", title: "Products", subtitle: null, description: null, subject: "NATURAL PRODUCTS" },
     { ...record, slug: "hidden", title: "Phytopharmaceuticals", active: false },
     { ...record, slug: "unreleased", title: "Phytopharmaceuticals", third_party: true, release_approved: false },
-  ].filter(visibleBook).map(publicBook);
+  ].filter(visibleBook).map((book) => publicBook(book));
   const interests = renderToStaticMarkup(React.createElement(SubjectNavigation, { books: discoveryBooks }));
   for (const query of ["Ayurveda", "reference", "research", "natural%20products"]) assert.ok(interests.includes(`href="/catalogue?q=${query}"`));
   assert.doesNotMatch(interests, /Phytopharmaceuticals/);

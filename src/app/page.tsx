@@ -15,7 +15,7 @@ export const metadata = { alternates: { canonical: siteUrl() } };
 
 export default async function Home() {
   const [records, content] = await Promise.all([getBooks(), getPublicContent()]);
-  const books = records.filter(visibleBook).map(publicBook);
+  const books = records.filter(visibleBook).map((book) => publicBook(book));
   const enabled = process.env.COMMERCE_ENABLED === "true";
   // Subject rails appear only once a subject can fill one; until then they would repeat the main shelf.
   const bySubject = new Map<string, typeof books>();

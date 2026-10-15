@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // A profile appears once published by admin, or as a plain bibliography for an attributed author.
 async function load(id: string) {
   const [records, content] = await Promise.all([getBooks(), getPublicContent()]);
-  const books = records.filter((book) => book.author_slug === id && visibleBook(book)).map(publicBook);
+  const books = records.filter((book) => book.author_slug === id && visibleBook(book)).map((book) => publicBook(book));
   const profile = content.authors.find((author) => author.id === id);
   const name = profile?.name || books[0]?.authorship;
   return name ? { profile, books, name } : null;

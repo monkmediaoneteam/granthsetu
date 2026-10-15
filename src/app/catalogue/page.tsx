@@ -26,7 +26,7 @@ function catalogueHref(params: Params, key: Key, value: string | null) {
 
 export default async function Catalogue({ searchParams }: { searchParams: Promise<Query> }) {
   const [query, records, content] = await Promise.all([searchParams, getBooks(), getPublicContent()]);
-  const books = records.filter(visibleBook).map(publicBook);
+  const books = records.filter(visibleBook).map((book) => publicBook(book));
   const params = Object.fromEntries(keys.map((key) => [key, first(query[key]).trim()])) as Params;
   const selectedCollection = content.collections.find((item) => item.slug === params.collection);
   const needle = params.q.toLocaleLowerCase();
