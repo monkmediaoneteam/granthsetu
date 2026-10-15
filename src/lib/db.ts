@@ -88,7 +88,7 @@ export type Book = {
   release_date?: string | null;
 };
 
-export type OrderItem = { slug: string; title: string; price: number; file_url?: string | null; file_format?: string | null; edition?: string | null; file_sha256?: string | null };
+export type OrderItem = { slug: string; title: string; price: number; file_url?: string | null; file_format?: string | null; edition?: string | null; file_sha256?: string | null; list_price?: number };
 
 export type Order = {
   id: string;

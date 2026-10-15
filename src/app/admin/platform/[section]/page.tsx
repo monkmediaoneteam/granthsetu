@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { contentSections, getAdminContent, type ContentSection } from "@/lib/content";
 import ActionForm from "@/app/author/ActionForm";
 import ModuleFields from "../ModuleFields";
+import BookPicker from "../BookPicker";
 
 export default async function ContentPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<{ type?: string }> }) {
   if (!(await isAdmin())) redirect("/admin/login");
@@ -41,7 +42,7 @@ function Editor({ section, record = {}, books, collections, authors, categories 
       {isModule && field("link_label", "Link label", { maxLength: 100 })}
     </div>
     <label className="text-sm">{section === "authors" ? "Biography" : section === "testimonials" ? "Quote" : "Copy"}<textarea name="body" className="field-input mt-1" rows={4} maxLength={20000} defaultValue={String(record.body ?? (record.payload as Record<string, unknown> | undefined)?.quote ?? "")} /></label>
-    {section === "collections" && <fieldset className="min-w-0"><legend className="mb-2 text-sm">Books</legend><div className="grid gap-2 sm:grid-cols-2">{books.map(book => <label key={book.slug} className="flex items-start gap-2 text-sm"><input className="mt-1" type="checkbox" name="book_slugs" value={book.slug} defaultChecked={Array.isArray(record.book_slugs) && record.book_slugs.includes(book.slug)} /><span className="min-w-0 break-words">{book.title}</span></label>)}</div></fieldset>}
+    {section === "collections" && <BookPicker books={books} selected={Array.isArray(record.book_slugs) ? record.book_slugs as string[] : []} />}
     <div className="grid gap-4 sm:grid-cols-3">
       <label className="text-sm">Status<select name="status" className="field-input mt-1" defaultValue={String(record.status ?? "draft")}><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
       {field("publish_at", "Publish at (with timezone)", { placeholder: "2026-10-10T12:00:00+05:30", maxLength: 40 })}
