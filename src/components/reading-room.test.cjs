@@ -203,6 +203,10 @@ async function checkCatalogue() {
   const facts = await renderQuery({ subject: "Research methodology", language: "English" });
   assert.match(facts, /data-book="real-book"/);
   assert.match(await renderQuery({ q: record.isbn, format: "EPUB" }), /No books found/);
+  // Facets count against the other filters, stay plain links, and active ones become removable chips.
+  assert.match(format, /href="\/catalogue\?format=PDF"/);
+  assert.match(format, /aria-label="Remove filter EPUB" href="\/catalogue"|href="\/catalogue" aria-label="Remove filter EPUB"/);
+  assert.doesNotMatch(await renderQuery({ subject: "Research methodology" }), /Second title/);
 }
 
 async function checkHomepage() {
@@ -225,20 +229,23 @@ async function checkHomepage() {
   assert.match(unmatched, /All books/);
   assert.equal(renderToStaticMarkup(React.createElement(DiscoveryFeatures, { books: [book] })), "");
   const features = renderToStaticMarkup(React.createElement(DiscoveryFeatures, { books: [
-    { ...book, slug: "no-cover", description: "No cover" },
     { ...book, slug: "no-description", cover: "/assets/book1.png" },
-    ...["first", "second", "third"].map(slug => ({ ...book, slug, cover: "/assets/book1.png", description: "About this book" })),
+    { ...book, slug: "first", description: "About this book" },
+    { ...book, slug: "second", highlights: ["Supplied chapter highlight"] },
+    { ...book, slug: "third", description: "About this book" },
   ] }));
   assert.match(features, /href="\/books\/first"/);
   assert.match(features, /href="\/books\/second"/);
-  assert.doesNotMatch(features, /href="\/books\/(?:no-cover|no-description|third)"/);
+  assert.match(features, /Supplied chapter highlight/);
+  assert.doesNotMatch(features, /href="\/books\/(?:no-description|third)"|<img/);
   const content = load("lib/content.ts", { "./db": { sql() { throw new Error("Database access forbidden in UI tests"); } } });
   const helpers = load("components/content-data.ts", { "@/lib/content": content });
   const moduleRecord = (value) => ({ id: "module", type: "text", title: "Editorial", body: "Supplied copy", image_url: null,
     mobile_image_url: null, link_url: null, link_label: null, payload: {}, sort: 0, status: "published", publish_at: null, ...value });
   const Hero = load("components/Hero.tsx", { "./content-data": helpers,
     "@/lib/store": { STORE: { name: "Reading Room by INVENTAYU", kicker: "Digital editions", tagline: "Reference editions" } } }).default;
-  const Card = { default: ({ book }) => React.createElement("article", { "data-book": book.slug }, book.title) };
+  const cardOf = (book) => React.createElement("article", { "data-book": book.slug, key: book.slug }, book.title);
+  const Card = { default: ({ book }) => cardOf(book), Shelf: ({ books }) => books.map(cardOf) };
   const Sections = load("components/ContentSections.tsx", { "./content-data": helpers, "./BookCard": Card }).default;
   const publishedHero = moduleRecord({ type: "hero", title: "Published shelf", body: "Published introduction", image_url: "/assets/DrNarendraBhatt.jpg", link_url: "/catalogue", link_label: "Browse editions" });
   const hero = renderToStaticMarkup(React.createElement(Hero, { books: [{ ...book, cover: "/assets/book1.png" }], module: publishedHero }));

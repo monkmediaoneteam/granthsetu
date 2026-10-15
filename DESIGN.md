@@ -4,7 +4,7 @@
 
 Bookstore redesign for readers and researchers, not a corporate Ayurveda landing page.
 The reference priority is Crossword, Bookswagon, then MyPustak; ThemeWagon is a quality reference, not a book catalogue to reproduce.
-Energy 2 / Rhythm 2 / Motion 1: campaign artwork provides colour; browsing stays predictable.
+Energy 3 / Rhythm 2 / Motion 1: campaign artwork and the forest "Look inside" band provide colour; browsing stays predictable.
 
 ## Reference Walkthrough
 
@@ -28,9 +28,9 @@ Captured reference screenshots are in scratch/reference-*.png.
 
 ## Shopping Sequence
 
-Search and account/cart access -> illustrated book campaign -> subject discovery -> one primary product shelf -> publication features -> optional approved editorial modules -> concise delivery/library links -> publishing invitation -> digital-purchase questions.
+Search and account/cart access -> illustrated book campaign -> subject discovery -> "New in the reading room" shelf rail -> subject rails (only for subjects with three or more titles) -> "Look inside" highlights (text, never repeated covers) -> optional approved editorial modules -> concise delivery/library links -> publishing invitation -> digital-purchase questions.
 
-With two publications, cards pair cover and description on wide screens and become a compact two-column shelf on phones. Larger catalogues use the existing grid; empty subjects and editorial modules stay hidden.
+Every book card shares one geometry (4:5 cover frame, title, author, price or Forthcoming). Homepage, collection and related shelves are horizontal scroll-snap rails; rails under four titles end with a publishing invitation tile instead of empty space. The catalogue uses a link-based facet sidebar with counts, removable chips and sort links, so it works without JavaScript. Book pages have a sticky cover, sticky buy panel with factual trust notes, author card, related rail and Book JSON-LD. Public author pages live at /authors/[author profile id]; releases set books.author_slug to that id.
 Book, catalogue, cart, and checkout retain the same typography, borders, controls, and availability vocabulary.
 Author spotlights are currently excluded from the homepage at the user's request. Factual book credits remain.
 

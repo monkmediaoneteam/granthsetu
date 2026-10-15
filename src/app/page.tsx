@@ -4,7 +4,7 @@ import { getBooks } from "@/lib/db";
 import { getPublicContent } from "@/lib/content";
 import { publicBook, visibleBook } from "@/components/book-data";
 import Hero from "@/components/Hero";
-import BookCard from "@/components/BookCard";
+import { Shelf } from "@/components/BookCard";
 import ContentSections from "@/components/ContentSections";
 import DiscoveryFeatures, { SubjectNavigation } from "@/components/DiscoveryFeatures";
 import { publicModules } from "@/components/content-data";
@@ -17,16 +17,26 @@ export default async function Home() {
   const [records, content] = await Promise.all([getBooks(), getPublicContent()]);
   const books = records.filter(visibleBook).map(publicBook);
   const enabled = process.env.COMMERCE_ENABLED === "true";
+  // Subject rails appear only once a subject can fill one; until then they would repeat the main shelf.
+  const bySubject = new Map<string, typeof books>();
+  for (const book of books) if (book.subject) bySubject.set(book.subject, [...bySubject.get(book.subject) || [], book]);
+  const subjectShelves = [...bySubject].filter(([, items]) => items.length >= 3);
   return <>
     <Hero books={books} module={publicModules(content.modules).find((module) => module.type === "hero")} />
     <SubjectNavigation books={books} />
     <section className="section shelf-section" id="catalogue"><div className="wrap">
-      <div className="section-heading"><div><p className="eyebrow">The digital bookshelf</p><h2>Find your next read.</h2></div>
+      <div className="section-heading"><div><p className="eyebrow">New in the reading room</p><h2>Find your next read.</h2></div>
         <Link href="/catalogue" className="text-link">All books <ArrowRight size={18} aria-hidden="true" /></Link>
       </div>
-      {books.length ? <div className="book-grid">{books.slice(0, 6).map((book, index) => <BookCard key={book.slug} book={book} index={index} enabled={enabled} />)}</div>
+      {books.length ? <Shelf books={books.slice(0, 12)} enabled={enabled} label="New in the reading room" />
         : <p className="empty-state">The shelves are being prepared. Please check back for new digital editions.</p>}
     </div></section>
+    {subjectShelves.map(([subject, items]) => <section className="section shelf-section" key={subject}><div className="wrap">
+      <div className="section-heading"><div><p className="eyebrow">By subject</p><h2>{subject}</h2></div>
+        <Link href={`/catalogue?subject=${encodeURIComponent(subject)}`} className="text-link">See all {items.length} <ArrowRight size={18} aria-hidden="true" /></Link>
+      </div>
+      <Shelf books={items.slice(0, 12)} enabled={enabled} label={subject} invite={false} />
+    </div></section>)}
     <DiscoveryFeatures books={books} />
     <ContentSections {...content} modules={content.modules.filter((module) => module.type !== "author")} books={books} enabled={enabled} />
     <section className="section reader-services" id="delivery" aria-label="Reading and delivery"><div className="wrap">

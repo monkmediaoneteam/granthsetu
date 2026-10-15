@@ -11,6 +11,8 @@ try {
   await db.exec(migration);
   await db.exec(migration);
   assert.equal((await db.query("select count(*)::int count from information_schema.columns where table_name='books' and column_name='file_sha256'")).rows[0].count, 1, 'Publishing migration must add the manuscript checksum without the commerce migration');
+  // Releases attribute the book to its author profile; the catalogue migration that adds author_slug follows in order.
+  await db.exec(readFileSync(new URL('../migrations/004-catalogue.sql', import.meta.url), 'utf8'));
   const defaults = (await db.query("select third_party,release_approved,scan_status from books where slug='existing-title'")).rows[0];
   assert.deepEqual(defaults, { third_party: false, release_approved: false, scan_status: 'pending' });
   globalThis.publishingTestSql = async (parts, ...values) => {
@@ -78,6 +80,7 @@ try {
   assert.equal(book.file_sha256, 'a'.repeat(64));
   assert.equal(book.cover, '/api/submissions/assets/asset-cover');
   assert.equal(book.sample_url, '/api/submissions/assets/asset-sample');
+  assert.equal(book.author_slug, (await q("select id from author_profiles where reader_id='reader-1'"))[0].id);
   assert.equal((await q('select status from publishing_submissions where id=$1', [id]))[0].status, 'released');
   await assert.rejects(s.releaseSubmission(id, 8, 'duplicate-title'));
   await assert.rejects(q("update books set file_url='https://evil.test/arbitrary.pdf' where slug='released-title'"));

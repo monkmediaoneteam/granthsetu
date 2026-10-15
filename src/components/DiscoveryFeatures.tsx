@@ -1,8 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpen, FlaskConical, Leaf, Library, Microscope, Sprout } from "lucide-react";
 import type { PublicBook } from "./book-data";
-import MotionBookLink from "./MotionBookLink";
 
 const subjects = [
   { label: "Ayurveda", query: "Ayurveda", icon: Leaf },
@@ -24,19 +22,18 @@ export function SubjectNavigation({ books }: { books: PublicBook[] }) {
   </nav>;
 }
 
+// Text from inside the books, not a second set of covers: the shelf above already shows them.
 export default function DiscoveryFeatures({ books }: { books: PublicBook[] }) {
-  const featured = books.filter(book => book.cover && book.description).slice(0, 2);
+  const featured = books.filter(book => book.highlights.length || book.description).slice(0, 2);
   if (!featured.length) return null;
-  return <section className="section reading-paths" aria-labelledby="reading-paths-title"><div className="wrap">
-    <div className="section-heading"><div><p className="eyebrow">Between the covers</p><h2 id="reading-paths-title">Follow your curiosity.</h2></div><p className="muted small">A closer look at the ideas inside.</p></div>
-    <div className="feature-grid">{featured.map((book, index) => <article className={`publication-feature feature-${index}`} key={book.slug}>
-      <img className="feature-backdrop" src={index === 0 ? "/assets/reading-room-botanical-v2.webp" : "/assets/reading-room-campaign.webp"} alt="" loading="lazy" />
-      <div className="feature-copy"><p className="eyebrow">{book.subject || "Ayurveda & natural products"}</p><h3>{book.title}</h3><p>{book.description}</p>
-        <Link className="text-link" href={`/books/${encodeURIComponent(book.slug)}`}>Inside the book <ArrowRight size={17} aria-hidden="true" /></Link>
+  return <section className="section look-inside" aria-labelledby="look-inside-title"><div className="wrap">
+    <div className="section-heading"><div><p className="eyebrow">Look inside</p><h2 id="look-inside-title">What you will find between the covers.</h2></div></div>
+    <div className="look-grid">{featured.map((book, index) => <article className="look-card" key={book.slug}>
+      <p className="look-index">{String(index + 1).padStart(2, "0")}</p>
+      <div><p className="eyebrow">{book.subject || "Digital edition"}</p><h3>{book.title}</h3>
+        {book.highlights.length ? <ul>{book.highlights.slice(0, 4).map((item, i) => <li key={i}>{item}</li>)}</ul> : <p>{book.description}</p>}
+        <Link className="text-link" href={`/books/${encodeURIComponent(book.slug)}`}>Read the full contents <ArrowRight size={17} aria-hidden="true" /></Link>
       </div>
-      <MotionBookLink className="feature-cover" href={`/books/${encodeURIComponent(book.slug)}`} label={`Explore ${book.title}`}>
-        <Image src={book.cover!} unoptimized={book.cover!.startsWith("https://")} alt={`Cover of ${book.title}`} width={1120} height={1400} sizes="(max-width: 640px) 120px, 200px" />
-      </MotionBookLink>
     </article>)}</div>
   </div></section>;
 }

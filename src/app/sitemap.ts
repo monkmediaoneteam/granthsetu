@@ -6,8 +6,10 @@ import { visibleBook } from '@/components/book-data';
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const books = (await getBooks()).filter(visibleBook);
+  const authors = new Set(books.flatMap(book => book.author_slug ? [book.author_slug] : []));
   const paths = ["", '/catalogue', '/publish', "/privacy", "/terms", "/refund-policy", "/delivery-policy",
-    ...(await getBooks()).filter(visibleBook).map(book => `/books/${encodeURIComponent(book.slug)}`)];
+    ...books.map(book => `/books/${encodeURIComponent(book.slug)}`), ...[...authors].map(id => `/authors/${encodeURIComponent(id)}`)];
   return paths.map((p) => ({
     url: `${siteUrl()}${p}`,
     lastModified: new Date(),

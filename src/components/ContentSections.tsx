@@ -3,7 +3,7 @@ import { ArrowRight, ArrowUpRight, Quote } from "lucide-react";
 import type { ContentModule, Collection, AuthorProfile } from "@/lib/content";
 import type { PublicBook } from "./book-data";
 import { contentUrl, publicModules, videoUrl } from "./content-data";
-import BookCard from "./BookCard";
+import { Shelf } from "./BookCard";
 
 export default function ContentSections({ modules, collections, authors, books, enabled }: {
   modules: ContentModule[]; collections: Collection[]; authors: AuthorProfile[]; books: PublicBook[]; enabled: boolean;
@@ -29,7 +29,7 @@ export default function ContentSections({ modules, collections, authors, books, 
             {cover && <img src={cover} alt={collection.title} loading="lazy" className="collection-image" />}
             <Link className="text-link" href={`/catalogue?collection=${encodeURIComponent(collection.slug)}`}>{module.link_label || "View collection"} <ArrowRight size={18} aria-hidden="true" /></Link>
           </div>
-          {books.length > 2 && <div className="book-grid">{selected.map((book, index) => <BookCard book={book} index={index} enabled={enabled} key={book.slug} />)}</div>}
+          {books.length > 2 && <Shelf books={selected} enabled={enabled} label={module.title || collection.title} invite={false} />}
         </div></section>;
       }
       if (module.type === "author") {

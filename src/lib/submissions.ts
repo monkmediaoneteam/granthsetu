@@ -166,8 +166,8 @@ async function releaseReviewedSubmission(id: string, version: number | null, slu
     and exists(select 1 from publishing_assets a where a.submission_id=s.id and a.kind='cover' and a.scan_status='clean' and a.reviewed)
     and not exists(select 1 from publishing_assets a where a.submission_id=s.id and (a.scan_status<>'clean' or not a.reviewed)) for update of s
   ), book as (
-    insert into books(slug,title,description,price_inr,isbn,authorship,file_url,file_sha256,cover,sample_url,active,third_party,rights_approved,commercial_approved,release_approved,scan_status,submission_id)
-    select ${slug},title,description,price_inr,isbn,name,
+    insert into books(slug,title,description,price_inr,isbn,authorship,author_slug,file_url,file_sha256,cover,sample_url,active,third_party,rights_approved,commercial_approved,release_approved,scan_status,submission_id)
+    select ${slug},title,description,price_inr,isbn,name,author_id,
       (select blob_url from publishing_assets where submission_id=e.id and kind='manuscript'),
       (select sha256 from publishing_assets where submission_id=e.id and kind='manuscript' and scan_status='clean' and reviewed),
       (select '/api/submissions/assets/' || id from publishing_assets where submission_id=e.id and kind='cover'),

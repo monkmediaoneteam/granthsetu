@@ -47,6 +47,7 @@ const form = (path, body, requestOrigin = origin) => new Request(`${origin}${pat
 try {
   await db.exec(readFileSync(new URL('../schema.sql', import.meta.url), 'utf8'));
   await db.exec(readFileSync(new URL('../migrations/003-publishing.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../migrations/004-catalogue.sql', import.meta.url), 'utf8'));
   dependencies['@/lib/db'] = { sql: async (parts, ...values) => (await db.query(parts.reduce((sql, part, i) => sql + (i ? `$${i}` : '') + part, ''), values)).rows };
   dependencies['@/lib/submissions'] = await load('../src/lib/submissions.ts');
   dependencies['@/lib/content'] = await load('../src/lib/content.ts');
