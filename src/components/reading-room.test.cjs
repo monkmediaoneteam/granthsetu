@@ -109,6 +109,10 @@ assert.match(qv, /<dialog/);
 assert.match(qv, /View full details/);
 assert.match(qv, /x{397}…/, "description is truncated with an ellipsis");
 assert.doesNotMatch(qv, /x{398}/);
+const { pushRecent } = load("components/RecentlyViewed.tsx", { "motion/react": { ...require("motion/react"), useReducedMotion: () => true } });
+assert.deepEqual(pushRecent(["a", "b", "c"], "b"), ["b", "a", "c"]);
+assert.equal(pushRecent(Array.from({ length: 12 }, (_, i) => `s${i}`), "new").length, 12);
+assert.equal(pushRecent(Array.from({ length: 12 }, (_, i) => `s${i}`), "new")[0], "new");
 
 // Author names and book text are author-supplied; inline JSON-LD must never close its <script>.
 const { jsonLdHtml, bookJsonLd } = load("lib/catalogue.ts", { "./access-policy": load("lib/access-policy.ts"), "./store": { siteUrl: () => "https://store.example" } });

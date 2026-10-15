@@ -64,3 +64,6 @@
   .drawer-note { padding-inline: 20px; font-size: 13px; color: var(--muted); } .drawer-foot .drawer-note { padding: 0; }
   .drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 }
+@layer components {
+  .recent-title { font-weight: 650; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+}

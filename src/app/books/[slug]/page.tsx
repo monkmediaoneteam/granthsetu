@@ -16,6 +16,7 @@ import BookTabs from "@/components/product/BookTabs";
 import ShareButton from "@/components/product/ShareButton";
 import WishlistButton from "@/components/WishlistButton";
 import BuyNow from "@/components/BuyNow";
+import RecentlyViewed from "@/components/RecentlyViewed";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -78,6 +79,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
       <BookTabs tabs={tabs} />
       {byAuthor.length > 0 && <div className="section"><Carousel title={`More by ${book.authorship}`}>{byAuthor.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
       {similar.length > 0 && <div className="section"><Carousel title="Similar books" href={category ? `/category/${category.slug}` : "/search"}>{similar.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
+      <RecentlyViewed current={book.slug} />
     </div>
   </div>;
 }
