@@ -37,7 +37,8 @@ export default function CartDrawer() {
       <button type="button" className="round-btn" onClick={cart.closeDrawer} aria-label="Close bag"><X size={18} aria-hidden="true" /></button></div>
     {added && <p className="drawer-added" role="status"><Check size={16} aria-hidden="true" /> Added to bag: {added.title}</p>}
     {failed ? <p className="drawer-note">Prices unavailable right now. <Link href="/cart" onClick={cart.closeDrawer}>View bag</Link></p>
-      : !lines ? <p className="drawer-note" role="status">Loading your bag…</p>
+      : !lines ? <ul className="drawer-lines" aria-busy="true">{[0, 1].map((i) => <li key={i} className="skeleton-row"><span className="skeleton skeleton-cover" /><span className="skeleton skeleton-line" /></li>)}
+          <li className="sr-only" role="status">Loading your bag</li></ul>
       : <ul className="drawer-lines">{lines.map((l) => <li key={l.slug}><span className="drawer-cover"><Cover src={l.cover} title={l.title} sizes="56px" /></span>
           <span className="drawer-text"><Link href={`/books/${encodeURIComponent(l.slug)}`} onClick={cart.closeDrawer}>{l.title}</Link>
             <span>{l.saleable ? <>{l.onSale && <s>{rupees(l.regular)}</s>} <strong>{rupees(l.price)}</strong></> : "Not yet on sale"}</span></span>

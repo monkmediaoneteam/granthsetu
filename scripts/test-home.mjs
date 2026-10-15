@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { load } from './test-commerce.mjs';
 
 // home.ts reaches content.ts (via content-data), which imports the database client; the pure helpers never call it.
-const { buildHome, LANGUAGE_GLYPHS } = load('src/lib/home.ts', { './db': { sql() { throw new Error('No database in home tests'); } } });
+const { buildHome } = load('src/lib/home.ts', { './db': { sql() { throw new Error('No database in home tests'); } } });
 const now = new Date('2026-10-15T00:00:00Z');
 const book = (slug, extra = {}) => ({ slug, title: slug, cover: `/c/${slug}.png`, authorship: 'A', author_slug: null, category_slug: 'fiction', language: 'English',
   saleable: true, saveable: true, price: 100, regular: 100, onSale: false, saving: 0, comingSoon: false, release_date: '2026-01-01', year: 2026, ...extra });
@@ -30,7 +30,7 @@ assert.deepEqual(rail('soon').books.map(b => b.slug), ['c']);
 assert.ok(!rail('new').books.some(b => b.comingSoon));
 assert.deepEqual(home.genres.map(g => g.slug), ['science', 'fiction'], 'empty genre dropped, admin order kept');
 assert.deepEqual(home.languages.map(l => [l.name, l.count]), [['English', 3], ['Hindi', 2]]);
-assert.equal(home.languages[1].glyph, LANGUAGE_GLYPHS.Hindi);
+assert.ok(!('glyph' in home.languages[1]), 'languages carry names and counts only; script letterforms are retired');
 assert.deepEqual(home.categoryTiles.map(t => t.slug), ['fiction', 'science']);
 assert.deepEqual(home.authors.map(a => a.id), ['au1']);
 

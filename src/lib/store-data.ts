@@ -26,3 +26,15 @@ export async function getPublishedAuthors() {
   return await sql`select id,name,photo_url from author_profiles
     where status='published' and (publish_at is null or publish_at <= now()) order by name` as { id: string; name: string; photo_url: string | null }[];
 }
+
+// Up to N covers per category for the header's hover panels; only titles the storefront may show.
+export async function categoryCovers(perCategory = 3): Promise<Record<string, { slug: string; title: string; cover: string }[]>> {
+  const rows = await sql`select category_slug, slug, title, cover from (
+    select category_slug, slug, title, cover, row_number() over (partition by category_slug order by sort, title) as n from books
+    where active and category_slug is not null and cover is not null
+      and (not coalesce(third_party, false) or (release_approved and scan_status = 'clean' and rights_approved and commercial_approved and price_inr > 0 and file_url is not null))
+  ) ranked where n <= ${perCategory}` as { category_slug: string; slug: string; title: string; cover: string }[];
+  const out: Record<string, { slug: string; title: string; cover: string }[]> = {};
+  for (const r of rows) (out[r.category_slug] ??= []).push({ slug: r.slug, title: r.title, cover: r.cover });
+  return out;
+}

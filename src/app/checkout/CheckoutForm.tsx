@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Cover from "@/components/Cover";
 import { useRef, useState } from "react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { cartTotals, useCart } from "@/components/CartProvider";
@@ -112,7 +113,7 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
         <noscript><p className="small">JavaScript is required to complete checkout.</p></noscript>
         <p className="checkout-policy">By continuing, you agree to our <Link href="/terms">terms</Link> and <Link href="/refund-policy">refund policy</Link>. Digital editions are licensed for personal use.</p>
       </form>
-      <aside className="order-summary"><h2>Your editions</h2>{selected.map((book) => <div className="summary-line" key={book.slug}><span>{book.title}</span><span>{book.saleable && book.price > 0 ? rupees(book.price) : "Not yet on sale"}</span></div>)}
+      <aside className="order-summary"><h2>Your editions</h2>{selected.map((book) => <div className="summary-line with-cover" key={book.slug}><span className="summary-cover"><Cover src={book.cover} title={book.title} sizes="40px" /></span><span>{book.title}</span><span>{book.saleable && book.price > 0 ? rupees(book.price) : "Not yet on sale"}</span></div>)}
         {totals && totals.tax > 0 && <div className="summary-line"><span>Tax</span><span>{rupees(totals.tax)}</span></div>}
         <div className="summary-line summary-total"><span>Total</span><span>{totalLabel}</span></div>
         <p className="small muted mt-4">Prices and availability are checked again before payment. <Link href="/delivery-policy" className="underline">Delivery details</Link></p>

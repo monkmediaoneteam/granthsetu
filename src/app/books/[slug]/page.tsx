@@ -6,12 +6,13 @@ import { getPublicContent, safeUrl } from "@/lib/content";
 import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { siteUrl } from "@/lib/store";
 import { getCategories } from "@/lib/store-data";
-import { LANGUAGE_FONT, LANGUAGE_GLYPHS } from "@/lib/languages";
 import { publicBook, visibleBook } from "@/components/book-data";
 import AddToCart from "@/components/AddToCart";
 import BookCard from "@/components/BookCard";
 import Carousel from "@/components/Carousel";
-import Cover from "@/components/Cover";
+import Book3D from "@/components/motion/Book3D";
+import Morph, { morphName } from "@/components/motion/Morph";
+import SampleViewer from "@/components/product/SampleViewer";
 import Price from "@/components/Price";
 import BookTabs from "@/components/product/BookTabs";
 import ShareButton from "@/components/product/ShareButton";
@@ -51,32 +52,35 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const tabs = [
     (paragraphs.length || book.description) && { id: "about", label: "About the book", content: <div className="prose">{(paragraphs.length ? paragraphs : [book.description!]).map((p, i) => <p key={i}>{p}</p>)}</div> },
     view.highlights.length && { id: "contents", label: "Contents", content: <ul className="contents-list">{view.highlights.map((h, i) => <li key={i}>{h}</li>)}</ul> },
-    facts.length && { id: "details", label: "More details", content: <table className="spec-table"><tbody>{facts.map(([k, v]) => <tr key={k}><th scope="row">{k}</th><td>{v}</td></tr>)}</tbody></table> },
+    facts.length && { id: "details", label: "More details", content: <table className="catalogue"><tbody>{facts.map(([k, v]) => <tr key={k}><th scope="row">{k}</th><td>{v}</td></tr>)}</tbody></table> },
     author && { id: "author", label: "About the author", content: <div className="prose"><p><strong>{author.name}</strong></p>{author.bio && <p>{author.bio}</p>}<p><Link className="text-link" href={`/authors/${encodeURIComponent(author.id)}`}>All books by {author.name}</Link></p></div> },
   ].filter(Boolean) as { id: string; label: string; content: React.ReactNode }[];
-  return <div className="product-page">
+  return <div className="product-page" data-book-page>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(bookJsonLd(book, url, view.saleable, now)) }} />
     <div className="wrap">
-      <nav className="crumbs product-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> / {category && <><Link href={`/category/${category.slug}`}>{category.name}</Link> / </>}<span aria-current="page">{book.title}</span></nav>
+      <nav className="crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span>{category && <><Link href={`/category/${category.slug}`}>{category.name}</Link><span aria-hidden="true">/</span></>}<span aria-current="page">{book.title}</span></nav>
       <article className="product-main">
-        <div className="product-gallery"><div className="gallery-stage">
-          <span className="gallery-glyph akshara" aria-hidden="true" style={{ fontFamily: LANGUAGE_FONT[view.language ?? ""] ?? "var(--font-head)" }}>{LANGUAGE_GLYPHS[view.language ?? ""] ?? "A"}</span>
-          <Cover src={book.cover} title={book.title} sizes="(max-width: 900px) 80vw, 420px" priority /></div>
-          {sample && <a className="btn btn-outline sample-btn" href={sample} target="_blank" rel="noopener noreferrer"><BookOpen size={17} aria-hidden="true" /> Read a sample</a>}</div>
-        <div className="product-info">
+        <div className="product-gallery">
+          <div className="gallery-stage plate surface-lit"><Morph name={morphName(book.slug)}><Book3D src={book.cover} title={book.title} sizes="(max-width: 900px) 70vw, 320px" priority /></Morph></div>
+          {sample && <SampleViewer href={sample} title={book.title} />}
+        </div>
+        <div className="product-info enter">
           <div className="title-row"><h1>{book.title}</h1><div className="title-actions"><WishlistButton slug={book.slug} title={book.title} variant="page" /><ShareButton title={book.title} url={url} /></div></div>
           {book.subtitle && <p className="product-subtitle">{book.subtitle}</p>}
           {book.authorship && <p className="product-author">by {book.author_slug ? <Link href={`/authors/${encodeURIComponent(book.author_slug)}`}>{book.authorship}</Link> : book.authorship}</p>}
           <ul className="tag-row">{category && <li><Link className="chip" href={`/category/${category.slug}`}>{category.name}</Link></li>}
             {view.language && <li><Link className="chip" href={`/search?language=${encodeURIComponent(view.language)}`}>{view.language}</Link></li>}
-            {book.file_format && <li><span className="chip">{book.file_format}</span></li>}</ul>
-          <Price book={view} size="page" />
-          {view.saleable && <p className="tax-note">Digital edition · Personal-use licence</p>}
-          <div className="buy-row"><AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} /><BuyNow slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} /></div>
-          {!enabled && <p className="notice">Online ordering is opening soon. Save this book to your bag and check out when it opens.</p>}
-          <ul className="trust-row">{[[Download, "Instant download"], [Lock, "Secure payment"], [BadgeCheck, "Licensed copy"], [Lifetime, "Lifetime library"]].map(([Icon, label]) =>
-            <li key={label as string}><span className="trust-icon"><Icon size={22} aria-hidden="true" /></span>{label as string}</li>)}</ul>
-          <dl className="detail-strip">{details.filter(([, , v]) => v).map(([Icon, label, value]) => <div key={label}><dt><Icon size={18} aria-hidden="true" />{label}</dt><dd>{value}</dd></div>)}</dl>
+            {book.file_format && <li><span className="chip">{book.file_format}</span></li>}
+            {book.pages && <li><span className="chip">{book.pages} pages</span></li>}</ul>
+          <div className="buy-panel surface surface-lit">
+            <Price book={view} size="page" />
+            <div className="buy-row"><BuyNow slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} />
+              <AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} variant="page" /></div>
+            {!enabled && <p className="notice">Ordering opens soon. Save it to your bag.</p>}
+            <ul className="ticks">{[[Download, "Instant download"], [Lock, "Secure payment"], [BadgeCheck, "Licensed to you"], [Lifetime, "Lifetime library"]].map(([Icon, label]) =>
+              <li key={label as string}><Icon size={16} aria-hidden="true" /><span>{label as string}</span></li>)}</ul>
+          </div>
+          <dl className="detail-strip">{details.filter(([, , v]) => v).map(([Icon, label, value]) => <div key={label}><dt><Icon size={14} aria-hidden="true" />{label}</dt><dd>{value}</dd></div>)}</dl>
         </div>
       </article>
       <BookTabs tabs={tabs} />
