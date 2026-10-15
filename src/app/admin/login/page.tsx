@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/lib/admin-auth";
 import { env } from "@/lib/env";
 import { STORE } from "@/lib/store";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign in", robots: { index: false, follow: false } };
@@ -25,12 +26,11 @@ export default async function AdminLogin({
       <p className="eyebrow mb-4">{STORE.name}</p>
       <h1 className="title title-lg mb-2">Admin sign in</h1>
       <hr className="gold-rule mb-8" />
+      {!!env("ADMIN_EMAIL") && <Link href="/login?next=/admin" className="btn btn-primary mb-6">Sign in with email</Link>}
 
       {!configured ? (
         <p className="text-[15px] leading-relaxed text-ink-soft">
-          <code className="font-mono">ADMIN_TOKEN</code> is not set on this
-          deployment, so admin is closed. Add it in your hosting environment
-          variables and redeploy.
+          {env("ADMIN_EMAIL") ? "Use your authorised email account to continue." : "Administration is not configured on this deployment."}
         </p>
       ) : (
         <form action={attempt}>
@@ -56,7 +56,7 @@ export default async function AdminLogin({
             Sign in
           </button>
           <p className="mt-4 text-[13px] text-ink-soft">
-            Stays signed in on this browser for 30 days.
+            Stays signed in on this browser for seven days.
           </p>
         </form>
       )}

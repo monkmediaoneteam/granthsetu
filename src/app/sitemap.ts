@@ -1,11 +1,17 @@
 import type { MetadataRoute } from "next";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+import { siteUrl } from '@/lib/store';
+import { getBooks } from '@/lib/db';
+import { visibleBook } from '@/components/book-data';
+export const dynamic = 'force-dynamic';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = ["", "/privacy", "/terms", "/refund-policy", "/delivery-policy"];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const books = (await getBooks()).filter(visibleBook);
+  const authors = new Set(books.flatMap(book => book.author_slug ? [book.author_slug] : []));
+  const paths = ["", '/catalogue', '/publish', "/privacy", "/terms", "/refund-policy", "/delivery-policy",
+    ...books.map(book => `/books/${encodeURIComponent(book.slug)}`), ...[...authors].map(id => `/authors/${encodeURIComponent(id)}`)];
   return paths.map((p) => ({
-    url: `${SITE}${p}`,
+    url: `${siteUrl()}${p}`,
     lastModified: new Date(),
     priority: p === "" ? 1 : 0.4,
   }));

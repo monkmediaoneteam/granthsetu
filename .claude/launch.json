@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "isolated-preview", "runtimeExecutable": "node", "runtimeArgs": ["scripts/dev-preview.mjs", "3100"], "port": 3100 }
+  ]
+}

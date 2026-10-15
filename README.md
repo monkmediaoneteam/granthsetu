@@ -1,80 +1,126 @@
-# INVENTAYU Books
+# Reading Room by INVENTAYU
 
-Digital storefront for Dr. Narendra Bhatt's books. **Standalone project** its
-own repo, own Vercel project, own Neon database. Shares nothing with the main
-inventayu.com site except the design tokens, which are copied, not imported.
+A specialist digital bookstore for Ayurveda, phytopharmaceuticals, and natural
+products, with books from multiple authors and publishers. Store identity is
+configurable through `NEXT_PUBLIC_STORE_NAME`. This is a standalone application;
+the main INVENTAYU website is separate.
 
-See `PRD.md` for scope and decisions.
+Features are implemented in this checkout. Production activation remains gated.
+See `IMPLEMENTATION.md` for verification and external release requirements, and
+`READING_ROOM_PRD.md` for the approved product scope. `PRD.md` is historical.
+
+## Implemented features
+
+- Catalogue search, book pages, cart, guest checkout, receipts, and reader library.
+- Image-led campaign with genuine publication covers, mobile-visible books,
+  editable editorial modules, genuine author profiles, publishing invitation and FAQ.
+- Verified-email magic-link sign-in and reader/admin access checks.
+- Hosted Razorpay Payment Links with server prices, idempotent checkout,
+  provider-verified payment state, refund revocation, and reconciliation.
+- Purchased file/edition/SHA-256 snapshots, integrity checks before delivery,
+  PDF licensing, download limits, and retryable email delivery.
+- Author profiles and drafts, explicit ownership declarations, private upload
+  quarantine, signed scanner callbacks, editorial review, and release approval.
+- Publishing release copies the clean, reviewed manuscript checksum. A database
+  trigger requires matching manuscript URL/hash and existing release approvals.
+  Release slugs are limited to 101 characters to fit download token claims.
+- Admin content modules, collections, authors, scheduled visibility, publishing
+  reviews, order exports, and audited delivery recovery.
+
+Payouts and print sales are outside the implemented scope. Scanner callbacks are
+implemented; an operating malware scanner is an external prerequisite.
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) - React 19 - Tailwind v4 - Neon Postgres -
-Razorpay - Resend. Design tokens live in `src/app/globals.css` under `@theme`,
-copied from inventayu.com so both properties read as one system.
+Next.js 16, React 19, Tailwind v4, Neon/Postgres, Better Auth, Razorpay, Resend,
+private Vercel Blob storage, and PGlite for isolated local databases.
 
-## Setup
+## Isolated development
 
 ```bash
-npm install
-cp .env.example .env.local     # fill in the values
-npm run seed                   # applies schema.sql + placeholder catalogue
-npm run dev
+npm ci
+npm test
+npm run preview:isolated
 ```
 
-## Environment
+The preview defaults to `http://localhost:3100`. To use another available port:
 
-| Var | Where from |
-|---|---|
-| `DATABASE_URL` | Neon → new project → connection string |
-| `RAZORPAY_KEY_ID` / `_SECRET` | Razorpay dashboard → API keys |
-| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | same key id, exposed to the browser |
-| `RAZORPAY_WEBHOOK_SECRET` | set when creating the webhook |
-| `RESEND_API_KEY` | Resend dashboard |
-| `DOWNLOAD_SECRET` | `openssl rand -hex 32` |
-| `ADMIN_TOKEN` | any long random string |
+```bash
+npm run preview:isolated -- 3101
+```
 
-## Razorpay webhook
+The preview creates a temporary PGlite database, applies `schema.sql` and all
+ordered migrations, and seeds a browsing fixture. It disables checkout, payment
+credentials, outbound email, storage credentials, and admin bootstrap credentials.
+It is intended for storefront inspection; live login, uploads, and purchases are
+not available. The temporary preview database is not production data.
 
-Point it at `https://<domain>/api/webhook` and use the same secret as
-`RAZORPAY_WEBHOOK_SECRET`. Subscribe to all five events:
+`npm test` runs offline helper, route, and PGlite regression suites with provider
+calls replaced by test fixtures. It does not load environment files or require
+production credentials. A passing focused test is not final acceptance.
 
-| Event | What it does |
-|---|---|
-| `payment_link.paid` | marks the order paid, sends the book — **the important one** |
-| `payment_link.cancelled` | marks the order failed |
-| `payment_link.expired` | marks the order failed |
-| `payment.captured` | same as above, for the older Orders API path |
-| `payment.failed` | marks the order failed |
+For browser checks, start the isolated preview, install the Playwright browsers
+if needed, then run `npm run test:browser`. The browser script defaults to port
+3100, accepts a localhost-only `PREVIEW_URL`, and checks Chromium, Firefox, WebKit,
+responsive widths, images, accessibility, empty search, and rendering without
+JavaScript. Screenshots are written under `scratch/visual-checks/`.
 
-Checkout creates hosted **Payment Links** (`plink_…`) rather than Orders, with
-`reference_id` set to our order id — a static no-code Payment Button would be
-the same URL for every buyer, so nothing would tie a payment back to an order.
+## Explicit database writes
 
-The webhook is the only thing that marks an order paid. The browser redirect
-just moves the buyer to their receipt — never trust it for money. If a webhook
-is ever missed, the hourly `/api/cron/reconcile` job asks Razorpay directly and
-recovers the order.
+These commands load `.env.local` and write to its `DATABASE_URL` target. Use an
+isolated database branch for development. The flags are write opt-ins, not database
+isolation; production application still requires approval and a backup.
 
-## Committing
+Apply the base schema and every `.sql` migration in filename order:
 
-Do **not** override the git identity when committing. Vercel blocks a
-deployment when GitHub cannot associate the committer with a GitHub user, and
-on a Hobby plan an unrecognised committer counts as a second team member:
+```bash
+node --env-file=.env.local scripts/migrate.mjs --apply
+```
 
-> The Deployment was blocked because GitHub could not associate the committer
-> with a GitHub user.
+The migration command rejects execution without `--apply` or `DATABASE_URL` before
+connecting. It executes complete SQL files through the PostgreSQL client.
 
-Plain `git commit` uses this repo's configured identity, which is correct.
+Apply the schema/migrations and insert missing draft catalogue records:
 
-## Going live
+```bash
+node --env-file=.env.local scripts/seed.mjs --apply-draft-catalogue
+```
 
-1. Swap the Razorpay test keys for live keys (3 env vars).
-2. Repoint the webhook at the production URL.
-3. Nothing else. No code change.
+The seed command rejects execution without `--apply-draft-catalogue` or
+`DATABASE_URL` before connecting. New catalogue rows have `price_inr=0`, no paid
+file URL, and no release approval, so they are unsaleable. Existing catalogue rows
+are skipped on slug conflict; existing records and purchases are not replaced.
+The equivalent package command is `npm run seed -- --apply-draft-catalogue`;
+bare `npm run seed` is rejected. Use `npm run preview:isolated` for demos without
+writing to the configured database. Neither write command deploys the application
+or approves a publication for sale.
 
-## Still placeholder
+## Verification status
 
-- Book prices, covers, ISBN, page counts, year see `scripts/seed.mjs`.
-- `books.file_url` is empty; downloads return 503 until the real PDFs are hosted.
-- Entity address, support email and phone in `src/app/legal.tsx`.
-- Tax is hardcoded to 0 pending the e-book GST answer (`src/lib/money.ts`).
+The full offline regression suite passed, including 41 real-database commerce
+checks, authentication, publishing, checksum recovery and additive migration
+reruns. TypeScript passed. The first cross-browser pass succeeded at all six
+requested widths, including accessibility scans and no-JavaScript catalogue
+visibility. The expanded three-browser interaction/layout checks and production
+build also passed. See `IMPLEMENTATION.md` for exact scope and external gates.
+These are isolated checks, not production sign-off.
+
+## Production blockers
+
+- Review and apply `schema.sql` and all ordered migrations using an
+  approved migration process. Plan backups, rollback, and legacy order recovery;
+  missing historical file/checksum snapshots block delivery.
+- Approve catalogue metadata, prices, rights, actual private paid files, SHA-256
+  checksums, clean scans, and explicit publication release gates.
+- Confirm seller identity/address, support contacts, tax treatment, refunds,
+  privacy, and delivery policies. Tax currently remains zero in the code.
+- Configure the canonical domain, database, strong authentication/download
+  secrets, admin access, private storage/allowed hosts, and signed scan service.
+- Configure and verify the Resend sender, Razorpay live credentials and signed
+  webhook, cron secret, delivery alerts, and provider recovery procedures.
+- Complete approved live-service integration, real-device checks, and the release
+  checklist before enabling commerce.
+
+`vercel.json` currently schedules reconciliation daily at 03:00 UTC. Payment state
+is verified with the provider; a browser redirect alone does not authorize access.
+Switching keys alone does not make this checkout ready for production.

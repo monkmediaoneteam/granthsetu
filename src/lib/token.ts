@@ -18,6 +18,7 @@ const sign = (data: string) =>
   crypto.createHmac("sha256", secret()).update(data).digest("hex");
 
 export function mintDownloadToken(orderId: string, slug: string) {
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(orderId) || !/^[a-z0-9][a-z0-9_-]{0,100}$/.test(slug)) throw new Error("Invalid token claim");
   const exp = Date.now() + TTL_MS;
   const data = `${orderId}|${slug}|${exp}`;
   return `${Buffer.from(data).toString("base64url")}.${sign(data)}`;
@@ -26,8 +27,8 @@ export function mintDownloadToken(orderId: string, slug: string) {
 export function verifyDownloadToken(
   token: string
 ): { orderId: string; slug: string } | null {
+  if (!/^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/.test(token) || token.length > 1024) return null;
   const [b64, mac] = token.split(".");
-  if (!b64 || !mac) return null;
 
   let data: string;
   try {
@@ -45,9 +46,15 @@ export function verifyDownloadToken(
     return null;
   }
 
-  const [orderId, slug, exp] = data.split("|");
-  if (!orderId || !slug || !exp) return null;
-  if (Date.now() > Number(exp)) return null;
+  const parts = data.split("|");
+  const [orderId, slug, exp] = parts;
+  if (parts.length !== 3 || !/^[A-Za-z0-9_-]{1,100}$/.test(orderId) || !/^[a-z0-9][a-z0-9_-]{0,100}$/.test(slug) || !/^\d+$/.test(exp)) return null;
+  if (!Number.isSafeInteger(Number(exp)) || Date.now() >= Number(exp)) return null;
 
   return { orderId, slug };
+}
+
+// Domain separation makes this printable identifier unusable as an access token.
+export function licenceId(orderId: string, slug: string) {
+  return sign(`licence:v1:${JSON.stringify([orderId, slug])}`).slice(0, 24);
 }

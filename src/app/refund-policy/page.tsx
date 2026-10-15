@@ -12,8 +12,8 @@ export default function Page() {
         <li>you were charged more than once for the same order;</li>
         <li>payment was taken but no book was delivered.</li>
       </ul>
-      <p>Write to {ENTITY.email} with your order number within 7 days of
-      purchase. Approved refunds are issued to the original payment method and
+      {ENTITY.email && <p>Write to {ENTITY.email} with your order number within 7 days of purchase.</p>}
+      <p>Approved refunds are issued to the original payment method and
       typically reach you within 5 to 7 working days, depending on your bank.</p>
     </Legal>
   );

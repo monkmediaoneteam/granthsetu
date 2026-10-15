@@ -1,216 +1,67 @@
-import Image from "next/image";
-import { getBooks, type Book } from "@/lib/db";
-import { rupees } from "@/lib/money";
-import Reveal from "@/components/Reveal";
-import { STORE } from "@/lib/store";
-import BookCopy from "@/components/BookCopy";
+import Link from "next/link";
+import { ArrowRight, BookOpen, Download, Library, Plus, Send } from "lucide-react";
+import { getBooks } from "@/lib/db";
+import { getPublicContent } from "@/lib/content";
+import { publicBook, visibleBook } from "@/components/book-data";
 import Hero from "@/components/Hero";
+import { Shelf } from "@/components/BookCard";
+import ContentSections from "@/components/ContentSections";
+import DiscoveryFeatures, { SubjectNavigation } from "@/components/DiscoveryFeatures";
+import { publicModules } from "@/components/content-data";
+import { siteUrl } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
-
-const FAQ: [string, string][] = [
-  [
-    "How are titles delivered?",
-    "Immediately. A download link appears as soon as payment clears and the same link is emailed to you. Reopening your order page always issues a fresh one, so access never lapses.",
-  ],
-  [
-    "Do I need an account?",
-    "No. Your email at checkout is enough. Each order gets its own page, which stays your permanent access point — bookmark it or keep the email.",
-  ],
-  [
-    "What am I buying?",
-    "A digital edition: a PDF you can read on any device, licensed for your personal use. Every copy carries the buyer’s email in the page footer.",
-  ],
-  [
-    "Can I buy more than one title?",
-    "Yes, though each is bought separately for now. Every purchase gets its own order page and download link.",
-  ],
-  [
-    "Can I get a refund?",
-    "Not once a file has been downloaded. If a file will not open or is not what was described, write to us and we will replace it or refund you in full.",
-  ],
-  [
-    "Do you add new titles?",
-    "Yes. The catalogue grows as publishers and authors bring work to the shop. Everything listed is available immediately.",
-  ],
-];
+export const metadata = { alternates: { canonical: siteUrl() } };
 
 export default async function Home() {
-  const books = await getBooks();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": books.map((b) => ({
-      "@type": ["Book", "Product"],
-      "@id": `${siteUrl}/#book-${b.slug}`,
-      name: b.title,
-      headline: b.subtitle || b.title,
-      description: b.description,
-      bookFormat: "https://schema.org/EBook",
-      // Attribution comes from the record, never assumed — these volumes have
-      // many contributors and naming one person would misstate authorship.
-      ...(b.authorship ? { author: { "@type": "Person", name: b.authorship } } : {}),
-      publisher: b.publisher ? { "@type": "Organization", name: b.publisher } : undefined,
-      offers: {
-        "@type": "Offer",
-        price: (b.price_inr / 100).toFixed(2),
-        priceCurrency: "INR",
-        availability: "https://schema.org/InStock",
-        url: `${siteUrl}/checkout?book=${encodeURIComponent(b.slug)}`,
-      },
-    })),
-  };
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        // Book copy is admin-editable, so escape < to stop a stray </script>
-        // in a description from breaking out of this block.
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
-        }}
-      />
-      <Reveal />
-
-      <Hero books={books} />
-
-      {/* ── catalogue ── */}
-      <section id="catalogue" className="wrap scroll-mt-20 pt-20 pb-10">
-        <div className="reveal mb-10 flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <h2 className="title title-lg mb-3">The catalogue</h2>
-            <p className="text-[16px] text-ink-soft">
-              Everything currently in stock. Each title is delivered as a
-              watermarked PDF.
-            </p>
-          </div>
-          <span className="pill">All prices in INR</span>
-        </div>
-        <hr className="fade-rule reveal mb-12" />
-
-        {books.length === 0 && (
-          <div className="card">
-            <p className="eyebrow mb-3">The catalogue is empty</p>
-            <p className="m-0 text-ink-soft">
-              No titles are listed yet. Add them from the admin console and they
-              will appear here.
-            </p>
-          </div>
-        )}
-
-        <div className="grid gap-14">
-          {books.map((b, i) => (
-            <Entry key={b.slug} book={b} index={i + 1} total={books.length} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── faq ─────────────────────────────────────────────────────── */}
-      <section id="faq" className="wrap reveal scroll-mt-24 pb-16">
-        <h2 className="title title-lg mb-5">Buying and delivery</h2>
-        <hr className="fade-rule mb-10" />
-        <dl className="grid gap-x-16 gap-y-9 md:grid-cols-2">
-          {FAQ.map(([q, a]) => (
-            <div key={q} className="surface surface-hover reveal p-6">
-              <dt className="mb-2.5 text-[16px] font-medium">{q}</dt>
-              <dd className="m-0 max-w-[52ch] text-[15px] leading-relaxed text-ink-soft">
-                {a}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-    </>
-  );
-}
-
-/** One catalogue entry: the book, its apparatus, and the buy action. */
-function Entry({ book: b, index, total }: { book: Book; index: number; total: number }) {
-  const facts: [string, string][] = [
-    // Keys starting with "_" are internal bookkeeping, never shown.
-    ...Object.entries(b.facts ?? {}).filter(([k]) => !k.startsWith("_")),
-    ...(b.pages ? ([["Pages", String(b.pages)]] as [string, string][]) : []),
-    ...(b.year ? ([["Year", String(b.year)]] as [string, string][]) : []),
-    ...(b.isbn ? ([["ISBN", b.isbn]] as [string, string][]) : []),
-  ];
-
-  return (
-    <article
-      id={`book-${b.slug}`}
-      className="surface surface-lit reveal scroll-mt-20 overflow-hidden"
-      style={{ ["--i" as string]: index - 1 }}
-    >
-      {/*
-        Desktop: cover top-left, facts beneath it, copy filling the right.
-        Mobile: cover, then title and copy, then the facts table LAST — the
-        bibliographic detail must never arrive before the title it describes.
-      */}
-      <div className="grid gap-x-14 gap-y-8 p-6 sm:p-9 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
-        <div className="plate cover-lift order-1 mx-auto grid w-full max-w-[240px] place-items-center p-6 lg:mx-0 lg:max-w-none lg:self-start">
-          {b.cover ? (
-            <Image
-              src={b.cover}
-              alt={`Cover of ${b.title}`}
-              width={540}
-              height={680}
-              priority={index === 1}
-              sizes="(max-width: 1024px) 240px, 280px"
-              className="cover-img h-auto w-full"
-            />
-          ) : (
-            <div className="grid aspect-3/4 w-full place-items-center">
-              <span className="eyebrow">Cover pending</span>
-            </div>
-          )}
-        </div>
-
-        <div className="order-2 flex min-w-0 flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <p className="eyebrow mb-4">Catalogue no. {String(index).padStart(3, "0")}</p>
-
-          <h2 className="title title-lg mb-3">{b.title}</h2>
-          {b.subtitle && <p className="subtitle mb-5 text-[20px]">{b.subtitle}</p>}
-          {b.authorship && <p className="eyebrow mb-6">{b.authorship}</p>}
-
-          {b.description && (
-            <p className="mb-7 max-w-[58ch] text-[18px] leading-relaxed text-ink">
-              {b.description}
-            </p>
-          )}
-
-          <BookCopy long={b.long_description} highlights={b.highlights ?? []} />
-
-          <div className="mt-auto flex flex-wrap items-center gap-x-7 gap-y-4 pt-8">
-            <p className="disp m-0 text-[34px] leading-none">{rupees(b.price_inr)}</p>
-            <a
-              className="btn btn-primary"
-              href={`/checkout?book=${encodeURIComponent(b.slug)}`}
-            >
-              Buy the digital edition <span aria-hidden>&rarr;</span>
-            </a>
-            <p className="eyebrow">PDF &middot; Instant download</p>
-          </div>
-        </div>
-
-        {facts.length > 0 && (
-          <div className="order-3 lg:col-start-1 lg:row-start-2">
-            <table className="catalogue">
-              <caption className="sr-only">
-                Bibliographic details for {b.title}
-              </caption>
-              <tbody>
-                {facts.map(([k, v]) => (
-                  <tr key={k}>
-                    <th scope="row">{k}</th>
-                    <td>{v}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+  const [records, content] = await Promise.all([getBooks(), getPublicContent()]);
+  const books = records.filter(visibleBook).map(publicBook);
+  const enabled = process.env.COMMERCE_ENABLED === "true";
+  // Subject rails appear only once a subject can fill one; until then they would repeat the main shelf.
+  const bySubject = new Map<string, typeof books>();
+  for (const book of books) if (book.subject) bySubject.set(book.subject, [...bySubject.get(book.subject) || [], book]);
+  const subjectShelves = [...bySubject].filter(([, items]) => items.length >= 3);
+  return <>
+    <Hero books={books} module={publicModules(content.modules).find((module) => module.type === "hero")} />
+    <SubjectNavigation books={books} />
+    <section className="section shelf-section" id="catalogue"><div className="wrap">
+      <div className="section-heading"><div><p className="eyebrow">New in the reading room</p><h2>Find your next read.</h2></div>
+        <Link href="/catalogue" className="text-link">All books <ArrowRight size={18} aria-hidden="true" /></Link>
       </div>
-    </article>
-  );
+      {books.length ? <Shelf books={books.slice(0, 12)} enabled={enabled} label="New in the reading room" />
+        : <p className="empty-state">The shelves are being prepared. Please check back for new digital editions.</p>}
+    </div></section>
+    {subjectShelves.map(([subject, items]) => <section className="section shelf-section" key={subject}><div className="wrap">
+      <div className="section-heading"><div><p className="eyebrow">By subject</p><h2>{subject}</h2></div>
+        <Link href={`/catalogue?subject=${encodeURIComponent(subject)}`} className="text-link">See all {items.length} <ArrowRight size={18} aria-hidden="true" /></Link>
+      </div>
+      <Shelf books={items.slice(0, 12)} enabled={enabled} label={subject} invite={false} />
+    </div></section>)}
+    <DiscoveryFeatures books={books} />
+    <ContentSections {...content} modules={content.modules.filter((module) => module.type !== "author")} books={books} enabled={enabled} />
+    <section className="section reader-services" id="delivery" aria-label="Reading and delivery"><div className="wrap">
+      <div className="service-grid">
+        <div><BookOpen size={25} strokeWidth={1.4} aria-hidden="true" /><h3>Digital editions</h3><p>Reference books for your reading device.</p><Link href="/catalogue">Browse the catalogue</Link></div>
+        <div><Download size={25} strokeWidth={1.4} aria-hidden="true" /><h3>Your personal copy</h3><p>Download access with each fulfilled order.</p><Link href="/delivery-policy">Delivery & downloads</Link></div>
+        <div><Library size={25} strokeWidth={1.4} aria-hidden="true" /><h3>Always on your shelf</h3><p>Your purchases and order history, together.</p><Link href="/library">Visit your library</Link></div>
+      </div>
+    </div></section>
+    <section className="section publishing-invitation" id="publish"><img className="publishing-image" src="/assets/reading-room-campaign.webp" alt="" loading="lazy" /><div className="wrap publishing-inner">
+      <div><p className="eyebrow">For authors and publishers</p><h2>Bring your work<br /><em>to the reading room.</em></h2></div>
+      <div><p>Your research deserves readers. Introduce your book to our editorial team, from a first manuscript to an established reference work. We will guide you through review and rights clearance.</p>
+        <Link className="btn btn-primary" href="/publish"><Send size={17} aria-hidden="true" /> Publish with us <ArrowRight size={17} aria-hidden="true" /></Link>
+      </div>
+    </div></section>
+    <section className="section" id="faq"><div className="wrap faq-layout">
+      <div><p className="eyebrow">Buying & reading</p><h2>A few things<br />worth knowing.</h2></div>
+      <div className="faq-list">
+        <details><summary>Are these printed books?<Plus size={18} aria-hidden="true" /></summary><p>These are digital editions. Nothing is shipped. Each book page lists the supplied format and bibliographic details.</p></details>
+        <details><summary>How do I choose a book?<Plus size={18} aria-hidden="true" /></summary><p>Explore by subject, or search for a title or author. Each book page brings together its description, edition details, and availability so you can decide what belongs on your shelf.</p></details>
+        <details><summary>How do I access a purchased book?<Plus size={18} aria-hidden="true" /></summary><p>After payment is confirmed and your order is fulfilled, access is provided through your order page and library. See our <Link href="/delivery-policy">delivery policy</Link> for download conditions.</p></details>
+        <details><summary>Can I read a sample?<Plus size={18} aria-hidden="true" /></summary><p>A sample link appears on a book page only when a sample has been supplied. Not every edition includes one.</p></details>
+        <details><summary>Can I share or return a digital copy?<Plus size={18} aria-hidden="true" /></summary><p>Digital editions are licensed for personal use. Downloaded books cannot be returned; file and delivery issues are covered by our <Link href="/refund-policy">refund policy</Link>.</p></details>
+        <details><summary>How do I submit my own book?<Plus size={18} aria-hidden="true" /></summary><p>Visit <Link href="/publish">Publish with us</Link>, sign in with a verified email, and prepare your metadata, manuscript, and cover for review.</p></details>
+      </div>
+    </div></section>
+  </>;
 }

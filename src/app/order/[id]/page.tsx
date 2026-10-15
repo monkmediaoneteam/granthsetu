@@ -3,6 +3,7 @@ import { rupees } from "@/lib/money";
 import { mintDownloadToken } from "@/lib/token";
 import { settleFromRazorpay } from "@/lib/settle";
 import CopyLinkButton from "@/components/CopyLinkButton";
+import { canAccessOrder } from '@/lib/reader-auth';
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your order", robots: { index: false } };
@@ -16,11 +17,16 @@ export default async function OrderPage({
 }) {
   const { id } = await params;
   let order = await getOrder(id);
+  if (!order || !(await canAccessOrder(order))) {
+    return <div className="wrap py-20"><h1 className="title title-lg">Verify your email to view this order.</h1>
+      <p className="my-6">Receipts and downloads are available only to the purchaser.</p>
+      <a className="btn btn-primary" href={`/login?next=${encodeURIComponent(`/order/${id}`)}`}>Sign in to your library</a></div>;
+  }
 
   // No webhook secret yet, so the order page is the primary confirmation path:
   // ask Razorpay directly, and re-read if that settled the order.
   if (order && order.status === "created") {
-    const settled = await settleFromRazorpay(order);
+    const settled = await settleFromRazorpay(order).catch(() => false);
     if (settled) order = await getOrder(id);
   }
 
@@ -65,7 +71,7 @@ export default async function OrderPage({
           <p className="mb-8 max-w-[58ch] text-ink-soft">
             {refunded
               ? "The amount has been returned to your original payment method. Bank timelines vary, so allow a few working days for it to appear."
-              : "Nothing was charged. This usually means the payment was cancelled or the link expired — you can start again from the catalogue."}
+              : "Payment has not been confirmed. If your account was debited, do not pay again: contact support while we reconcile the payment."}
           </p>
           <a className="btn btn-primary" href="/#catalogue">
             Back to the catalogue <span aria-hidden>&rarr;</span>
@@ -104,8 +110,8 @@ export default async function OrderPage({
 
           <ul className="mb-10 grid gap-4">
             {order.items.map((item) => {
-              const n = used.get(item.slug) ?? 0;
-              const exhausted = n >= MAX_DOWNLOADS;
+              const n = used.get(item.slug);
+              const exhausted = n === undefined || n >= MAX_DOWNLOADS;
               return (
                 <li
                   key={item.slug}
@@ -114,11 +120,11 @@ export default async function OrderPage({
                   <div>
                     <p className="m-0 font-medium">{item.title}</p>
                     <p className="eyebrow mt-1.5">
-                      {n} of {MAX_DOWNLOADS} downloads used
+                      {n === undefined ? 'Delivery is being prepared' : `${n} of ${MAX_DOWNLOADS} downloads used`}
                     </p>
                   </div>
                   {exhausted ? (
-                    <span className="eyebrow">Limit reached &mdash; contact us</span>
+                    <span className="eyebrow">{n === undefined ? 'Preparing access' : 'Limit reached'} &mdash; contact us</span>
                   ) : (
                     <a
                       className="btn btn-primary"

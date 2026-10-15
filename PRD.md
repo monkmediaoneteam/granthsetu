@@ -1,5 +1,8 @@
 # PRD INVENTAYU Books (digital)
 
+> Historical brief, superseded by `READING_ROOM_PRD.md`. Do not use its no-login,
+> URL-token administration, placeholder prices, or original launch checklist for release.
+
 Standalone storefront selling Dr. Narendra Bhatt's books as digital copies.
 Separate app, separate deploy, separate DB from the main static site.
 

@@ -1,121 +1,38 @@
 import Image from "next/image";
-import type { Book } from "@/lib/db";
-import { rupees } from "@/lib/money";
+import Link from "next/link";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { STORE } from "@/lib/store";
+import type { PublicBook } from "./book-data";
+import type { ContentModule } from "@/lib/content";
+import { contentUrl, publicModules } from "./content-data";
+import MotionBookLink from "./MotionBookLink";
 
-/**
- * Commerce hero: the claim on the left, the products as real cards on the
- * right. Every card, shadow and transition uses the shared surface system, so
- * the page reads as one designed thing rather than a pile of effects.
- */
-export default function Hero({ books }: { books: Book[] }) {
-  const shown = books.slice(0, 2);
-
-  return (
-    <section className="field overflow-hidden border-b border-line">
-      <div className="wrap grid items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-20 lg:py-24">
-        <div className="enter">
-          <span className="pill">
-            <span className="dot" />
-            {STORE.kicker}
-          </span>
-
-          <h1 className="disp mt-7 mb-6 text-[clamp(36px,4.6vw,60px)] leading-[1.03]">
-            The reference shelf for{" "}
-            <span className="bg-gradient-to-br from-brand via-brand-deep to-gold bg-clip-text text-transparent">
-              Ayurvedic research
-            </span>
-            .
-          </h1>
-
-          <p className="mb-9 max-w-[50ch] text-[19px] leading-relaxed text-ink-soft">
-            {STORE.tagline} Every title is a digital edition: pay once, download
-            straight away, keep it for good.
-          </p>
-
-          <div className="mb-11 flex flex-wrap items-center gap-3.5">
-            <a className="btn btn-primary" href="#catalogue">
-              Browse the catalogue <span aria-hidden>→</span>
-            </a>
-            <a className="btn btn-ghost" href="#faq">
-              How delivery works
-            </a>
-          </div>
-
-          <dl className="mb-9 flex gap-8 lg:hidden">
-            {[
-              ["Titles", String(books.length)],
-              ["Format", "PDF"],
-              ["Delivery", "Instant"],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <dt className="eyebrow mb-1.5">{k}</dt>
-                <dd className="disp m-0 text-[24px]">{v}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <ul className="flex flex-wrap gap-x-8 gap-y-3">
-            {[
-              ["Instant", "download after payment"],
-              ["Secure", "payments via Razorpay"],
-              ["Watermarked", "licensed to you"],
-            ].map(([strong, rest]) => (
-              <li key={strong} className="flex items-center gap-2.5 text-[14px] text-ink-soft">
-                <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-brand">
-                  <circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.3" opacity="0.35" />
-                  <path d="M4.7 8.2l2.2 2.2 4.4-4.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>
-                  <strong className="font-medium text-ink">{strong}</strong> {rest}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* The products, as the cards the buyer will actually click. */}
-        <div className="hidden gap-5 lg:grid lg:grid-cols-2">
-          {shown.map((b, i) => (
-            <a
-              key={b.slug}
-              href={`#book-${b.slug}`}
-              className="surface surface-hover surface-lit group flex flex-col p-5"
-              style={{
-                animation: `rise 0.8s var(--ease-out) ${0.18 + i * 0.1}s backwards`,
-              }}
-            >
-              <div className="plate mb-5 grid place-items-center p-5">
-                {b.cover ? (
-                  <Image
-                    src={b.cover}
-                    alt={`Cover of ${b.title}`}
-                    width={420}
-                    height={540}
-                    priority={i === 0}
-                    sizes="(max-width: 640px) 70vw, 200px"
-                    className="cover-img h-auto w-full"
-                  />
-                ) : (
-                  <span className="eyebrow py-16">Cover pending</span>
-                )}
-              </div>
-
-              <p className="mb-1.5 text-[15px] leading-snug font-medium text-ink">
-                {b.title}
-              </p>
-              <p className="eyebrow mb-4 line-clamp-1">{b.authorship ?? "Digital edition"}</p>
-
-              <div className="mt-auto flex items-baseline justify-between gap-3 border-t border-line pt-4">
-                <span className="disp text-[22px]">{rupees(b.price_inr)}</span>
-                <span className="eyebrow text-brand transition-colors group-hover:text-brand-deep">
-                  View <span aria-hidden>→</span>
-                </span>
-              </div>
-            </a>
-          ))}
-        </div>
+export default function Hero({ books, module }: { books: PublicBook[]; module?: ContentModule }) {
+  const settings = module && publicModules([module]).find((item) => item.type === "hero");
+  const title = settings?.title || (STORE.name.includes(" by ") ? STORE.name.split(" by ")[0] : STORE.name);
+  const subtitle = settings && typeof settings.payload.subtitle === "string" ? settings.payload.subtitle : null;
+  const image = contentUrl(settings?.image_url) || "/assets/reading-room-botanical-v2.webp";
+  const mobileImage = contentUrl(settings?.mobile_image_url);
+  const href = contentUrl(settings?.link_url) || "/catalogue";
+  const shown = books.filter((book) => book.cover).slice(0, 2);
+  return <section className={`reading-hero${settings ? " hero-custom" : ""}${title.length > 90 ? " hero-long-title" : ""}`}>
+    <picture className="hero-editorial-media">{mobileImage && <source media="(max-width: 640px)" srcSet={mobileImage} />}<img src={image} alt="" className="hero-editorial-image" fetchPriority="high" /></picture>
+    <div className="wrap hero-inner">
+      <div className="hero-copy">
+        <p className="eyebrow"><span className="edition-marker" /> {STORE.kicker}</p>
+        <h1>{title}</h1>
+        {settings ? subtitle && <p className="hero-deck">{subtitle}</p> : <p className="hero-deck">Rooted in Ayurveda.<br /><em>Open to discovery.</em></p>}
+        <p className="hero-description preserve-lines">{settings?.body || "Explore books on research, natural products, and the ideas connecting tradition with science."}</p>
+        <Link href={href} className="btn btn-primary">{settings?.link_label || "Browse books"} <ArrowRight size={18} aria-hidden="true" /></Link>
       </div>
-    </section>
-  );
+      {shown.length > 0 && <div className="hero-books" aria-label="Featured digital editions">
+        {shown.map((book, index) => <MotionBookLink key={book.slug} href={`/books/${encodeURIComponent(book.slug)}`} className="hero-volume">
+          <Image src={book.cover!} unoptimized={book.cover!.startsWith("https://")} alt={`Cover of ${book.title}`} width={1120} height={1400} preload
+            sizes="(max-width: 640px) 47vw, (max-width: 1000px) 32vw, 350px" />
+          <span className="hero-volume-label"><span>{String(index + 1).padStart(2, "0")}</span>{book.title}</span>
+        </MotionBookLink>)}
+      </div>}
+      <div className="hero-foot"><span><BookOpen size={17} aria-hidden="true" /> A shelf for curious minds</span><span>{books.length} {books.length === 1 ? "digital edition" : "digital editions"}<ArrowRight size={17} aria-hidden="true" /></span></div>
+    </div>
+  </section>;
 }

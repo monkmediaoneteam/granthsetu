@@ -9,7 +9,8 @@
 
 export const STORE = {
   /** Shown in the navbar, page titles and emails. */
-  name: process.env.NEXT_PUBLIC_STORE_NAME || "The Reading Room",
+  name: process.env.NEXT_PUBLIC_STORE_NAME && process.env.NEXT_PUBLIC_STORE_NAME !== 'The Reading Room'
+    ? process.env.NEXT_PUBLIC_STORE_NAME : 'Reading Room by INVENTAYU',
 
   /** Small label above the headline. */
   kicker: "Digital editions",
@@ -25,11 +26,17 @@ export const STORE = {
    * to appear on invoices. It must match the Razorpay account holder even when
    * the storefront itself is unbranded.
    */
-  legalEntity: process.env.LEGAL_ENTITY_NAME || "[REGISTERED SELLER NAME]",
-  legalAddress: process.env.LEGAL_ENTITY_ADDRESS || "[REGISTERED ADDRESS]",
-  supportEmail: process.env.SUPPORT_EMAIL || "[SUPPORT EMAIL]",
-  supportPhone: process.env.SUPPORT_PHONE || "[SUPPORT PHONE]",
+  legalEntity: process.env.LEGAL_ENTITY_NAME || '',
+  legalAddress: process.env.LEGAL_ENTITY_ADDRESS || '',
+  supportEmail: process.env.SUPPORT_EMAIL || '',
+  supportPhone: process.env.SUPPORT_PHONE || '',
 } as const;
 
-export const siteUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+export function siteUrl() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configured) {
+    const url = new URL(configured);
+    if (process.env.NODE_ENV !== 'production' || !['localhost', '127.0.0.1'].includes(url.hostname)) return url.origin;
+  }
+  return 'https://inventayu-books.vercel.app';
+}
