@@ -14,6 +14,7 @@ import Cover from "@/components/Cover";
 import Price from "@/components/Price";
 import BookTabs from "@/components/product/BookTabs";
 import ShareButton from "@/components/product/ShareButton";
+import WishlistButton from "@/components/WishlistButton";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -58,7 +59,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
         <div className="product-gallery"><div className="gallery-stage"><Cover src={book.cover} title={book.title} sizes="(max-width: 900px) 80vw, 420px" priority /></div>
           {sample && <a className="btn btn-outline sample-btn" href={sample} target="_blank" rel="noopener noreferrer"><BookOpen size={17} aria-hidden="true" /> Read a sample</a>}</div>
         <div className="product-info">
-          <div className="title-row"><h1>{book.title}</h1><div className="title-actions">{/* wishlist heart: Task C2 */}<ShareButton title={book.title} url={url} /></div></div>
+          <div className="title-row"><h1>{book.title}</h1><div className="title-actions"><WishlistButton slug={book.slug} title={book.title} variant="page" /><ShareButton title={book.title} url={url} /></div></div>
           {book.subtitle && <p className="product-subtitle">{book.subtitle}</p>}
           {book.authorship && <p className="product-author">by {book.author_slug ? <Link href={`/authors/${encodeURIComponent(book.author_slug)}`}>{book.authorship}</Link> : book.authorship}</p>}
           <ul className="tag-row">{category && <li><Link className="chip" href={`/category/${category.slug}`}>{category.name}</Link></li>}

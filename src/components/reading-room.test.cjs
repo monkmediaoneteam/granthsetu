@@ -17,6 +17,7 @@ function load(relative, overrides = {}) {
   const module = { exports: {} };
   const dependency = (name) => {
     if (Object.hasOwn(overrides, name)) return overrides[name];
+    if (name === "./WishlistProvider" || name === "@/components/WishlistProvider") return { useWishlist: () => ({ slugs: [], ready: true, has: () => false, toggle() {} }) };
     if (name === "@/components/CartProvider" || name === "./CartProvider") return { ...load("components/CartProvider.tsx"), useCart: () => cart };
     if (name.startsWith("@/") || name.startsWith(".")) {
       const base = name.startsWith("@/") ? name.slice(2) : path.relative(root, path.resolve(path.dirname(filename), name)).split(path.sep).join("/");
