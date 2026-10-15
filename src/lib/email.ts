@@ -1,4 +1,4 @@
-import { orderSavings, rupees } from "./money";
+import { rupees } from "./money";
 import type { Order } from "./db";
 import { env } from "./env";
 import { STORE } from "./store";
@@ -103,7 +103,7 @@ export function confirmationPayload(order: Order, siteUrl: string): EmailPayload
           ${escapeHtml(i.title)}<br>
           <span style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${BRAND.mute};">Digital edition &middot; PDF</span>
         </td>
-        <td align="right" style="padding:12px 0;border-bottom:1px solid ${BRAND.line};font-family:'Courier New',monospace;font-size:15px;color:${BRAND.ink};white-space:nowrap;">${typeof i.list_price === "number" && i.list_price > i.price ? `<s style="color:${BRAND.mute};">${rupees(i.list_price)}</s> ` : ""}${rupees(i.price)}</td>
+        <td align="right" style="padding:12px 0;border-bottom:1px solid ${BRAND.line};font-family:'Courier New',monospace;font-size:15px;color:${BRAND.ink};white-space:nowrap;">${rupees(i.price)}</td>
       </tr>`
     )
     .join("");
@@ -147,7 +147,6 @@ export function confirmationPayload(order: Order, siteUrl: string): EmailPayload
               <td style="padding:12px 0 0;font-size:15px;font-weight:600;color:${BRAND.ink};">Total paid</td>
               <td align="right" style="padding:12px 0 0;font-family:'Courier New',monospace;font-size:17px;font-weight:600;color:${BRAND.brand};">${rupees(order.total)}</td>
             </tr>
-            ${orderSavings(order) > 0 ? `<tr><td style="padding:8px 0 0;font-size:14px;color:${BRAND.ink};">You saved</td><td align="right" style="padding:8px 0 0;font-family:'Courier New',monospace;font-size:15px;color:${BRAND.ink};">${rupees(orderSavings(order))}</td></tr>` : ""}
           </table>
           <div style="height:1px;background:${BRAND.line};margin:16px 0;"></div>
           <p style="margin:0;font-size:12px;line-height:1.7;color:${BRAND.soft};">

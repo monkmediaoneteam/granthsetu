@@ -2,7 +2,6 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFile, readdir, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { seedDemo } from './demo-catalogue.mjs';
 
 export async function createIsolatedDatabase({ seed = false } = {}) {
   const directory = await mkdtemp(path.join(tmpdir(), 'reading-room-'));
@@ -22,7 +21,6 @@ export async function createIsolatedDatabase({ seed = false } = {}) {
     }
     await db.query(`insert into author_profiles(id,name,bio,photo_url,status) values
       ('narendra-bhatt','Dr. Narendra Bhatt','Author of Researching Research for Ayurveda.','/assets/DrNarendraBhatt.jpg','published')`);
-    await seedDemo(db);
   }
   return { db, directory };
 }

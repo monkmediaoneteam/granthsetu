@@ -19,16 +19,13 @@ export function parseCart(value: string | null): string[] {
   } catch { return []; }
 }
 
-type Cart = { slugs: string[]; ready: boolean; error: string; add: (slug: string, options?: { quiet?: boolean }) => void; remove: (slug: string) => void;
-  drawerOpen: boolean; openDrawer: () => void; closeDrawer: () => void; lastAdded: string | null };
+type Cart = { slugs: string[]; ready: boolean; error: string; add: (slug: string) => void; remove: (slug: string) => void };
 const CartContext = createContext<Cart | null>(null);
 
 export default function CartProvider({ children }: { children: React.ReactNode }) {
   const [slugs, setSlugs] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [lastAdded, setLastAdded] = useState<string | null>(null);
   useEffect(() => {
     try { setSlugs(parseCart(localStorage.getItem(CART_KEY))); }
     catch { setError("Your browser cannot save this cart. Keep this page open to retain your selection."); }
@@ -45,9 +42,8 @@ export default function CartProvider({ children }: { children: React.ReactNode }
     catch { setError("Your browser cannot save this cart. Keep this page open to retain your selection."); }
   }
   return <CartContext.Provider value={{ slugs, ready, error,
-    add: (slug, options) => { update(parseCart(JSON.stringify([...slugs, slug]))); setLastAdded(slug); if (!options?.quiet) setDrawerOpen(true); },
+    add: (slug) => update(parseCart(JSON.stringify([...slugs, slug]))),
     remove: (slug) => update(slugs.filter((item) => item !== slug)),
-    drawerOpen, openDrawer: () => setDrawerOpen(true), closeDrawer: () => setDrawerOpen(false), lastAdded,
   }}>{children}</CartContext.Provider>;
 }
 

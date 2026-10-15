@@ -7,7 +7,6 @@ export type ContentModule = {
   link_url: string | null; link_label: string | null;
   payload: Record<string, unknown>; sort: number;
   status: "draft" | "published" | "archived"; publish_at: string | null;
-  ends_at: string | null;
 };
 export type Collection = {
   slug: string; title: string; description: string | null;
@@ -16,8 +15,7 @@ export type Collection = {
 export type AuthorProfile = { id: string; name: string; bio: string | null; photo_url: string | null };
 export const contentSections = ["modules", "collections", "media", "testimonials", "authors"] as const;
 export type ContentSection = typeof contentSections[number];
-export const moduleTypes = ["hero", "banner", "text", "collection", "testimonial", "author", "media", "announcement", "promo", "genre-switcher"] as const;
-const themes = ["coral", "sky", "yellow", "green", "ink", "lilac"];
+export const moduleTypes = ["hero", "banner", "text", "collection", "testimonial", "author", "media"] as const;
 export class ContentError extends Error {}
 
 export function safeUrl(value: unknown): string | null {
@@ -43,9 +41,6 @@ export function validateContent(section: ContentSection, input: Record<string, u
   if (!["draft", "published", "archived"].includes(String(status))) throw new ContentError("Invalid publication status.");
   const publishAt = input.publish_at ? textField(input.publish_at, 40) : null;
   if (publishAt && !Number.isFinite(Date.parse(publishAt))) throw new ContentError("Invalid publication date.");
-  const endsAt = input.ends_at ? textField(input.ends_at, 40) : null;
-  if (endsAt && !Number.isFinite(Date.parse(endsAt))) throw new ContentError("Invalid end date.");
-  if (endsAt && publishAt && Date.parse(endsAt) <= Date.parse(publishAt)) throw new ContentError("The end date must be after the publish date.");
   const sort = Number(input.sort ?? 0);
   if (!Number.isSafeInteger(sort) || Math.abs(sort) > 100000) throw new ContentError("Invalid sort order.");
   const type = input.type ?? "text";
@@ -55,20 +50,14 @@ export function validateContent(section: ContentSection, input: Record<string, u
   const bookSlugs = input.book_slugs ?? [];
   if (!Array.isArray(bookSlugs) || bookSlugs.length > 100 || bookSlugs.some(s => typeof s !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s)) || new Set(bookSlugs).size !== bookSlugs.length) throw new ContentError("Invalid book selection.");
   const payload = input.payload ?? {};
-  const allowedKeys = ["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url", "theme", "size", "category_slug", "category_slugs"];
-  if (!payload || typeof payload !== "object" || Array.isArray(payload) || JSON.stringify(payload).length > 10000 || Object.keys(payload).some(k => !allowedKeys.includes(k))) throw new ContentError("Invalid module data.");
+  if (!payload || typeof payload !== "object" || Array.isArray(payload) || JSON.stringify(payload).length > 10000 || Object.keys(payload).some(k => !["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url"].includes(k))) throw new ContentError("Invalid module data.");
   for (const [key, value] of Object.entries(payload)) {
     if (key === "video_url") safeUrl(value);
-    else if (key === "theme") { if (!themes.includes(String(value))) throw new ContentError("Invalid theme."); }
-    else if (key === "size") { if (!["large", "small"].includes(String(value))) throw new ContentError("Invalid tile size."); }
-    else if (key === "category_slug") { if (typeof value !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) throw new ContentError("Invalid category."); }
-    else if (key === "category_slugs") {
-      if (!Array.isArray(value) || value.length > 8 || value.some(s => typeof s !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s))) throw new ContentError("Choose up to 8 categories.");
-    } else if (key === "book_slugs") {
+    else if (key === "book_slugs") {
       if (!Array.isArray(value) || value.length > 100 || value.some(s => typeof s !== "string" || !/^[a-z0-9-]{1,120}$/.test(s))) throw new ContentError("Invalid module book selection.");
     } else textField(value, 4000);
   }
-  return { title, status: status as ContentModule["status"], publish_at: publishAt, ends_at: endsAt, sort, type: String(type), slug,
+  return { title, status: status as ContentModule["status"], publish_at: publishAt, sort, type: String(type), slug,
     body: textField(input.body ?? input.bio ?? input.description, 20000) || null,
     image_url: safeUrl(input.image_url ?? input.photo_url), mobile_image_url: safeUrl(input.mobile_image_url),
     link_url: safeUrl(input.link_url), link_label: textField(input.link_label, 100) || null,
@@ -77,8 +66,8 @@ export function validateContent(section: ContentSection, input: Record<string, u
 
 export async function getPublicContent(): Promise<{ modules: ContentModule[]; collections: Collection[]; authors: AuthorProfile[] }> {
   const [modules, collections, authors] = await Promise.all([
-    sql`select id, type, title, body, image_url, mobile_image_url, link_url, link_label, payload, sort, status, publish_at::text, ends_at::text
-      from content_modules where status = 'published' and (publish_at is null or publish_at <= now()) and (ends_at is null or ends_at > now()) order by sort, id`,
+    sql`select id, type, title, body, image_url, mobile_image_url, link_url, link_label, payload, sort, status, publish_at::text
+      from content_modules where status = 'published' and (publish_at is null or publish_at <= now()) order by sort, id`,
     sql`select c.slug, c.title, c.description, c.image_url,
       coalesce((select jsonb_agg(s.slug order by s.ordinality) from jsonb_array_elements_text(c.book_slugs) with ordinality s(slug, ordinality)
         join books b on b.slug = s.slug where b.active and b.release_approved and b.scan_status = 'clean' and b.price_inr > 0 and b.file_url is not null
@@ -101,7 +90,7 @@ export async function getAdminContent(section: ContentSection): Promise<Record<s
   if (section === "collections") return await sql`select *, description body, updated_at::text, publish_at::text from content_collections order by sort, slug`;
   if (section === "authors") return await sql`select *, name title, bio body, photo_url image_url, updated_at::text, publish_at::text from author_profiles order by name`;
   if (section === "media" || section === "testimonials") return await sql`select *, updated_at::text, publish_at::text from content_modules where type=${section === "media" ? "media" : "testimonial"} order by sort, id`;
-  return await sql`select *, updated_at::text, publish_at::text, ends_at::text from content_modules where type not in ('media','testimonial') order by sort, id`;
+  return await sql`select *, updated_at::text, publish_at::text from content_modules where type not in ('media','testimonial') order by sort, id`;
 }
 export async function saveContent(section: ContentSection, id: string, expected: string | null, input: Record<string, unknown>) {
   const c = validateContent(section, { ...input, ...(section === "media" ? { type: "media" } : section === "testimonials" ? { type: "testimonial" } : {}) });
@@ -137,9 +126,9 @@ export async function saveContent(section: ContentSection, id: string, expected:
     select id from changed`;
   } else {
     rows = await sql`with changed as (
-      insert into content_modules(id,type,title,body,image_url,mobile_image_url,link_url,link_label,payload,sort,status,publish_at,ends_at)
-      values(${id || randomUUID()},${c.type},${c.title},${c.body},${c.image_url},${c.mobile_image_url},${c.link_url},${c.link_label},${JSON.stringify(c.payload)}::jsonb,${c.sort},${c.status},${c.publish_at}::timestamptz,${c.ends_at}::timestamptz)
-      on conflict(id) do update set type=excluded.type,title=excluded.title,body=excluded.body,image_url=excluded.image_url,mobile_image_url=excluded.mobile_image_url,link_url=excluded.link_url,link_label=excluded.link_label,payload=excluded.payload,sort=excluded.sort,status=excluded.status,publish_at=excluded.publish_at,ends_at=excluded.ends_at,updated_at=now()
+      insert into content_modules(id,type,title,body,image_url,mobile_image_url,link_url,link_label,payload,sort,status,publish_at)
+      values(${id || randomUUID()},${c.type},${c.title},${c.body},${c.image_url},${c.mobile_image_url},${c.link_url},${c.link_label},${JSON.stringify(c.payload)}::jsonb,${c.sort},${c.status},${c.publish_at}::timestamptz)
+      on conflict(id) do update set type=excluded.type,title=excluded.title,body=excluded.body,image_url=excluded.image_url,mobile_image_url=excluded.mobile_image_url,link_url=excluded.link_url,link_label=excluded.link_label,payload=excluded.payload,sort=excluded.sort,status=excluded.status,publish_at=excluded.publish_at,updated_at=now()
       where content_modules.updated_at=${expected}::timestamptz returning id
     ), audit as (insert into publishing_audit(actor_id,action,payload) select 'admin','content.module.saved',jsonb_build_object('id',id) from changed)
     select id from changed`;

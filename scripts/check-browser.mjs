@@ -9,7 +9,7 @@ assert.ok(['localhost', '127.0.0.1'].includes(new URL(base).hostname), 'Browser 
 const output = new URL('../scratch/visual-checks/', import.meta.url);
 await mkdir(output, { recursive: true });
 const sizes = [320, 390, 768, 1024, 1440, 1920];
-const routes = ['/', '/search', '/category/science', '/books/demo-the-monsoon-ledger', '/wishlist', '/books/researching-research-for-ayurveda', '/books/integrative-perspectives', '/cart', '/checkout?book=researching-research-for-ayurveda', '/publish', '/login', '/privacy', '/order/unknown'];
+const routes = ['/', '/catalogue', '/books/researching-research-for-ayurveda', '/books/integrative-perspectives', '/cart', '/checkout?book=researching-research-for-ayurveda', '/publish', '/login', '/privacy', '/order/unknown'];
 const failures = [];
 for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
   if (process.env.BROWSERS && !process.env.BROWSERS.split(',').includes(name)) continue;
@@ -25,52 +25,50 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
         assert.equal(response.status(), 200, `${name} ${width} ${route}`);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
         if (overflow) failures.push(`${name}: overflow ${width} ${route}`);
-        for (const image of await page.locator('main img:visible').all()) {
+        for (const image of await page.locator('main img').all()) {
           await image.scrollIntoViewIfNeeded();
           await expect.poll(() => image.evaluate(image => image.complete && image.naturalWidth > 0), { timeout: 15000 }).toBeTruthy();
         }
         await page.evaluate(() => scrollTo(0, 0));
-        const images = await page.locator('main img:visible').evaluateAll(images => images.filter(image => !image.complete || image.naturalWidth === 0).map(image => image.src));
+        const images = await page.locator('main img').evaluateAll(images => images.filter(image => !image.complete || image.naturalWidth === 0).map(image => image.src));
         if (images.length) failures.push(`${name}: missing images ${width} ${route}: ${images}`);
         if (route === '/') {
+          const cover = await page.locator('.hero-books img').first().boundingBox();
+          if (!cover || cover.y >= (width < 768 ? 800 : 1000)) failures.push(`${name}: no first-viewport book at ${width}`);
           await page.evaluate(() => document.fonts.ready);
-          assert.ok(await page.evaluate(() => document.fonts.check('750 32px "Plus Jakarta Sans Variable"') && document.fonts.check('400 16px "Inter Variable"')), `${name}: local fonts loaded`);
-          const banner = await page.locator('.banner-slide:not([hidden])').first().boundingBox();
-          if (!banner || banner.y >= (width < 768 ? 800 : 1000)) failures.push(`${name}: no first-viewport banner at ${width}`);
-          assert.equal(await page.locator('.banner-controls [aria-label="Pause offers"]').count(), 0, `${name}: reduced motion shows no autoplay control`);
-          await page.locator('.product-card').first().hover();
-          await page.waitForTimeout(300);
-          assert.ok(await page.locator('.product-card').first().evaluate(el => ['none', 'matrix(1, 0, 0, 1, 0, 0)'].includes(getComputedStyle(el).transform)), `${name}: reduced motion respected`);
+          assert.ok(await page.evaluate(() => document.fonts.check('600 32px "Fraunces Variable"') && document.fonts.check('400 16px "Manrope Variable"')), `${name}: local fonts loaded`);
+          const labelsFit = await page.locator('.subject-navigation > a > span:not(.subject-icon)').evaluateAll(labels => labels.every(label => label.scrollWidth <= label.clientWidth + 1));
+          assert.ok(labelsFit, `${name}: category labels fit at ${width}px`);
+          await page.locator('.hero-volume').first().hover();
+          await page.waitForTimeout(350);
+          assert.ok(await page.locator('.hero-volume').first().evaluate(el => ['none', 'matrix(1, 0, 0, 1, 0, 0)'].includes(getComputedStyle(el).transform)), `${name}: reduced motion respected`);
           await page.mouse.move(0, 0);
         }
-        const shots = { '/': 'home', '/books/demo-the-monsoon-ledger': 'book', '/search': 'search' };
-        if (name === 'chromium' && shots[route]) {
-          await page.screenshot({ path: fileURLToPath(new URL(`${shots[route]}-${width}.png`, output)), fullPage: true });
+        if (name === 'chromium' && ['/', '/books/integrative-perspectives'].includes(route)) {
+          await page.screenshot({ path: fileURLToPath(new URL(`${route === '/' ? 'home' : 'book'}-${width}.png`, output)), fullPage: true });
         }
       }
       console.log(`${name}: ${width}px routes checked`);
     }
-    for (const route of ['/', '/search', '/category/science', '/books/demo-the-monsoon-ledger', '/cart', '/wishlist', '/login', '/publish']) {
+    for (const route of ['/', '/catalogue', '/books/integrative-perspectives', '/login', '/publish']) {
       await page.goto(base + route, { waitUntil: 'networkidle' });
       const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
       for (const violation of result.violations) failures.push(`${name}: accessibility ${route}: ${violation.id}: ${violation.nodes.map(node => node.target).join(',')}`);
     }
-    await page.goto(base + '/search?q=nonexistent-title');
-    await expect(page.getByRole('heading', { name: 'No books match these filters' })).toBeVisible();
+    await page.goto(base + '/catalogue?q=nonexistent-title');
+    await expect(page.getByRole('heading', { name: 'No books found.' })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + '/books/researching-research-for-ayurveda');
-    await expect(page.getByText('Online ordering is opening soon.', { exact: false })).toBeVisible();
-    await page.getByRole('button', { name: 'Save to bag: Researching Research for Ayurveda' }).click();
-    await expect(page.getByRole('dialog', { name: /Your bag/ })).toBeVisible();
-    await page.keyboard.press('Escape');
-    await page.goto(base + '/cart');
+    await expect(page.getByText('Online ordering is currently unavailable.', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: 'Save to cart: Researching Research for Ayurveda' }).click();
+    await page.getByRole('link', { name: 'In your cart' }).click();
     await expect(page.getByRole('heading', { name: 'Researching Research for Ayurveda', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Checkout unavailable' })).toBeDisabled();
     await expect(page.getByText('Online ordering is currently unavailable.', { exact: false })).toBeVisible();
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Researching Research for Ayurveda', exact: true })).toBeVisible();
     await page.getByRole('button', { name: /Remove Researching/ }).click();
-    await expect(page.getByText('Your bag is empty.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Your next chapter starts here.' })).toBeVisible();
     await page.goto(base + '/checkout?book=researching-research-for-ayurveda');
     await expect(page.getByText('Online ordering is currently unavailable.', { exact: false })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Payment unavailable' })).toBeDisabled();
@@ -81,40 +79,35 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
       await page.goto(base);
       if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) failures.push(`${name}: landscape overflow`);
     }
-    // 200% browser zoom on a 1024x768 screen is a 512x384 CSS viewport (WCAG reflow); media queries respond as they would for a reader.
-    await page.setViewportSize({ width: 512, height: 384 });
-    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto(base);
+    await page.addStyleTag({ content: 'body { zoom: 2; }' });
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) failures.push(`${name}: 200% zoom overflow`);
-    await page.goto(base, { waitUntil: 'networkidle' });
-    // The dev server's tools overlay sits first in tab order; production has no overlay.
-    await page.evaluate(() => document.querySelectorAll('nextjs-portal').forEach(node => node.remove()));
+    await page.goto(base);
     await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/#main$/);
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(base, { waitUntil: 'networkidle' });
-    await page.getByRole('combobox', { name: /Search books/ }).fill('monsoon led');
-    await expect(page.getByRole('listbox', { name: 'Suggestions' })).toBeVisible();
-    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('#faq details')).toHaveCount(6);
+    await expect(page.locator('#faq summary').filter({ hasText: 'How do I choose a book?' })).toBeVisible();
+    await expect(page.locator('#faq')).not.toContainText('Purchases are currently paused');
+    const question = page.locator('#faq summary').first();
+    await question.focus();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/books\/demo-the-monsoon-ledger$/);
-    await page.getByRole('button', { name: /Add The Monsoon Ledger to wishlist/ }).first().click();
-    await page.goto(base + '/wishlist');
-    await expect(page.getByRole('link', { name: 'The Monsoon Ledger' }).first()).toBeVisible();
+    await expect(page.locator('#faq details').first()).toHaveAttribute('open', '');
     const fixtureContext = await browser.newContext({ javaScriptEnabled: false });
     const fixturePage = await fixtureContext.newPage();
     for (const width of [320, 768, 1440]) {
       await fixturePage.setViewportSize({ width, height: 800 });
       for (const count of [1, 2, 9]) {
-        await fixturePage.goto(base + '/search');
-        await fixturePage.locator('.grid-books').evaluate((grid, count) => {
+        await fixturePage.goto(base + '/catalogue');
+        await fixturePage.locator('.book-grid').evaluate((grid, count) => {
           const card = grid.firstElementChild.cloneNode(true);
           grid.replaceChildren();
           for (let index = 0; index < count; index++) {
             const item = card.cloneNode(true);
-            item.querySelector('.card-body h3 a').textContent = index % 2 ? 'An unusually long publication title about research methodology, practice, and natural products' : 'PublicationWithAnUnusuallyLongUnbrokenTitleToCheckResponsiveWrapping';
-            if (index === 2) item.querySelector('.card-cover img')?.remove();
+            item.querySelector('h3 a').textContent = index % 2 ? 'An unusually long publication title about research methodology, practice, and natural products' : 'PublicationWithAnUnusuallyLongUnbrokenTitleToCheckResponsiveWrapping';
+            if (index === 2) item.querySelector('.book-art img')?.remove();
             grid.append(item);
           }
         }, count);
@@ -125,9 +118,8 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
     const noJs = await browser.newContext({ javaScriptEnabled: false });
     const staticPage = await noJs.newPage();
     await staticPage.goto(base);
-    await expect(staticPage.locator('.product-card').first()).toBeVisible();
-    await staticPage.goto(base + '/search?q=monsoon');
-    await expect(staticPage.getByRole('link', { name: 'The Monsoon Ledger' }).first()).toBeVisible();
+    await expect(staticPage.locator('#catalogue').getByRole('heading', { name: 'Researching Research for Ayurveda', exact: true })).toBeVisible();
+    await expect(staticPage.locator('.hero-books img').first()).toBeVisible();
     await noJs.close();
     await context.close();
   } finally { await browser.close(); }

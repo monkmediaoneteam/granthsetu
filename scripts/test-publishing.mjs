@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 import { createHmac } from 'node:crypto';
-import { load as loadModule } from './test-commerce.mjs';
 
 // Exercise the actual pure helpers without opening a database connection.
 async function load(path, database = '() => { throw new Error("Unexpected database call"); }') {
@@ -60,19 +59,6 @@ assert.throws(() => c.validateContent('collections', { title: 'X', slug: 'Bad Sl
 assert.throws(() => c.validateContent('modules', { title: 'X', type: 'hero', payload: { html: '<script>' } }));
 assert.throws(() => c.validateContent('modules', { title: 'X', type: 'media', payload: { video_url: 'javascript:alert(1)' } }));
 assert.equal(c.validateContent('modules', { title: 'X', type: 'media', payload: { video_url: '/media/interview.mp4' } }).payload.video_url, '/media/interview.mp4');
-const content = loadModule('src/lib/content.ts', { './db': { sql() { throw new Error('no db'); } } });
-const promo = content.validateContent('modules', { title: 'Science week', type: 'promo', status: 'published',
-  payload: { size: 'large', theme: 'sky', category_slug: 'science' }, ends_at: '2026-10-20T00:00:00+05:30' });
-assert.equal(promo.type, 'promo');
-assert.equal(promo.ends_at, '2026-10-20T00:00:00+05:30');
-assert.throws(() => content.validateContent('modules', { title: 'x', type: 'promo', payload: { theme: 'neon' } }), /theme/);
-assert.throws(() => content.validateContent('modules', { title: 'x', type: 'promo', payload: { size: 'huge' } }), /size/);
-assert.throws(() => content.validateContent('modules', { title: 'x', type: 'genre-switcher', payload: { category_slugs: Array(9).fill('a') } }), /categor/);
-assert.throws(() => content.validateContent('modules', { title: 'x', publish_at: '2026-10-21T00:00:00Z', ends_at: '2026-10-20T00:00:00Z' }), /end/);
-const helpers = loadModule('src/components/content-data.ts', { '@/lib/content': content });
-const base = { id: 'm', type: 'banner', title: 't', status: 'published', publish_at: null, sort: 0, payload: {} };
-assert.equal(helpers.publicModules([{ ...base, ends_at: '2026-10-14T00:00:00Z' }], new Date('2026-10-15T00:00:00Z')).length, 0);
-assert.equal(helpers.publicModules([{ ...base, ends_at: '2026-10-16T00:00:00Z' }], new Date('2026-10-15T00:00:00Z')).length, 1);
 console.log('Publishing transitions, release gates, upload limits, signed scans, and content validation passed.');
 for (const table of ['content_modules', 'content_collections', 'author_profiles']) {
   const legacy = await load('../src/lib/content.ts', `async () => { throw Object.assign(new Error('relation "${table}" does not exist'), { code: '42P01' }); }`);

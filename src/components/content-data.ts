@@ -4,8 +4,8 @@ export function contentUrl(value: unknown) {
   try { return safeUrl(value); } catch { return null; }
 }
 
-export function publicModules(modules: ContentModule[], now = new Date()) {
-  return modules.filter((module) => isPublicRecord(module, now.getTime()) && (!module.ends_at || Date.parse(module.ends_at) > now.getTime()))
+export function publicModules(modules: ContentModule[]) {
+  return modules.filter((module) => isPublicRecord(module))
     .sort((a, b) => a.sort - b.sort || a.id.localeCompare(b.id));
 }
 

@@ -1,25 +1,9 @@
 /**
  * TailAdmin-style chrome (fixed sidebar, stat cards, panelled tables) rendered
  * in the store's own tokens rather than importing the TailAdmin template.
- * the note in README. Client-safe: the platform layout renders it from a client component.
+ * the note in README. Server component: no client JS needed for a static nav.
  */
-import Link from "next/link";
 import { STORE } from "@/lib/store";
-
-export type AdminSection = "overview" | "orders" | "books" | "categories" | "authors" | "collections" | "banners" | "modules" | "reviews" | "delivery";
-const nav: { key: AdminSection; label: string; href: string }[] = [
-  { key: "overview", label: "Dashboard", href: "/admin" },
-  { key: "orders", label: "Orders", href: "/admin/orders" },
-  { key: "books", label: "Books", href: "/admin/books" },
-  { key: "categories", label: "Categories", href: "/admin/categories" },
-  { key: "authors", label: "Authors", href: "/admin/platform/authors" },
-  { key: "collections", label: "Collections", href: "/admin/platform/collections" },
-  { key: "banners", label: "Banners", href: "/admin/platform/modules?type=banner" },
-  { key: "modules", label: "Homepage sections", href: "/admin/platform/modules" },
-  { key: "reviews", label: "Submissions", href: "/admin/platform/reviews" },
-  { key: "delivery", label: "Delivery recovery", href: "/admin/platform/delivery" },
-];
-
 
 export default function AdminShell({
   active,
@@ -28,12 +12,17 @@ export default function AdminShell({
   actions,
   children,
 }: {
-  active: AdminSection;
+  active: "overview" | "books" | "platform";
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const nav = [
+    { key: "overview", label: "Overview", href: "/admin" },
+    { key: "books", label: "Books", href: "/admin/books" },
+    { key: "platform", label: "Publishing & content", href: "/admin/platform" },
+  ];
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -47,7 +36,7 @@ export default function AdminShell({
           <ul className="grid gap-1">
             {nav.map((n) => (
               <li key={n.key}>
-                <Link
+                <a
                   href={n.href}
                   aria-current={active === n.key ? "page" : undefined}
                   className={`block rounded-2 px-3 py-2 text-[15px] transition-colors ${
@@ -57,7 +46,7 @@ export default function AdminShell({
                   }`}
                 >
                   {n.label}
-                </Link>
+                </a>
               </li>
             ))}
             <li className="mt-2 border-t border-line pt-2">

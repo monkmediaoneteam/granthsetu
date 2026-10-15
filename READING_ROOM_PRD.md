@@ -5,7 +5,7 @@
 Independent premium specialist digital bookstore, initially two publications,
 with a reviewed growing catalogue. Identity remains configurable. Digital-only,
 INR, guest checkout and verified-email personal library. No print fulfilment,
-payouts, bank-detail collection, fabricated reviews, bestseller claims, or fake discounts. Admin-set per-title sale prices are allowed; a struck price must be the title's genuine regular price, the sale price is charged only inside its window, and orders snapshot both prices.
+payouts, bank-detail collection, fabricated reviews, bestseller claims, or discounts.
 Frontend and transactional email precede production payment activation.
 
 ## Experience
