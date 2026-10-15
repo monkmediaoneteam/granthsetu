@@ -6,7 +6,7 @@ const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 
 const root = path.resolve(__dirname, "..");
-let cart = { ready: true, slugs: [], error: "", add() {}, remove() {} };
+let cart = { ready: true, slugs: [], error: "", add() {}, remove() {}, drawerOpen: false, openDrawer() {}, closeDrawer() {}, lastAdded: null };
 const cache = new Map();
 function load(relative, overrides = {}) {
   if (!Object.keys(overrides).length && cache.has(relative)) return cache.get(relative);

@@ -6,6 +6,7 @@ import { STORE, siteUrl } from "@/lib/store";
 import CartProvider from "@/components/CartProvider";
 import StoreHeader from "@/components/StoreHeader";
 import SiteFooter from "@/components/SiteFooter";
+import CartDrawer from "@/components/CartDrawer";
 import { getCategories } from "@/lib/store-data";
 import { getPublicContent } from "@/lib/content";
 import { publicModules, contentUrl } from "@/components/content-data";
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <a href="#main" className="skip-link" tabIndex={0}>Skip to content</a>
     <StoreHeader name={STORE.name} nav={nav} announcement={announcement} />
     <main id="main" tabIndex={-1}>{children}</main>
+    <CartDrawer />
     <SiteFooter name={STORE.name} categories={categories} />
   </WishlistProvider></CartProvider></body></html>;
 }

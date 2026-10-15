@@ -46,3 +46,21 @@
   .qv-actions { display: flex; gap: 10px; align-items: center; } .qv-actions .cart-control { flex: 1; }
   @media (max-width: 640px) { .qv-grid { grid-template-columns: 1fr; } .qv-cover { max-width: 200px; } }
 }
+@layer components {
+  .cart-drawer { position: fixed; inset: 0 0 0 auto; margin: 0; width: min(420px, 100vw); height: 100dvh; max-height: none; padding: 0; border: 0; display: none; flex-direction: column; background: var(--card); }
+  .cart-drawer[open] { display: flex; animation: drawer-in .25s ease-out; }
+  .cart-drawer::backdrop { background: rgb(0 0 0 / 40%); }
+  @keyframes drawer-in { from { transform: translateX(100%); } to { transform: none; } }
+  .drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+  .drawer-head h2 { font-size: 20px; }
+  .drawer-added { display: flex; align-items: center; gap: 8px; margin: 12px 20px 0; padding: 10px 12px; border-radius: 8px; background: var(--offer-bg); color: var(--offer); font-weight: 650; font-size: 14px; }
+  .drawer-lines { flex: 1; overflow-y: auto; padding: 8px 20px; }
+  .drawer-lines li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding-block: 12px; border-bottom: 1px solid var(--line); }
+  .drawer-cover { width: 56px; height: 76px; background: var(--page); border-radius: 4px; overflow: hidden; } .drawer-cover img { width: 100%; height: 100%; object-fit: contain; }
+  .drawer-text { display: grid; gap: 4px; font-size: 14px; } .drawer-text a { font-weight: 650; } .drawer-text s { color: var(--muted); }
+  .icon-plain { border: 0; background: none; padding: 8px; color: var(--muted); } .icon-plain:hover { color: var(--sale); }
+  .drawer-foot { padding: 16px 20px 20px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+  .drawer-subtotal { display: flex; justify-content: space-between; font-size: 17px; }
+  .drawer-note { padding-inline: 20px; font-size: 13px; color: var(--muted); } .drawer-foot .drawer-note { padding: 0; }
+  .drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+}

@@ -15,6 +15,7 @@ import Price from "@/components/Price";
 import BookTabs from "@/components/product/BookTabs";
 import ShareButton from "@/components/product/ShareButton";
 import WishlistButton from "@/components/WishlistButton";
+import BuyNow from "@/components/BuyNow";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -67,7 +68,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
             {book.file_format && <li><span className="chip">{book.file_format}</span></li>}</ul>
           <Price book={view} size="page" />
           {view.saleable && <p className="tax-note">Digital edition · Personal-use licence</p>}
-          <div className="buy-row"><AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} />{/* Buy now: Task C4 */}</div>
+          <div className="buy-row"><AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} /><BuyNow slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} /></div>
           {!enabled && <p className="notice">Online ordering is opening soon. Save this book to your bag and check out when it opens.</p>}
           <ul className="trust-row">{[[Download, "Instant download"], [Lock, "Secure payment"], [BadgeCheck, "Licensed copy"], [Lifetime, "Lifetime library"]].map(([Icon, label]) =>
             <li key={label as string}><span className="trust-icon"><Icon size={22} aria-hidden="true" /></span>{label as string}</li>)}</ul>
