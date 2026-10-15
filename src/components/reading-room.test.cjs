@@ -31,12 +31,12 @@ function load(relative, overrides = {}) {
 }
 
 const layoutSource = fs.readFileSync(path.join(root, "app/layout.tsx"), "utf8");
-assert.match(layoutSource, /@fontsource-variable\/bricolage-grotesque/);
-assert.match(layoutSource, /@fontsource\/mukta/);
-assert.doesNotMatch(layoutSource, /fraunces|manrope/i);
+assert.match(layoutSource, /@fontsource-variable\/geist"/);
+assert.match(layoutSource, /@fontsource-variable\/geist-mono"/);
+assert.doesNotMatch(layoutSource, /bricolage|mukta|fraunces|manrope/i);
 const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
-for (const token of ["--neel: #2B2F8F", "--ink: #16182B", "--paper: #FFFFFF", "--kumkum: #C21D3A"]) assert.ok(tokens.includes(token), token);
-assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|font-display/);
+for (const token of ["--bg-2: #fafaf7", "--brand: #2f7a4d", "--gold: #b9852e", "--forest: #0b2416", "--ink: #0a0e0c", "--cream: #f4f1e6"]) assert.ok(tokens.includes(token), token);
+assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|Bricolage|Mukta/);
 const { buildNav } = load("lib/navigation.ts");
 const cats = [
   { slug: "fiction", name: "Fiction", parent_slug: null, sort: 1 }, { slug: "crime", name: "Crime", parent_slug: "fiction", sort: 1 },

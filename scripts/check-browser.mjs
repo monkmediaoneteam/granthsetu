@@ -34,7 +34,7 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
         if (images.length) failures.push(`${name}: missing images ${width} ${route}: ${images}`);
         if (route === '/') {
           await page.evaluate(() => document.fonts.ready);
-          assert.ok(await page.evaluate(() => document.fonts.check('700 32px "Bricolage Grotesque Variable"') && document.fonts.check('400 16px "Mukta"')), `${name}: local fonts loaded`);
+          assert.ok(await page.evaluate(() => document.fonts.check('500 32px "Geist Variable"') && document.fonts.check('500 12px "Geist Mono Variable"')), `${name}: local fonts loaded`);
           const hero = await page.locator('.akshara-hero h1').boundingBox();
           if (!hero || hero.y >= (width < 768 ? 800 : 1000)) failures.push(`${name}: no first-viewport hero at ${width}`);
           if (!(await page.locator('.hero-book').count())) failures.push(`${name}: hero has no covers at ${width}`);

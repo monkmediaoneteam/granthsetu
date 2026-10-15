@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "@fontsource-variable/bricolage-grotesque/standard.css";
-import "@fontsource/mukta/400.css";
-import "@fontsource/mukta/500.css";
-import "@fontsource/mukta/600.css";
-import "@fontsource/mukta/700.css";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
 // Light weights of each script, for the outlined letterforms (unicode-range keeps unused scripts from downloading).
 import "@fontsource/noto-sans-devanagari/300.css";
 import "@fontsource/noto-sans-tamil/300.css";

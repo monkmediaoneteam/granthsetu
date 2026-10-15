@@ -7,17 +7,17 @@
 @import "../styles/listing.css";
 @import "../styles/product.css";
 
-/* Tailwind utilities used by admin and account pages, mapped onto the Akshara palette. */
+/* Tailwind utilities used by admin and account pages, mapped onto the INVENTAYU palette. */
 @theme {
-  --color-bg: #FFFFFF; --color-bg-2: #F1F2F6; --color-bg-3: #E6E8EF;
-  --color-ink: #16182B; --color-ink-2: #3A3D52; --color-ink-soft: #5E6275; --color-ink-mute: #5E6275;
-  --color-line: #E2E4EC; --color-line-2: #D3D6E2;
-  --color-brand: #2B2F8F; --color-brand-deep: #1C1F66; --color-brand-glow: #ECEDFA;
-  --color-gold: #2B2F8F; --color-danger: #B91C1C;
-  --color-forest: #16182B; --color-forest-2: #2A2D45; --color-forest-line: #3A3D52; --color-cream: #F1F2F6;
-  --font-sans: "Mukta", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", monospace;
-  --radius-1: 6px; --radius-2: 10px; --radius-3: 16px;
+  --color-bg: #ffffff; --color-bg-2: #fafaf7; --color-bg-3: #efede5;
+  --color-ink: #0a0e0c; --color-ink-2: #1b201e; --color-ink-soft: #4a524f; --color-ink-mute: #3f4743;
+  --color-line: #e8e6dd; --color-line-2: #d6d3c7;
+  --color-brand: #2f7a4d; --color-brand-deep: #1f5a3a; --color-brand-glow: #5bc58a;
+  --color-gold: #b9852e; --color-danger: #b3261e;
+  --color-forest: #0b2416; --color-forest-2: #123a24; --color-forest-line: #1e4d33; --color-cream: #f4f1e6;
+  --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
+  --radius-1: 4px; --radius-2: 10px; --radius-3: 18px;
 }
 
 
