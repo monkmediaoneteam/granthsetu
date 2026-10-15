@@ -17,6 +17,16 @@ export default function SearchBox() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const latest = useRef(0);
+  const input = useRef<HTMLInputElement>(null);
+  // "/" jumps to search from anywhere on the page, as in most catalogues.
+  useEffect(() => {
+    const focus = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) && !t.isContentEditable) { e.preventDefault(); input.current?.focus(); }
+    };
+    addEventListener("keydown", focus);
+    return () => removeEventListener("keydown", focus);
+  }, []);
   useEffect(() => {
     const q = value.trim();
     if (q.length < 2) { setResult(null); return; }
@@ -42,7 +52,7 @@ export default function SearchBox() {
     if (expanded && active >= 0) { e.preventDefault(); setOpen(false); router.push(options[active].href); }
   }}>
     <label htmlFor={`${id}-input`} className="sr-only">Search books, authors and categories</label>
-    <input id={`${id}-input`} name="q" type="search" placeholder="Search by title, author or ISBN" autoComplete="off" value={value}
+    <input ref={input} id={`${id}-input`} name="q" type="search" placeholder="Search titles, authors or ISBN" autoComplete="off" value={value}
       role="combobox" aria-expanded={expanded} aria-controls={`${id}-list`} aria-autocomplete="list"
       aria-activedescendant={expanded && active >= 0 ? `${id}-opt-${active}` : undefined}
       onChange={(e) => { setValue(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)}
@@ -51,7 +61,8 @@ export default function SearchBox() {
         if (e.key === "ArrowUp" && options.length) { e.preventDefault(); setActive((i) => (i <= 0 ? options.length - 1 : i - 1)); }
         if (e.key === "Escape") { setOpen(false); setActive(-1); }
       }} />
-    <button type="submit" aria-label="Search"><Search size={18} strokeWidth={2.2} aria-hidden="true" /></button>
+    <button type="submit" aria-label="Search"><Search size={19} strokeWidth={2} aria-hidden="true" /></button>
+    <kbd className="search-key" aria-hidden="true">/</kbd>
     {expanded && <ul id={`${id}-list`} role="listbox" className="suggest-list" aria-label="Suggestions">{options.map((o, i) =>
       <li key={o.key} id={`${id}-opt-${i}`} role="option" aria-selected={i === active} className={i === active ? "active" : undefined}
         onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => setActive(i)}>

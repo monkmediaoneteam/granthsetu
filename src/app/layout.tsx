@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "@fontsource-variable/plus-jakarta-sans";
-import "@fontsource-variable/inter";
+import "@fontsource-variable/bricolage-grotesque/standard.css";
+import "@fontsource/mukta/400.css";
+import "@fontsource/mukta/500.css";
+import "@fontsource/mukta/600.css";
+import "@fontsource/mukta/700.css";
+// Light weights of each script, for the outlined letterforms (unicode-range keeps unused scripts from downloading).
+import "@fontsource/noto-sans-devanagari/300.css";
+import "@fontsource/noto-sans-tamil/300.css";
+import "@fontsource/noto-sans-bengali/300.css";
+import "@fontsource/noto-sans-gujarati/300.css";
+import "@fontsource/noto-sans-kannada/300.css";
+import "@fontsource/noto-sans-telugu/300.css";
 import { STORE, siteUrl } from "@/lib/store";
 import CartProvider from "@/components/CartProvider";
 import StoreHeader from "@/components/StoreHeader";

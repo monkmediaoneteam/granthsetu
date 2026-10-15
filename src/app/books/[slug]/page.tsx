@@ -6,6 +6,7 @@ import { getPublicContent, safeUrl } from "@/lib/content";
 import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { siteUrl } from "@/lib/store";
 import { getCategories } from "@/lib/store-data";
+import { LANGUAGE_FONT, LANGUAGE_GLYPHS } from "@/lib/languages";
 import { publicBook, visibleBook } from "@/components/book-data";
 import AddToCart from "@/components/AddToCart";
 import BookCard from "@/components/BookCard";
@@ -58,7 +59,9 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
     <div className="wrap">
       <nav className="crumbs product-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> / {category && <><Link href={`/category/${category.slug}`}>{category.name}</Link> / </>}<span aria-current="page">{book.title}</span></nav>
       <article className="product-main">
-        <div className="product-gallery"><div className="gallery-stage"><Cover src={book.cover} title={book.title} sizes="(max-width: 900px) 80vw, 420px" priority /></div>
+        <div className="product-gallery"><div className="gallery-stage">
+          <span className="gallery-glyph akshara" aria-hidden="true" style={{ fontFamily: LANGUAGE_FONT[view.language ?? ""] ?? "var(--font-head)" }}>{LANGUAGE_GLYPHS[view.language ?? ""] ?? "A"}</span>
+          <Cover src={book.cover} title={book.title} sizes="(max-width: 900px) 80vw, 420px" priority /></div>
           {sample && <a className="btn btn-outline sample-btn" href={sample} target="_blank" rel="noopener noreferrer"><BookOpen size={17} aria-hidden="true" /> Read a sample</a>}</div>
         <div className="product-info">
           <div className="title-row"><h1>{book.title}</h1><div className="title-actions"><WishlistButton slug={book.slug} title={book.title} variant="page" /><ShareButton title={book.title} url={url} /></div></div>

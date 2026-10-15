@@ -14,7 +14,7 @@ export default function AddToCart({ slug, title, enabled, saleable, saveable }: 
   const label = !canSave ? "Unavailable" : full ? "Bag is full" : enabled ? "Add to bag" : "Save to bag";
   return <div className="cart-control">
     {added ? <Link className="btn btn-outline card-add" href="/cart"><Check size={17} aria-hidden="true" /> In your bag</Link>
-      : <motion.button className="btn btn-yellow card-add" type="button" disabled={!cart.ready || !canSave || full}
+      : <motion.button className="btn btn-neel card-add" type="button" disabled={!cart.ready || !canSave || full}
         whileTap={{ scale: reduced ? 1 : .96 }} transition={{ duration: .12 }}
         onClick={() => cart.add(slug)} aria-label={`${label}: ${title}`}>
         <ShoppingBag size={17} aria-hidden="true" />{label}

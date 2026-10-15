@@ -19,8 +19,8 @@ export default function StoreHeader({ name, nav, announcement }: {
   const count = ready ? slugs.length : 0;
   return <header className="site-header">
     {announcement && <div className="announcement-bar">{announcement.link_url ? <Link href={announcement.link_url}>{announcement.title}</Link> : announcement.title}</div>}
-    <div className="header-yellow"><div className="wrap header-row">
-      <Link href="/" className="logo" aria-label={`${name}, home`}><span className="logo-mark" aria-hidden="true">R</span><span>{brand}{by && <small>by {by}</small>}</span></Link>
+    <div className="header-bar"><div className="wrap header-row">
+      <Link href="/" className="logo" aria-label={`${name}, home`}><span className="logo-mark" aria-hidden="true">अ</span><span>{brand}{by && <small>by {by}</small>}</span></Link>
       <SearchBox />
       <nav className="header-icons" aria-label="Your account">
         <Link href="/wishlist" aria-label={`Wishlist, ${wishlist.slugs.length} ${wishlist.slugs.length === 1 ? "book" : "books"}`}><Heart size={22} strokeWidth={2} aria-hidden="true" />{wishlist.slugs.length > 0 && <span className="count-badge">{wishlist.slugs.length}</span>}</Link>

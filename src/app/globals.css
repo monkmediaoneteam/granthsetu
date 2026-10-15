@@ -7,17 +7,17 @@
 @import "../styles/listing.css";
 @import "../styles/product.css";
 
-/* Tailwind utilities used by admin and legacy pages, mapped onto the retail palette. */
+/* Tailwind utilities used by admin and account pages, mapped onto the Akshara palette. */
 @theme {
-  --color-bg: #ffffff; --color-bg-2: #F4F4F5; --color-bg-3: #E4E4E7;
-  --color-ink: #111111; --color-ink-2: #3F3F46; --color-ink-soft: #52525B; --color-ink-mute: #71717A;
-  --color-line: #E4E4E7; --color-line-2: #D4D4D8;
-  --color-brand: #111111; --color-brand-deep: #000000; --color-brand-glow: #FFD93D;
-  --color-gold: #F5C400; --color-danger: #B91C1C;
-  --color-forest: #111111; --color-forest-2: #27272A; --color-forest-line: #3F3F46; --color-cream: #FFFBEA;
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-bg: #FFFFFF; --color-bg-2: #F1F2F6; --color-bg-3: #E6E8EF;
+  --color-ink: #16182B; --color-ink-2: #3A3D52; --color-ink-soft: #5E6275; --color-ink-mute: #5E6275;
+  --color-line: #E2E4EC; --color-line-2: #D3D6E2;
+  --color-brand: #2B2F8F; --color-brand-deep: #1C1F66; --color-brand-glow: #ECEDFA;
+  --color-gold: #2B2F8F; --color-danger: #B91C1C;
+  --color-forest: #16182B; --color-forest-2: #2A2D45; --color-forest-line: #3A3D52; --color-cream: #F1F2F6;
+  --font-sans: "Mukta", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", monospace;
-  --radius-1: 4px; --radius-2: 8px; --radius-3: 12px;
+  --radius-1: 6px; --radius-2: 10px; --radius-3: 16px;
 }
 
 

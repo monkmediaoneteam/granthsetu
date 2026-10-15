@@ -16,7 +16,8 @@ export default function Listing({ base, title, intro, banner, books, params, cat
   const chips = groups.flatMap((g) => g.options.filter((o) => o.active).map((o) => ({ key: g.key, label: o.label })));
   if (params.q) chips.unshift({ key: "q" as never, label: `"${params.q}"` });
   return <div className="listing">
-    <div className="listing-banner" style={{ ["--tile" as string]: banner?.colour ?? "#FFD93D" }}>
+    <div className="listing-banner" style={{ ["--tile" as string]: banner?.colour ?? "var(--neel)" }}>
+      <span className="listing-glyph akshara" aria-hidden="true">{title.replace(/^[^\p{L}]+/u, "").charAt(0)}</span>
       <div className="wrap"><nav className="crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> / <span aria-current="page">{title}</span></nav>
         <h1>{title}</h1>{intro && <p>{intro}</p>}{children}</div>
       {banner?.image && <img src={banner.image} alt="" className="listing-art" />}

@@ -28,18 +28,27 @@ const LANGUAGES = ['English', 'English', 'English', 'Hindi', 'Marathi', 'Tamil',
 const slugify = value => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const escapeXml = value => value.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);
 
-export function demoCover(title, author, colour) {
+// Each title gets its own colour and abstract composition so demo shelves show real variety.
+const COVER_COLOURS = ['#C2410C', '#166534', '#1F2937', '#1D4ED8', '#BE185D', '#B45309', '#4338CA', '#0F766E', '#7C2D12', '#D97706', '#3F6212', '#9F1239', '#0E7490', '#6D28D9', '#15803D'];
+const COVER_SHAPES = [
+  '<circle cx="240" cy="330" r="120" fill="#fff" opacity=".14"/><circle cx="240" cy="330" r="70" fill="#fff" opacity=".14"/>',
+  '<path d="M0 300 Q150 220 300 300 V450 H0Z" fill="#fff" opacity=".16"/><path d="M0 345 Q150 275 300 345 V450 H0Z" fill="#fff" opacity=".12"/>',
+  '<rect x="40" y="200" width="220" height="190" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2"/><rect x="80" y="240" width="140" height="110" fill="#fff" opacity=".1"/>',
+  '<g stroke="#fff" stroke-opacity=".24" stroke-width="2">' + Array.from({ length: 9 }, (_, k) => `<line x1="${k * 40}" y1="450" x2="${k * 40 + 160}" y2="200"/>`).join('') + '</g>',
+  '<circle cx="60" cy="380" r="150" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/><circle cx="60" cy="380" r="100" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/><circle cx="60" cy="380" r="50" fill="#fff" opacity=".12"/>',
+];
+export function demoCover(title, author, seed = 0) {
   const words = title.split(' ');
   const lines = [];
   for (const word of words) {
     const last = lines.at(-1);
-    if (last && (last + ' ' + word).length <= 14) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
+    if (last && (last + ' ' + word).length <= 13) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
   }
-  const text = lines.map((line, i) => `<text x="30" y="${110 + i * 38}" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="800" fill="#ffffff">${escapeXml(line)}</text>`).join('');
+  const colour = COVER_COLOURS[(seed * 7) % COVER_COLOURS.length];
+  const text = lines.map((line, i) => `<text x="28" y="${84 + i * 36}" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="700" letter-spacing="-1" fill="#ffffff">${escapeXml(line)}</text>`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">`
-    + `<rect width="300" height="450" fill="${colour}"/><rect x="0" y="0" width="14" height="450" fill="#000" opacity=".18"/>`
-    + `<circle cx="250" cy="390" r="90" fill="#fff" opacity=".12"/>${text}`
-    + `<text x="30" y="410" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#ffffff" opacity=".9">${escapeXml(author)}</text></svg>`;
+    + `<rect width="300" height="450" fill="${colour}"/>${COVER_SHAPES[seed % COVER_SHAPES.length]}${text}`
+    + `<text x="28" y="418" font-family="Arial,Helvetica,sans-serif" font-size="17" fill="#ffffff" fill-opacity=".88">${escapeXml(author)}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
@@ -56,7 +65,7 @@ export function demoCatalogue(now = new Date()) {
       books.push({
         slug: `demo-${slugify(title)}`, title, category_slug: slug, authorship: author.name, author_slug: author.id,
         description: `${title} is a demo listing used to preview the store at full scale. It is not a real book.`,
-        cover: demoCover(title, author.name, colour), price_inr: price,
+        cover: demoCover(title, author.name, n), price_inr: price,
         sale_price_inr: n % 3 === 0 ? Math.round(price * 0.8 / 100) * 100 : null,
         release_date: n % 11 === 0 ? day(10 + n) : day(-30 - n), language: LANGUAGES[n % LANGUAGES.length],
         file_format: n % 4 === 0 ? 'EPUB' : 'PDF', pages: 120 + (n * 37) % 400, year: 2020 + (n % 6),

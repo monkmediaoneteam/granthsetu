@@ -46,7 +46,7 @@ export default function CartDrawer() {
       {lines && payable.length > 0 && <p className="drawer-subtotal"><span>Subtotal</span><strong>{rupees(subtotal)}</strong></p>}
       <p className="drawer-note">Final prices are confirmed at checkout.</p>
       <div className="drawer-actions"><Link className="btn btn-outline" href="/cart" onClick={cart.closeDrawer}>View bag</Link>
-        <Link className="btn btn-yellow" href="/checkout" onClick={cart.closeDrawer}>Checkout</Link></div>
+        <Link className="btn btn-neel" href="/checkout" onClick={cart.closeDrawer}>Checkout</Link></div>
     </div>
   </dialog>;
 }

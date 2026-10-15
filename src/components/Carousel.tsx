@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 export default function Carousel({ title, tagline, href, label, children }: { title: string; tagline?: string; href?: string; label?: string; children: ReactNode }) {
@@ -28,7 +28,7 @@ export default function Carousel({ title, tagline, href, label, children }: { ti
         {!(edges.start && edges.end) && <>
           <button type="button" className="round-btn" onClick={() => page(-1)} disabled={edges.start} aria-label={`Previous in ${title}`}><ChevronLeft size={20} aria-hidden="true" /></button>
           <button type="button" className="round-btn" onClick={() => page(1)} disabled={edges.end} aria-label={`Next in ${title}`}><ChevronRight size={20} aria-hidden="true" /></button></>}
-        {href && <Link className="btn btn-outline" href={href}>Show all <ArrowUpRight size={16} aria-hidden="true" /></Link>}
+        {href && <Link className="link-line" href={href}>See all</Link>}
       </div></div>
     <ul ref={track} className="carousel-track" onScroll={measure}>{items.map((item, i) => <li key={i}>{item}</li>)}</ul>
   </section>;

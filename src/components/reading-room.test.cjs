@@ -31,11 +31,11 @@ function load(relative, overrides = {}) {
 }
 
 const layoutSource = fs.readFileSync(path.join(root, "app/layout.tsx"), "utf8");
-assert.match(layoutSource, /@fontsource-variable\/plus-jakarta-sans/);
-assert.match(layoutSource, /@fontsource-variable\/inter/);
+assert.match(layoutSource, /@fontsource-variable\/bricolage-grotesque/);
+assert.match(layoutSource, /@fontsource\/mukta/);
 assert.doesNotMatch(layoutSource, /fraunces|manrope/i);
 const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
-for (const token of ["--yellow: #FFD93D", "--ink: #111111", "--page: #F7F7F7", "--offer: #15803D"]) assert.ok(tokens.includes(token), token);
+for (const token of ["--neel: #2B2F8F", "--ink: #16182B", "--paper: #FFFFFF", "--kumkum: #C21D3A"]) assert.ok(tokens.includes(token), token);
 assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|font-display/);
 const { buildNav } = load("lib/navigation.ts");
 const cats = [

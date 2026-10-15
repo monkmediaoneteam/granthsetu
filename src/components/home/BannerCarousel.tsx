@@ -5,8 +5,12 @@ import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import type { Banner } from "@/lib/home";
+import Cover from "../Cover";
 
-export default function BannerCarousel({ banners }: { banners: Banner[] }) {
+// Script letterforms drifting behind the copy: the band carries the identity, admin supplies the words.
+const SCRIPT_ROW = "अ आ इ ई உ ஊ এ ঐ ઓ ಔ క ఖ ক খ গ ઘ ङ ச ஞ ಟ ఠ ड ढ ण";
+
+export default function BannerCarousel({ banners, covers = [] }: { banners: Banner[]; covers?: { slug: string; title: string; cover: string | null }[] }) {
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -26,9 +30,12 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
     onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)}>
     <div className="banner-viewport">{banners.map((b, i) => <div key={b.id} className={`banner-slide theme-${b.theme}`} hidden={i !== index}
       role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${banners.length}`}>
+      <div className="band-script" aria-hidden="true"><span>{SCRIPT_ROW} {SCRIPT_ROW}</span><span>{SCRIPT_ROW} {SCRIPT_ROW}</span></div>
       {b.image && <picture className="banner-art">{b.mobileImage && <source media="(max-width: 640px)" srcSet={b.mobileImage} />}<img src={b.image} alt="" /></picture>}
       <div className="banner-copy">{b.subtitle && <p className="banner-kicker">{b.subtitle}</p>}<h2>{b.title}</h2>{b.body && <p>{b.body}</p>}
-        {b.href && <Link className="btn btn-dark" href={b.href}>{b.label || "Shop now"}</Link>}</div>
+        {b.href && <Link className="btn band-btn" href={b.href}>{b.label || "Shop now"}</Link>}</div>
+      {!b.image && covers.length >= 3 && <div className="band-books" aria-hidden="true">{[0, 1, 2].map((k) => covers[(i * 3 + k) % covers.length]).map((c) =>
+        <span key={c.slug} className="band-book"><Cover src={c.cover} title={c.title} sizes="160px" /></span>)}</div>}
     </div>)}</div>
     {many && <div className="banner-controls">
       <button type="button" className="round-btn" onClick={() => go(-1)} aria-label="Previous offer"><ChevronLeft size={18} aria-hidden="true" /></button>

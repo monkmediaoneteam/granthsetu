@@ -4,9 +4,8 @@ import type { Category } from "./store-data";
 import { contentUrl, publicModules } from "@/components/content-data";
 
 // Native-script glyphs for the language shelf (written as characters, not escapes).
-export const LANGUAGE_GLYPHS: Record<string, string> = {
-  English: "Aa", Hindi: "हि", Marathi: "म", Gujarati: "ગ", Tamil: "த", Telugu: "తె", Bengali: "বা", Kannada: "ಕ", Malayalam: "മ", Sanskrit: "सं", Urdu: "اُ", Punjabi: "ਪੰ",
-};
+import { LANGUAGE_GLYPHS } from "./languages";
+export { LANGUAGE_FONT, LANGUAGE_GLYPHS, LANGUAGE_NATIVE } from "./languages";
 export type HomeInput = { books: PublicBook[]; categories: Category[]; modules: ContentModule[]; bestsellers: string[];
   authors: { id: string; name: string; photo_url: string | null }[]; now: Date };
 export type Banner = { id: string; title: string; body: string | null; subtitle: string | null; image: string | null; mobileImage: string | null; href: string | null; label: string | null; theme: string };
@@ -51,7 +50,7 @@ export function buildHome({ books, categories, modules, bestsellers, authors, no
   for (const b of books) if (b.language) counts.set(b.language, (counts.get(b.language) ?? 0) + 1);
   const languages = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([name, count]) => ({ name, count, glyph: LANGUAGE_GLYPHS[name] ?? name.slice(0, 2) }));
-  const categoryTiles = categories.filter((c) => inCategory(c.slug).length).slice(0, 8).map((c) => ({ slug: c.slug, name: c.name, colour: c.colour,
+  const categoryTiles = categories.filter((c) => inCategory(c.slug).length).slice(0, 12).map((c) => ({ slug: c.slug, name: c.name, colour: c.colour, count: inCategory(c.slug).length,
     image: contentUrl(c.image_url), covers: inCategory(c.slug).flatMap((b) => b.cover ? [b.cover] : []).slice(0, 3) }));
   const withBooks = new Set(books.map((b) => b.author_slug).filter(Boolean));
   return { banners, promos, rails, genres, languages, categoryTiles, authors: authors.filter((a) => withBooks.has(a.id)).slice(0, 10) };

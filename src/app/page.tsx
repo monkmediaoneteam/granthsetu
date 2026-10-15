@@ -4,11 +4,10 @@ import { buildHome } from "@/lib/home";
 import { siteUrl } from "@/lib/store";
 import BookCard from "@/components/BookCard";
 import Carousel from "@/components/Carousel";
+import AksharaHero from "@/components/home/AksharaHero";
 import BannerCarousel from "@/components/home/BannerCarousel";
-import PromoGrid from "@/components/home/PromoGrid";
-import GenreSwitcher from "@/components/home/GenreSwitcher";
+import SubjectIndex from "@/components/home/SubjectIndex";
 import LanguageShelf from "@/components/home/LanguageShelf";
-import CategoryTiles from "@/components/home/CategoryTiles";
 import AuthorStrip from "@/components/home/AuthorStrip";
 import PublishBanner from "@/components/home/PublishBanner";
 
@@ -20,21 +19,24 @@ export default async function Home() {
   const [books, categories, content, bestsellers, authors] = await Promise.all([getStoreBooks(now), getCategories(), getPublicContent(), bestsellerSlugs(), getPublishedAuthors()]);
   const home = buildHome({ books, categories, modules: content.modules, bestsellers, authors, now });
   const enabled = process.env.COMMERCE_ENABLED === "true";
-  const rail = (key: string) => home.rails.find((r) => r.key === key);
   const railView = (key: string) => {
-    const r = rail(key);
+    const r = home.rails.find((rail) => rail.key === key);
     return r && <div className="wrap section" key={key}><Carousel title={r.title} tagline={r.tagline} href={r.href}>{r.books.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>;
   };
+  // Hero covers: the strongest shelves first, three at a time, only books that have a cover.
+  const featured = [...(home.rails.find((r) => r.key === "bestsellers")?.books ?? []), ...books]
+    .filter((b, i, all) => b.cover && all.findIndex((x) => x.slug === b.slug) === i).slice(0, 21)
+    .map(({ slug, title, cover }) => ({ slug, title, cover }));
+  const heroSets = Array.from({ length: Math.floor(featured.length / 3) }, (_, i) => featured.slice(i * 3, i * 3 + 3));
+  const offerCovers = books.filter((b) => b.onSale && b.cover).map(({ slug, title, cover }) => ({ slug, title, cover }));
   return <>
-    <h1 className="sr-only">Digital books across every category</h1>
-    <BannerCarousel banners={home.banners} />
+    <AksharaHero languages={home.languages.map((l) => l.name)} covers={heroSets} />
     {railView("bestsellers")}
-    <PromoGrid promos={home.promos} enabled={enabled} />
+    <BannerCarousel banners={home.banners} covers={offerCovers.length >= 3 ? offerCovers : featured} />
     {railView("new")}
     {railView("offers")}
-    <GenreSwitcher genres={home.genres} enabled={enabled} />
+    <SubjectIndex subjects={home.categoryTiles.map(({ slug, name, count, covers }) => ({ slug, name, count, covers }))} />
     {railView("soon")}
-    <CategoryTiles tiles={home.categoryTiles} />
     <LanguageShelf languages={home.languages} />
     <AuthorStrip authors={home.authors} />
     <PublishBanner />
