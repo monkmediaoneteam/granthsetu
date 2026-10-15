@@ -29,6 +29,13 @@ function load(relative, overrides = {}) {
   return module.exports;
 }
 
+const layoutSource = fs.readFileSync(path.join(root, "app/layout.tsx"), "utf8");
+assert.match(layoutSource, /@fontsource-variable\/plus-jakarta-sans/);
+assert.match(layoutSource, /@fontsource-variable\/inter/);
+assert.doesNotMatch(layoutSource, /fraunces|manrope/i);
+const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
+for (const token of ["--yellow: #FFD93D", "--ink: #111111", "--page: #F7F7F7", "--offer: #15803D"]) assert.ok(tokens.includes(token), token);
+assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|font-display/);
 const { parseCart, cartTotals } = load("components/CartProvider.tsx");
 assert.deepEqual(parseCart(null), []);
 assert.deepEqual(parseCart("not-json"), []);
