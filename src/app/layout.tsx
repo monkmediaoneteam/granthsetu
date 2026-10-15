@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowUpRight, BookOpen } from "lucide-react";
 import "./globals.css";
 import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/inter";
 import { STORE, siteUrl } from "@/lib/store";
 import CartProvider from "@/components/CartProvider";
 import StoreHeader from "@/components/StoreHeader";
+import SiteFooter from "@/components/SiteFooter";
+import { getCategories } from "@/lib/store-data";
+import { getPublicContent } from "@/lib/content";
+import { publicModules, contentUrl } from "@/components/content-data";
+import { buildNav } from "@/lib/navigation";
 
 const SITE = siteUrl();
 export const metadata: Metadata = {
@@ -17,17 +20,21 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// A database error must never take down every page: the frame falls back to an empty menu.
+async function frameData() {
+  try {
+    const [categories, content] = await Promise.all([getCategories(), getPublicContent()]);
+    const announcement = publicModules(content.modules).find((m) => m.type === "announcement") ?? null;
+    return { nav: buildNav(categories), categories, announcement: announcement && { title: announcement.title, link_url: contentUrl(announcement.link_url) } };
+  } catch { console.error("[layout] storefront frame data unavailable"); return { nav: { primary: [], more: [] }, categories: [], announcement: null }; }
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { nav, categories, announcement } = await frameData();
   return <html lang="en" data-scroll-behavior="smooth"><body><CartProvider>
     <a href="#main" className="skip-link" tabIndex={0}>Skip to content</a>
-    <StoreHeader name={STORE.name} />
+    <StoreHeader name={STORE.name} nav={nav} announcement={announcement} />
     <main id="main" tabIndex={-1}>{children}</main>
-    <footer className="store-footer"><div className="wrap footer-grid">
-      <div><Link className="footer-brand" href="/"><BookOpen size={32} strokeWidth={1.8} aria-hidden="true" /><span>{STORE.name.includes(" by ") ? <>{STORE.name.split(" by ")[0]}<small>by {STORE.name.split(" by ").slice(1).join(" by ")}</small></> : STORE.name}</span></Link>
-        <p>Books, research, and curious minds.</p>
-      </div>
-      <div><p className="eyebrow">Explore</p><Link href="/catalogue">Catalogue</Link><Link href="/library">My library</Link><Link href="/publish">Publish with us <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
-      <div><p className="eyebrow">The details</p>{[["Privacy", "/privacy"], ["Terms", "/terms"], ["Refunds", "/refund-policy"], ["Delivery", "/delivery-policy"]].map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div>
-    </div><div className="wrap footer-bottom"><span>{STORE.name}</span><span>Digital books. Lasting ideas.</span></div></footer>
+    <SiteFooter name={STORE.name} categories={categories} />
   </CartProvider></body></html>;
 }

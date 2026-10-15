@@ -36,6 +36,18 @@ assert.doesNotMatch(layoutSource, /fraunces|manrope/i);
 const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
 for (const token of ["--yellow: #FFD93D", "--ink: #111111", "--page: #F7F7F7", "--offer: #15803D"]) assert.ok(tokens.includes(token), token);
 assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|font-display/);
+const { buildNav } = load("lib/navigation.ts");
+const cats = [
+  { slug: "fiction", name: "Fiction", parent_slug: null, sort: 1 }, { slug: "crime", name: "Crime", parent_slug: "fiction", sort: 1 },
+  { slug: "science", name: "Science", parent_slug: null, sort: 0 },
+  ...Array.from({ length: 8 }, (_, i) => ({ slug: `c${i}`, name: `Cat ${i}`, parent_slug: null, sort: 10 + i })),
+];
+const nav = buildNav(cats, 7);
+assert.deepEqual(nav.primary.slice(0, 2).map(c => c.slug), ["science", "fiction"]);
+assert.deepEqual(nav.primary[1].children.map(c => c.slug), ["crime"]);
+assert.equal(nav.primary.length, 7);
+assert.equal(nav.more.length, 3);
+assert.ok(!nav.primary.some(c => c.slug === "crime"), "children never appear as top-level items");
 const { parseCart, cartTotals } = load("components/CartProvider.tsx");
 assert.deepEqual(parseCart(null), []);
 assert.deepEqual(parseCart("not-json"), []);
@@ -338,6 +350,14 @@ async function checkHomepage() {
   const urls = (await sitemap()).map(item => item.url).join("\n");
   assert.match(urls, /books\/real-book/);
   assert.doesNotMatch(urls, /books\/unapproved/);
+  const Header = load("components/StoreHeader.tsx", { "next/navigation": { usePathname: () => "/" } }).default;
+  const header = renderToStaticMarkup(React.createElement(Header, { name: "Reading Room by INVENTAYU", nav,
+    announcement: { title: "Festive reads: up to 20% off", link_url: "/search?offer=1" } }));
+  assert.match(header, /Festive reads: up to 20% off/);
+  assert.match(header, /href="\/category\/fiction"/);
+  assert.match(header, /href="\/category\/crime"/);
+  assert.match(header, /<form[^>]+action="\/search"/);
+  assert.doesNotMatch(renderToStaticMarkup(React.createElement(Header, { name: "x", nav, announcement: null })), /announcement-bar/);
   const Shell = load("components/AdminShell.tsx").default;
   const shell = renderToStaticMarkup(React.createElement(Shell, { active: "orders", title: "Orders" }, "body"));
   for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/platform/modules?type=banner", "/admin/platform/delivery"])
