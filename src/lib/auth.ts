@@ -33,19 +33,30 @@ function createAuthentication() {
     plugins: [magicLink({
       expiresIn: 15 * 60,
       storeToken: 'hashed',
-      async sendMagicLink({ email, url }) {
-        const key = requireEnv('RESEND_API_KEY', 'Transactional email must be configured.');
-        const response = await fetch('https://api.resend.com/emails', {
-          method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-          body: JSON.stringify({ from: requireEnv('MAIL_FROM', 'Configure a verified sender.'), to: email,
-            subject: `Your ${STORE.name} sign-in link`,
-            text: `Sign in to your library and publishing workspace: ${url}\nThis link expires in 15 minutes. Ignore this email if you did not request it.` }),
-          signal: AbortSignal.timeout(15000),
-        });
-        if (!response.ok) throw new Error('Sign-in email could not be delivered.');
-      },
+      sendMagicLink: ({ email, url }) => deliverMagicLink(email, url),
     }), nextCookies()],
   });
+}
+
+// Outside production the link is also printed to the server log, so local sign-in
+// works before the sending domain is verified. Production still requires delivery.
+export async function deliverMagicLink(email: string, url: string) {
+  const local = process.env.NODE_ENV !== 'production';
+  if (local) console.info(`[auth] Development sign-in link for ${email}: ${url}`);
+  try {
+    const key = requireEnv('RESEND_API_KEY', 'Transactional email must be configured.');
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ from: requireEnv('MAIL_FROM', 'Configure a verified sender.'), to: email,
+        subject: `Your ${STORE.name} sign-in link`,
+        text: `Sign in to your library and publishing workspace: ${url}\nThis link expires in 15 minutes. Ignore this email if you did not request it.` }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw new Error('Sign-in email could not be delivered.');
+  } catch (error) {
+    if (!local) throw error;
+    console.warn('[auth] Sign-in email was not delivered; use the development link above.');
+  }
 }
 
 let authentication: ReturnType<typeof createAuthentication> | undefined;
