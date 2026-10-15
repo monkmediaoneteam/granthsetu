@@ -16,10 +16,9 @@ export default function Listing({ base, title, intro, banner, books, params, cat
   const chips = groups.flatMap((g) => g.options.filter((o) => o.active).map((o) => ({ key: g.key, label: o.label })));
   if (params.q) chips.unshift({ key: "q" as never, label: `"${params.q}"` });
   return <div className="listing">
-    <div className="listing-banner" style={{ ["--tile" as string]: banner?.colour ?? "var(--neel)" }}>
-      <span className="listing-glyph akshara" aria-hidden="true">{title.replace(/^[^\p{L}]+/u, "").charAt(0)}</span>
-      <div className="wrap"><nav className="crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> / <span aria-current="page">{title}</span></nav>
-        <h1>{title}</h1>{intro && <p>{intro}</p>}{children}</div>
+    <div className="listing-banner" style={{ ["--tile" as string]: banner?.colour ?? "var(--brand)" }}>
+      <div className="wrap"><nav className="crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">{title}</span></nav>
+        <h1 className="enter">{title}</h1>{intro && <p>{intro}</p>}{children}</div>
       {banner?.image && <img src={banner.image} alt="" className="listing-art" />}
     </div>
     <div className="wrap listing-layout">
@@ -36,7 +35,7 @@ export default function Listing({ base, title, intro, banner, books, params, cat
       </aside>
       <section className="results" aria-label="Results">
         <div className="results-bar"><p role="status">{page.total} {page.total === 1 ? "book" : "books"}</p>
-          <nav aria-label="Sort" className="sort-row"><span>Sort by</span>{SORT_LABELS.map(([value, label]) =>
+          <nav aria-label="Sort" className="sort-row"><span className="eyebrow">Sort</span>{SORT_LABELS.map(([value, label]) =>
             <Link key={value || "relevance"} className="chip" aria-current={params.sort === value ? "true" : undefined} href={listingHref(base, params, { sort: value })}>{label}</Link>)}</nav></div>
         {chips.length > 0 && <ul className="active-chips" aria-label="Active filters">{chips.map((c) =>
           <li key={c.key}><Link className="chip" href={listingHref(base, params, { [c.key]: c.key === "offer" ? false : "" } as Partial<ListingParams>)} aria-label={`Remove filter ${c.label}`}>{c.label}<X size={14} aria-hidden="true" /></Link></li>)}
