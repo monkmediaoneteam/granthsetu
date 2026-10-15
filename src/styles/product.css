@@ -2,9 +2,9 @@
   .product-page { padding-bottom: 24px; }
   .product-crumbs { padding-block: 16px; }
   .product-main { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 40px; align-items: start; }
-  .product-gallery { position: sticky; top: 12px; display: grid; gap: 12px; }
-  .gallery-stage { display: grid; place-items: center; aspect-ratio: 4 / 5; padding: 32px; background: var(--card); border-radius: 16px; }
-  .gallery-stage img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 16px 24px rgb(0 0 0 / 18%)); }
+  .product-gallery { position: sticky; top: 12px; display: grid; gap: 12px; min-width: 0; }
+  .gallery-stage { display: grid; place-items: center; min-width: 0; aspect-ratio: 4 / 5; padding: 32px; background: var(--card); border-radius: 16px; overflow: hidden; }
+  .gallery-stage img { min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 16px 24px rgb(0 0 0 / 18%)); }
   .sample-btn { justify-self: center; }
   .title-row { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
   .product-info h1 { font-size: clamp(28px, 3.4vw, 40px); font-weight: 800; }

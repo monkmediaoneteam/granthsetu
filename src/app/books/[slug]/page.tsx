@@ -40,7 +40,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const similar = others.filter((o) => o.category_slug && o.category_slug === book.category_slug && !byAuthor.includes(o)).slice(0, 12);
   const details: [typeof BookOpen, string, string | number | null | undefined][] = [
     [FileText, "Format", book.file_format], [Layers, "Pages", book.pages], [Globe2, "Language", view.language], [Hash, "ISBN", book.isbn],
-    [Building2, "Publisher", book.publisher], [BookOpen, "Edition", view.edition], [BadgeCheck, "Published", book.release_date ? String(book.release_date).slice(0, 10) : book.year],
+    [Building2, "Publisher", book.publisher], [BookOpen, "Edition", view.edition], [BadgeCheck, "Published", view.release_date ?? book.year],
   ];
   const facts = Object.entries(book.facts || {}).filter(([k]) => !k.startsWith("_"));
   const paragraphs = (book.long_description || "").split(/\n\s*\n/).filter(Boolean);
