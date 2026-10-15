@@ -7,14 +7,13 @@ export default async function PublishPage() {
   const reader = await getReader();
   const start = reader ? "/author" : "/login?next=/author";
   return <div className="wrap page-shell">
-    <section className="publish-banner"><div><h1>Publish your digital edition</h1>
-      <p>Reach readers across India. Every submission gets editorial review, rights clearance and agreed commercial terms before it goes on sale.</p>
-      <Link className="btn btn-neel" href={start}>{reader ? "Open your author workspace" : "Sign in to start"}</Link></div>
-      <div className="publish-art" aria-hidden="true"><span /><span /><span /></div></section>
-    <section className="section"><div className="section-head"><div><h2>How it works</h2></div></div>
-      <ol className="steps"><li>Create your author profile</li><li>Upload your manuscript, cover and sample</li><li>Editorial and rights review</li><li>Release and start selling</li></ol></section>
-    <section className="section panel"><h2>What we accept</h2>
-      <ul className="contents-list"><li>PDF or EPUB files</li><li>Original work, or work you hold the digital rights to</li><li>A cover image at least 1600 pixels tall</li><li>An optional free sample for readers</li></ul>
-      <p className="tax-note">Approval does not release a title for sale on its own; rights, terms and clean files are all required. <Link className="text-link" href="/terms">Read the terms</Link></p></section>
+    <section className="publish-band reveal"><div><p className="eyebrow">For authors</p><h1>Publish your digital edition</h1>
+      <p>Editorial review, fair terms, readers across India.</p>
+      <Link className="btn btn-light" href={start}>{reader ? "Open your workspace" : "Sign in to start"} <span aria-hidden="true">→</span></Link></div></section>
+    <section className="section"><div className="section-head"><h2>How it works</h2></div>
+      <ol className="steps">{["Create your profile", "Upload files", "Editorial and rights review", "Release and sell"].map((s) => <li key={s} className="surface reveal">{s}</li>)}</ol></section>
+    <section className="section"><div className="section-head"><h2>What we accept</h2></div>
+      <ul className="entry-chips">{["PDF or EPUB", "Your own work or digital rights", "Cover 1600px tall or more", "Optional free sample"].map((s) => <li key={s} className="chip">{s}</li>)}</ul>
+      <p className="tax-note">Approval alone does not release a title; rights, terms and clean files are required. <Link className="text-link" href="/terms">Terms</Link></p></section>
   </div>;
 }

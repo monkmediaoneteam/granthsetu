@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Cover from "@/components/Cover";
 import Link from "next/link";
 import { ArrowRight, ShoppingBag, Trash2 } from "lucide-react";
 import { cartTotals, useCart } from "@/components/CartProvider";
@@ -19,7 +19,7 @@ export default function CartContents({ books, enabled }: { books: PublicBook[]; 
   const unavailable = !totals || missing.length > 0 || selected.some((book) => !book.saleable);
   return <div className="cart-layout">
     <div>{selected.map((book) => <article className="cart-row" key={book.slug}>
-      <Link href={`/books/${encodeURIComponent(book.slug)}`} tabIndex={-1} aria-hidden="true">{book.cover && <Image src={book.cover} unoptimized={book.cover.startsWith("https://")} alt="" width={112} height={140} />}</Link>
+      <Link href={`/books/${encodeURIComponent(book.slug)}`} tabIndex={-1} aria-hidden="true"><Cover src={book.cover} title={book.title} sizes="88px" /></Link>
       <div><h2><Link href={`/books/${encodeURIComponent(book.slug)}`}>{book.title}</Link></h2>{book.file_format && <p className="small muted">{book.file_format} digital edition</p>}{book.saleable && book.price > 0 ? <Price book={book} /> : <p className="small muted">Not yet on sale</p>}{!book.saleable && <p className="small muted">{enabled ? "Not available for purchase" : "Saved for later"}</p>}</div>
       <button className="icon-button" type="button" title={`Remove ${book.title}`} aria-label={`Remove ${book.title} from bag`} onClick={() => cart.remove(book.slug)}><Trash2 size={19} aria-hidden="true" /></button>
     </article>)}
