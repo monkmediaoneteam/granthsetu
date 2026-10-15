@@ -10,6 +10,7 @@
     "seed": "node --env-file=.env.local scripts/seed.mjs",
     "test": "node scripts/test-all.mjs",
     "test:browser": "node scripts/check-browser.mjs",
+    "test:admin": "node scripts/check-admin.mjs",
     "preview:isolated": "node scripts/dev-preview.mjs",
     "sample-pdf": "node scripts/make-sample-pdf.mjs"
   },
