@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Search, ShoppingBag, UserRound } from "lucide-react";
+import { Heart, ShoppingBag, UserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useCart } from "./CartProvider";
 import CategoryBar from "./CategoryBar";
+import SearchBox from "./SearchBox";
 import type { NavCategory } from "@/lib/navigation";
 
 export default function StoreHeader({ name, nav, announcement }: {
@@ -18,11 +19,7 @@ export default function StoreHeader({ name, nav, announcement }: {
     {announcement && <div className="announcement-bar">{announcement.link_url ? <Link href={announcement.link_url}>{announcement.title}</Link> : announcement.title}</div>}
     <div className="header-yellow"><div className="wrap header-row">
       <Link href="/" className="logo" aria-label={`${name}, home`}><span className="logo-mark" aria-hidden="true">R</span><span>{brand}{by && <small>by {by}</small>}</span></Link>
-      <form action="/search" className="header-search" role="search">
-        <label htmlFor="site-search" className="sr-only">Search books, authors and categories</label>
-        <input id="site-search" name="q" type="search" placeholder="Search by title, author or ISBN" autoComplete="off" />
-        <button type="submit" aria-label="Search"><Search size={18} strokeWidth={2.2} aria-hidden="true" /></button>
-      </form>
+      <SearchBox />
       <nav className="header-icons" aria-label="Your account">
         <Link href="/wishlist" aria-label="Wishlist"><Heart size={22} strokeWidth={2} aria-hidden="true" /></Link>
         <Link href="/library" aria-label="Your library"><UserRound size={22} strokeWidth={2} aria-hidden="true" /></Link>
