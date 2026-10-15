@@ -113,13 +113,24 @@ const CardView = load("components/BookCard.tsx", {
   "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true },
 }).default;
 const cardHtml = renderToStaticMarkup(React.createElement(CardView, { book: saleBook, enabled: true }));
-assert.match(cardHtml, /class="product-card"/);
+assert.match(cardHtml, /data-book-card/);
 assert.match(cardHtml, /Add to bag/);
 assert.match(cardHtml, /href="\/books\/real-book"/);
 assert.doesNotMatch(cardHtml, /private\/never-expose/);
 const dataCover = renderToStaticMarkup(React.createElement(CardView, { book: { ...saleBook, cover: "data:image/svg+xml;utf8,%3Csvg%3E" }, enabled: true }));
 assert.match(dataCover, /src="data:image\/svg\+xml/);
 assert.match(cardHtml, /Quick view/);
+const realCoverHtml = renderToStaticMarkup(React.createElement(CardView, { book: { ...saleBook, cover: "/assets/book1.png" }, enabled: true }));
+assert.match(realCoverHtml, /class="book3d"/, "real covers get the tilt without drawn edges");
+assert.match(dataCover, /class="book3d flat"/, "flat demo covers get the drawn spine");
+const EntryView = load("components/CatalogueEntry.tsx", {
+  "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true },
+  "next/navigation": { useRouter: () => ({ push() {} }) },
+}).default;
+const entryHtml = renderToStaticMarkup(React.createElement(EntryView, { book: saleBook, index: 1, enabled: true }));
+assert.match(entryHtml, /Catalogue no\. 001/);
+assert.match(entryHtml, /Buy now/);
+assert.doesNotMatch(entryHtml, /<p[^>]*>[^<]{121,}<\/p>/, "entries carry no long paragraphs");
 const QuickViewView = load("components/QuickView.tsx", { "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true } }).default;
 const qv = renderToStaticMarkup(React.createElement(QuickViewView, { book: { ...saleBook, description: "x".repeat(600) }, enabled: true }));
 assert.match(qv, /<dialog/);
