@@ -1,37 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BookOpen, Search, ShoppingBag, Library } from "lucide-react";
-import { useCart } from "./CartProvider";
+import { Heart, ShoppingBag, UserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { useCart } from "./CartProvider";
+import CategoryBar from "./CategoryBar";
+import SearchBox from "./SearchBox";
+import { useWishlist } from "./WishlistProvider";
+import type { NavCategory } from "@/lib/navigation";
 
-export default function StoreHeader({ name }: { name: string }) {
+export default function StoreHeader({ name, nav, announcement }: {
+  name: string; nav: { primary: NavCategory[]; more: NavCategory[] }; announcement: { title: string; link_url: string | null } | null;
+}) {
   const { slugs, ready } = useCart();
-  const pathname = usePathname();
+  const wishlist = useWishlist();
   const reduced = useReducedMotion();
-  return <header className="store-header">
-    <div className="store-ribbon">Books for enquiring minds. <Link href="/publish">Share your work with us <span aria-hidden="true">&rarr;</span></Link></div>
-    <div className="wrap header-main">
-      <Link href="/" className="brand" aria-label={`${name}, home`}>
-        <BookOpen size={29} strokeWidth={1.4} aria-hidden="true" />
-        <span>{name.includes(" by ") ? <>{name.split(" by ")[0]}<small>by {name.split(" by ").slice(1).join(" by ")}</small></> : name}</span>
-      </Link>
-      <form action="/catalogue" className="header-search" role="search">
-        <label htmlFor="site-search" className="sr-only">Search books, authors, subjects</label>
-        <input id="site-search" name="q" type="search" placeholder="Search by title, author or ISBN" />
-        <button type="submit" className="icon-button" aria-label="Search catalogue" title="Search catalogue"><Search size={19} aria-hidden="true" /></button>
-      </form>
-      <Link href="/library" className="header-library" aria-label="My library" title="My library"><Library size={21} aria-hidden="true" /><span>My library</span></Link>
-      <Link href="/cart" className="cart-link" aria-label={`Cart, ${ready ? slugs.length : 0} titles`}>
-        <ShoppingBag size={21} aria-hidden="true" /><span>Cart</span><motion.span key={ready ? slugs.length : 0} className="cart-count"
-          initial={false} animate={{ scale: reduced ? 1 : [1, 1.2, 1] }} transition={{ duration: .25 }}>{ready ? slugs.length : 0}</motion.span>
-      </Link>
-    </div>
-    <nav className="wrap header-nav" aria-label="Main navigation">
-      {[["Home", "/"], ["All books", "/catalogue"], ["Ayurveda", "/catalogue?q=Ayurveda"], ["Research", "/catalogue?q=research"], ["Publish with us", "/publish"]].map(([label, href]) =>
-        <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined}>{label}</Link>)}
-      <span className="nav-caption">Independent thought. Shared knowledge.</span>
-    </nav>
+  const [brand, by] = name.includes(" by ") ? [name.split(" by ")[0], name.split(" by ").slice(1).join(" by ")] : [name, ""];
+  const count = ready ? slugs.length : 0;
+  return <header className="site-header">
+    {announcement && <div className="announcement-bar">{announcement.link_url ? <Link href={announcement.link_url}>{announcement.title}</Link> : announcement.title}</div>}
+    <div className="header-bar"><div className="wrap header-row">
+      <Link href="/" className="logo" aria-label={`${name}, home`}><span className="logo-mark" aria-hidden="true">अ</span><span>{brand}{by && <small>by {by}</small>}</span></Link>
+      <SearchBox />
+      <nav className="header-icons" aria-label="Your account">
+        <Link href="/wishlist" aria-label={`Wishlist, ${wishlist.slugs.length} ${wishlist.slugs.length === 1 ? "book" : "books"}`}><Heart size={22} strokeWidth={2} aria-hidden="true" />{wishlist.slugs.length > 0 && <span className="count-badge">{wishlist.slugs.length}</span>}</Link>
+        <Link href="/library" aria-label="Your library"><UserRound size={22} strokeWidth={2} aria-hidden="true" /></Link>
+        <Link href="/cart" aria-label={`Bag, ${count} ${count === 1 ? "item" : "items"}`} className="bag-link">
+          <ShoppingBag size={22} strokeWidth={2} aria-hidden="true" />
+          <motion.span key={count} className="count-badge" initial={false} animate={{ scale: reduced ? 1 : [1, 1.25, 1] }} transition={{ duration: .25 }}>{count}</motion.span>
+        </Link>
+      </nav>
+    </div></div>
+    <CategoryBar nav={nav} />
   </header>;
 }

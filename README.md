@@ -11,9 +11,19 @@ See `IMPLEMENTATION.md` for verification and external release requirements, and
 
 ## Implemented features
 
-- Catalogue search, book pages, cart, guest checkout, receipts, and reader library.
-- Image-led campaign with genuine publication covers, mobile-visible books,
-  editable editorial modules, genuine author profiles, publishing invitation and FAQ.
+- Retail storefront: announcement bar, yellow header with instant search
+  suggestions, category bar with mega menu, banner carousel, bento promo tiles,
+  bestseller/new/offer/coming-soon carousels, genre switcher, language shelf,
+  category tiles, author strip, and a yellow footer.
+- Category and search pages with checkbox facets (category, author, language,
+  format, price band, offers), sort and pagination; `/catalogue` redirects to `/search`.
+- Product page with offer price block, trust row, detail strip, tabs, Buy now,
+  more-by-author, similar books and recently viewed.
+- Wishlist (local for guests, synced to the account on sign-in), quick view,
+  and a slide-in bag that shows server prices.
+- Per-title sale prices with optional IST start/end. One rule (`currentPrice`)
+  feeds every page and checkout; orders snapshot the regular price and receipts
+  show the saving. Bestsellers come only from real paid orders.
 - Verified-email magic-link sign-in and reader/admin access checks.
 - Hosted Razorpay Payment Links with server prices, idempotent checkout,
   provider-verified payment state, refund revocation, and reconciliation.
@@ -24,8 +34,11 @@ See `IMPLEMENTATION.md` for verification and external release requirements, and
 - Publishing release copies the clean, reviewed manuscript checksum. A database
   trigger requires matching manuscript URL/hash and existing release approvals.
   Release slugs are limited to 101 characters to fit download token claims.
-- Admin content modules, collections, authors, scheduled visibility, publishing
-  reviews, order exports, and audited delivery recovery.
+- Admin with one sidebar: dashboard, searchable orders with detail view, books
+  (create drafts, full details, offers that do not un-release a title, release
+  checklist), categories, authors, collections with a book picker, banners,
+  homepage sections (announcement, promo, genre switcher) with end dates,
+  submissions, and audited delivery recovery.
 
 Payouts and print sales are outside the implemented scope. Scanner callbacks are
 implemented; an operating malware scanner is an external prerequisite.
@@ -50,10 +63,21 @@ npm run preview:isolated -- 3101
 ```
 
 The preview creates a temporary PGlite database, applies `schema.sql` and all
-ordered migrations, and seeds a browsing fixture. It disables checkout, payment
-credentials, outbound email, storage credentials, and admin bootstrap credentials.
-It is intended for storefront inspection; live login, uploads, and purchases are
-not available. The temporary preview database is not production data.
+ordered migrations, and seeds the real titles plus a 60-title demo catalogue
+(clearly fictional, `facts._demo = 'true'`, preview only) so the storefront can be
+reviewed at marketplace scale. It disables checkout, payment credentials,
+outbound email and storage credentials.
+
+The preview prints a per-run admin token: open `/admin/login` and paste it.
+Pass `ADMIN_TOKEN=<64 hex>` to choose it, which `npm run test:admin` uses:
+
+```bash
+ADMIN_TOKEN=<64 hex> npm run preview:isolated -- 3100
+ADMIN_TOKEN=<same value> npm run test:admin
+```
+
+Outside production, email sign-in links are also printed to the server terminal,
+so local sign-in works before the Resend domain is verified.
 
 `npm test` runs offline helper, route, and PGlite regression suites with provider
 calls replaced by test fixtures. It does not load environment files or require

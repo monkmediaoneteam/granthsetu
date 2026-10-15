@@ -1,16 +1,23 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ArrowUpRight, FileCheck2, Library, ShieldCheck, Zap } from "lucide-react";
+import { BadgeCheck, BookOpen, Download, FileText, Globe2, Hash, Infinity as Lifetime, Layers, Lock, Building2 } from "lucide-react";
 import { getBook, getBooks } from "@/lib/db";
-import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { getPublicContent, safeUrl } from "@/lib/content";
-import { rupees } from "@/lib/money";
+import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { siteUrl } from "@/lib/store";
+import { getCategories } from "@/lib/store-data";
+import { LANGUAGE_FONT, LANGUAGE_GLYPHS } from "@/lib/languages";
 import { publicBook, visibleBook } from "@/components/book-data";
 import AddToCart from "@/components/AddToCart";
-import BookCopy from "@/components/BookCopy";
-import { Shelf } from "@/components/BookCard";
+import BookCard from "@/components/BookCard";
+import Carousel from "@/components/Carousel";
+import Cover from "@/components/Cover";
+import Price from "@/components/Price";
+import BookTabs from "@/components/product/BookTabs";
+import ShareButton from "@/components/product/ShareButton";
+import WishlistButton from "@/components/WishlistButton";
+import BuyNow from "@/components/BuyNow";
+import RecentlyViewed from "@/components/RecentlyViewed";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -18,68 +25,64 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!book || !visibleBook(book)) return { title: "Book not found", robots: { index: false } };
   return { title: book.title, description: book.description || undefined,
     alternates: { canonical: `${siteUrl()}/books/${encodeURIComponent(book.slug)}` },
-    openGraph: { title: book.title, description: book.description || undefined, images: book.cover ? [book.cover] : [] } };
+    openGraph: { title: book.title, description: book.description || undefined, images: book.cover && !book.cover.startsWith("data:") ? [book.cover] : [] } };
 }
 
-export default async function BookDetail({ params }: { params: Promise<{ slug: string }> }) {
-  const [book, records, content] = await Promise.all([getBook((await params).slug), getBooks(), getPublicContent()]);
+export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
+  const now = new Date();
+  const [book, records, content, categories] = await Promise.all([getBook((await params).slug), getBooks(), getPublicContent(), getCategories()]);
   if (!book || !visibleBook(book)) notFound();
+  const view = publicBook(book, now);
   const enabled = process.env.COMMERCE_ENABLED === "true";
-  const view = publicBook(book);
-  const priced = view.saleable && book.price_inr > 0;
   const url = `${siteUrl()}/books/${encodeURIComponent(book.slug)}`;
-  const author = book.author_slug ? content.authors.find((item) => item.id === book.author_slug) : undefined;
-  let authorPhoto: string | null = null;
-  try { authorPhoto = safeUrl(author?.photo_url); } catch { /* An unusable photo is omitted. */ }
-  const others = records.filter((item) => item.slug !== book.slug && visibleBook(item)).map(publicBook);
-  const related = [...others.filter((item) => view.subject && item.subject === view.subject), ...others.filter((item) => !view.subject || item.subject !== view.subject)].slice(0, 8);
+  const category = categories.find((c) => c.slug === book.category_slug);
+  const author = book.author_slug ? content.authors.find((a) => a.id === book.author_slug) : undefined;
   let sample: string | null = null;
-  try { sample = safeUrl(book.sample_url); } catch { /* A malformed sample is not a download link. */ }
-  const facts = new Map<string, string>(Object.entries(book.facts || {}).filter(([key]) => !key.startsWith("_")));
-  for (const [label, value] of [["Format", book.file_format], ["Edition", book.edition], ["Language", book.language], ["Subject", book.subject], ["Pages", book.pages], ["Published", book.year], ["ISBN", book.isbn], ["Publisher", book.publisher], ["File size", book.file_size]] as const) {
-    if (value) facts.set(label, String(value));
-  }
-  return <div className="wrap section">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(bookJsonLd(book, url, view.saleable)) }} />
-    <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Reading room</Link><span aria-hidden="true">/</span><Link href="/catalogue">Catalogue</Link>
-      {view.subject && <><span aria-hidden="true">/</span><Link href={`/catalogue?subject=${encodeURIComponent(view.subject)}`}>{view.subject}</Link></>}
-      <span aria-hidden="true">/</span><span aria-current="page">{book.title}</span></nav>
-    <article className="book-detail">
-      <div className="detail-art">{book.cover ? <Image src={book.cover} unoptimized={book.cover.startsWith("https://")} alt={`Cover of ${book.title}`} width={1120} height={1400} preload sizes="(max-width: 640px) 90vw, 30vw" /> : <p>Cover image unavailable</p>}</div>
-      <div className="detail-copy">
-        <p className="eyebrow">{view.subject || "Digital edition"}</p><h1>{book.title}</h1>
-        {book.subtitle && <p className="subtitle">{book.subtitle}</p>}
-        {book.authorship && <p className="detail-author">by {book.author_slug ? <Link className="underline" href={`/authors/${encodeURIComponent(book.author_slug)}`}>{book.authorship}</Link> : book.authorship}</p>}
-        {book.description && <p className="detail-lede preserve-lines">{book.description}</p>}
-        {(book.long_description || book.highlights?.length > 0) && <section className="book-description" aria-labelledby="inside-title"><h2 id="inside-title">Inside the book</h2><BookCopy long={book.long_description} highlights={book.highlights || []} /></section>}
-        {facts.size > 0 && <section className="book-description" aria-labelledby="details-title"><h2 id="details-title">Edition details</h2>
-          <table className="catalogue"><caption className="sr-only">Bibliographic details</caption><tbody>{[...facts].map(([label, value]) => <tr key={label}><th scope="row">{label}</th><td>{value}</td></tr>)}</tbody></table></section>}
-        {author && <section className="author-card" aria-label="About the author">
-          {authorPhoto && <img src={authorPhoto} alt="" className="author-card-photo" loading="lazy" />}
-          <div><p className="eyebrow">About the author</p><h2>{author.name}</h2>{author.bio && <p className="author-card-bio">{author.bio}</p>}
-            <Link className="text-link" href={`/authors/${encodeURIComponent(author.id)}`}>Author profile <ArrowRight size={16} aria-hidden="true" /></Link></div>
-        </section>}
-      </div>
-      <aside className="buy-panel" aria-label="Purchase">
-        {priced ? <p className="price">{rupees(book.price_inr)}</p> : <p className="status-pill">Forthcoming digital edition</p>}
-        {book.file_format && <p className="small muted">{book.file_format} · Personal-use licence</p>}
-        <AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} />
-        {!enabled && <p className="purchase-paused">Online ordering is currently unavailable. You can save this title in your cart for later.</p>}
-        {enabled && !view.saleable && <p className="small muted">This edition is not currently available to buy.</p>}
-        {sample && <a className="text-link" href={sample} target="_blank" rel="noopener noreferrer">Read a sample <ArrowUpRight size={17} aria-hidden="true" /></a>}
-        <ul className="trust-list">
-          <li><Zap size={18} aria-hidden="true" /><span><strong>Digital delivery</strong>Nothing is shipped; download once payment is confirmed.</span></li>
-          <li><ShieldCheck size={18} aria-hidden="true" /><span><strong>Hosted secure payment</strong>Card, UPI and netbanking through Razorpay.</span></li>
-          <li><FileCheck2 size={18} aria-hidden="true" /><span><strong>Your licensed copy</strong>Each file carries a personal licence mark.</span></li>
-          <li><Library size={18} aria-hidden="true" /><span><strong>In your library</strong>Purchases stay listed under your verified email.</span></li>
-        </ul>
-        <p className="small"><Link className="underline" href="/delivery-policy">Delivery</Link> · <Link className="underline" href="/refund-policy">Refunds</Link></p>
-      </aside>
-    </article>
-    {related.length > 0 && <section className="related-books" aria-labelledby="related-title">
-      <div className="section-heading"><div><p className="eyebrow">Keep reading</p><h2 id="related-title">{view.subject && related[0]?.subject === view.subject ? `More in ${view.subject}` : "More on the shelf"}</h2></div>
-        <Link href="/catalogue" className="text-link">All books <ArrowRight size={18} aria-hidden="true" /></Link></div>
-      <Shelf books={related} enabled={enabled} label="Related books" />
-    </section>}
+  try { sample = safeUrl(book.sample_url); } catch { /* A malformed sample is not offered. */ }
+  const others = records.filter((r) => r.slug !== book.slug && visibleBook(r)).map((r) => publicBook(r, now));
+  const byAuthor = book.author_slug ? others.filter((o) => o.author_slug === book.author_slug).slice(0, 12) : [];
+  const similar = others.filter((o) => o.category_slug && o.category_slug === book.category_slug && !byAuthor.includes(o)).slice(0, 12);
+  const details: [typeof BookOpen, string, string | number | null | undefined][] = [
+    [FileText, "Format", book.file_format], [Layers, "Pages", book.pages], [Globe2, "Language", view.language], [Hash, "ISBN", book.isbn],
+    [Building2, "Publisher", book.publisher], [BookOpen, "Edition", view.edition], [BadgeCheck, "Published", view.release_date ?? book.year],
+  ];
+  const facts = Object.entries(book.facts || {}).filter(([k]) => !k.startsWith("_"));
+  const paragraphs = (book.long_description || "").split(/\n\s*\n/).filter(Boolean);
+  const tabs = [
+    (paragraphs.length || book.description) && { id: "about", label: "About the book", content: <div className="prose">{(paragraphs.length ? paragraphs : [book.description!]).map((p, i) => <p key={i}>{p}</p>)}</div> },
+    view.highlights.length && { id: "contents", label: "Contents", content: <ul className="contents-list">{view.highlights.map((h, i) => <li key={i}>{h}</li>)}</ul> },
+    facts.length && { id: "details", label: "More details", content: <table className="spec-table"><tbody>{facts.map(([k, v]) => <tr key={k}><th scope="row">{k}</th><td>{v}</td></tr>)}</tbody></table> },
+    author && { id: "author", label: "About the author", content: <div className="prose"><p><strong>{author.name}</strong></p>{author.bio && <p>{author.bio}</p>}<p><Link className="text-link" href={`/authors/${encodeURIComponent(author.id)}`}>All books by {author.name}</Link></p></div> },
+  ].filter(Boolean) as { id: string; label: string; content: React.ReactNode }[];
+  return <div className="product-page">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(bookJsonLd(book, url, view.saleable, now)) }} />
+    <div className="wrap">
+      <nav className="crumbs product-crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link> / {category && <><Link href={`/category/${category.slug}`}>{category.name}</Link> / </>}<span aria-current="page">{book.title}</span></nav>
+      <article className="product-main">
+        <div className="product-gallery"><div className="gallery-stage">
+          <span className="gallery-glyph akshara" aria-hidden="true" style={{ fontFamily: LANGUAGE_FONT[view.language ?? ""] ?? "var(--font-head)" }}>{LANGUAGE_GLYPHS[view.language ?? ""] ?? "A"}</span>
+          <Cover src={book.cover} title={book.title} sizes="(max-width: 900px) 80vw, 420px" priority /></div>
+          {sample && <a className="btn btn-outline sample-btn" href={sample} target="_blank" rel="noopener noreferrer"><BookOpen size={17} aria-hidden="true" /> Read a sample</a>}</div>
+        <div className="product-info">
+          <div className="title-row"><h1>{book.title}</h1><div className="title-actions"><WishlistButton slug={book.slug} title={book.title} variant="page" /><ShareButton title={book.title} url={url} /></div></div>
+          {book.subtitle && <p className="product-subtitle">{book.subtitle}</p>}
+          {book.authorship && <p className="product-author">by {book.author_slug ? <Link href={`/authors/${encodeURIComponent(book.author_slug)}`}>{book.authorship}</Link> : book.authorship}</p>}
+          <ul className="tag-row">{category && <li><Link className="chip" href={`/category/${category.slug}`}>{category.name}</Link></li>}
+            {view.language && <li><Link className="chip" href={`/search?language=${encodeURIComponent(view.language)}`}>{view.language}</Link></li>}
+            {book.file_format && <li><span className="chip">{book.file_format}</span></li>}</ul>
+          <Price book={view} size="page" />
+          {view.saleable && <p className="tax-note">Digital edition · Personal-use licence</p>}
+          <div className="buy-row"><AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} /><BuyNow slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} /></div>
+          {!enabled && <p className="notice">Online ordering is opening soon. Save this book to your bag and check out when it opens.</p>}
+          <ul className="trust-row">{[[Download, "Instant download"], [Lock, "Secure payment"], [BadgeCheck, "Licensed copy"], [Lifetime, "Lifetime library"]].map(([Icon, label]) =>
+            <li key={label as string}><span className="trust-icon"><Icon size={22} aria-hidden="true" /></span>{label as string}</li>)}</ul>
+          <dl className="detail-strip">{details.filter(([, , v]) => v).map(([Icon, label, value]) => <div key={label}><dt><Icon size={18} aria-hidden="true" />{label}</dt><dd>{value}</dd></div>)}</dl>
+        </div>
+      </article>
+      <BookTabs tabs={tabs} />
+      {byAuthor.length > 0 && <div className="section"><Carousel title={`More by ${book.authorship}`}>{byAuthor.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
+      {similar.length > 0 && <div className="section"><Carousel title="Similar books" href={category ? `/category/${category.slug}` : "/search"}>{similar.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
+      <RecentlyViewed current={book.slug} />
+    </div>
   </div>;
 }

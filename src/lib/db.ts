@@ -81,9 +81,14 @@ export type Book = {
   release_approved?: boolean;
   scan_status?: string;
   file_sha256?: string | null;
+  category_slug?: string | null;
+  sale_price_inr?: number | null;
+  sale_starts_at?: string | null;
+  sale_ends_at?: string | null;
+  release_date?: string | null;
 };
 
-export type OrderItem = { slug: string; title: string; price: number; file_url?: string | null; file_format?: string | null; edition?: string | null; file_sha256?: string | null };
+export type OrderItem = { slug: string; title: string; price: number; file_url?: string | null; file_format?: string | null; edition?: string | null; file_sha256?: string | null; list_price?: number };
 
 export type Order = {
   id: string;
