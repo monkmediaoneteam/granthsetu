@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @import "../styles/tokens.css";
+@import "../styles/surface.css";
+@import "../styles/motion.css";
 @import "../styles/header.css";
 @import "../styles/card.css";
 @import "../styles/home.css";

@@ -37,6 +37,23 @@ assert.doesNotMatch(layoutSource, /bricolage|mukta|fraunces|manrope/i);
 const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
 for (const token of ["--bg-2: #fafaf7", "--brand: #2f7a4d", "--gold: #b9852e", "--forest: #0b2416", "--ink: #0a0e0c", "--cream: #f4f1e6"]) assert.ok(tokens.includes(token), token);
 assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|Bricolage|Mukta/);
+// Motion primitives degrade safely and never draw a book inside a mockup.
+const { isFlatCover } = load("components/motion/Book3D.tsx", { "motion/react": { ...require("motion/react"), useReducedMotion: () => true } });
+assert.equal(isFlatCover("/assets/book1.png"), false, "real covers are finished mockups");
+assert.equal(isFlatCover("https://cdn.example.com/cover.jpg"), false);
+assert.equal(isFlatCover("data:image/svg+xml;utf8,%3Csvg%3E"), true);
+assert.equal(isFlatCover(null), true);
+const MorphModule = load("components/motion/Morph.tsx");
+assert.equal(MorphModule.morphName("real-book"), "cover-real-book");
+const morphed = renderToStaticMarkup(React.createElement(MorphModule.default, { name: "cover-x" }, React.createElement("img", { alt: "x", src: "/x.png" })));
+assert.match(morphed, /<img alt="x" src="\/x.png"/, "without ViewTransition the children render unchanged");
+const { flightKeyframes, flyToBag } = load("components/motion/fly.ts");
+const frames = flightKeyframes({ left: 0, top: 500, width: 100, height: 150 }, { left: 900, top: 10, width: 20, height: 20 });
+assert.equal(frames.length, 3);
+assert.equal(frames[0].transform, "translate(0px, 0px) scale(1)");
+assert.equal(frames[2].transform, "translate(860px, -555px) scale(0.2)");
+assert.match(flightKeyframes({ left: 0, top: 0, width: 1000, height: 1000 }, { left: 0, top: 0, width: 1, height: 1 })[2].transform, /scale\(0\.08\)/, "scale is clamped");
+assert.doesNotThrow(() => flyToBag(null));
 const { buildNav } = load("lib/navigation.ts");
 const cats = [
   { slug: "fiction", name: "Fiction", parent_slug: null, sort: 1 }, { slug: "crime", name: "Crime", parent_slug: "fiction", sort: 1 },

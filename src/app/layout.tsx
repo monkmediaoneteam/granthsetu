@@ -20,6 +20,7 @@ import { publicModules, contentUrl } from "@/components/content-data";
 import { buildNav } from "@/lib/navigation";
 import { getReader } from "@/lib/reader-auth";
 import WishlistProvider from "@/components/WishlistProvider";
+import Reveal from "@/components/motion/Reveal";
 
 const SITE = siteUrl();
 export const metadata: Metadata = {
@@ -41,11 +42,14 @@ async function frameData() {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [{ nav, categories, announcement }, reader] = await Promise.all([frameData(), getReader().catch(() => null)]);
-  return <html lang="en" data-scroll-behavior="smooth"><body><CartProvider><WishlistProvider signedIn={!!reader}>
+  return <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <head><script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} /></head>
+    <body><CartProvider><WishlistProvider signedIn={!!reader}>
     <a href="#main" className="skip-link" tabIndex={0}>Skip to content</a>
     <StoreHeader name={STORE.name} nav={nav} announcement={announcement} />
     <main id="main" tabIndex={-1}>{children}</main>
     <CartDrawer />
+    <Reveal />
     <SiteFooter name={STORE.name} categories={categories} />
   </WishlistProvider></CartProvider></body></html>;
 }
