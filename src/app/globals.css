@@ -2,6 +2,8 @@
 
 @import "../styles/tokens.css";
 @import "../styles/header.css";
+@import "../styles/card.css";
+@import "../styles/home.css";
 
 /* Tailwind utilities used by admin and legacy pages, mapped onto the retail palette. */
 @theme {

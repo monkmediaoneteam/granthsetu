@@ -60,8 +60,8 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + '/books/researching-research-for-ayurveda');
     await expect(page.getByText('Online ordering is currently unavailable.', { exact: false })).toBeVisible();
-    await page.getByRole('button', { name: 'Save to cart: Researching Research for Ayurveda' }).click();
-    await page.getByRole('link', { name: 'In your cart' }).click();
+    await page.getByRole('button', { name: 'Save to bag: Researching Research for Ayurveda' }).click();
+    await page.getByRole('link', { name: 'In your bag' }).click();
     await expect(page.getByRole('heading', { name: 'Researching Research for Ayurveda', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Checkout unavailable' })).toBeDisabled();
     await expect(page.getByText('Online ordering is currently unavailable.', { exact: false })).toBeVisible();

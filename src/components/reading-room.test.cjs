@@ -83,6 +83,24 @@ assert.equal(publicBook(record, new Date("2026-10-15T00:00:00Z")).comingSoon, fa
 const pendingBook = publicBook({ ...record, price_inr: 0, release_approved: false });
 assert.equal(pendingBook.saveable, true);
 assert.equal(pendingBook.saleable, false);
+const PriceView = load("components/Price.tsx").default;
+const saleBook = publicBook({ ...record, price_inr: 29900, sale_price_inr: 25200 });
+const priceHtml = renderToStaticMarkup(React.createElement(PriceView, { book: saleBook }));
+assert.match(priceHtml, /<s[^>]*>₹299<\/s>/);
+assert.match(priceHtml, /₹252/);
+assert.match(priceHtml, /₹47 off/);
+assert.equal(renderToStaticMarkup(React.createElement(PriceView, { book: { ...saleBook, saleable: false, comingSoon: false } })), "");
+assert.match(renderToStaticMarkup(React.createElement(PriceView, { book: { ...saleBook, saleable: false, comingSoon: true } })), /Coming soon/);
+const CardView = load("components/BookCard.tsx", {
+  "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true },
+}).default;
+const cardHtml = renderToStaticMarkup(React.createElement(CardView, { book: saleBook, enabled: true }));
+assert.match(cardHtml, /class="product-card"/);
+assert.match(cardHtml, /Add to bag/);
+assert.match(cardHtml, /href="\/books\/real-book"/);
+assert.doesNotMatch(cardHtml, /private\/never-expose/);
+const dataCover = renderToStaticMarkup(React.createElement(CardView, { book: { ...saleBook, cover: "data:image/svg+xml;utf8,%3Csvg%3E" }, enabled: true }));
+assert.match(dataCover, /src="data:image\/svg\+xml/);
 
 // Author names and book text are author-supplied; inline JSON-LD must never close its <script>.
 const { jsonLdHtml, bookJsonLd } = load("lib/catalogue.ts", { "./access-policy": load("lib/access-policy.ts"), "./store": { siteUrl: () => "https://store.example" } });
@@ -138,10 +156,10 @@ async function checkPausedSelection() {
   const props = { slug: pendingBook.slug, title: pendingBook.title, enabled: false, saleable: pendingBook.saleable, saveable: pendingBook.saveable };
   const button = AddToCart(props).props.children[0];
   assert.equal(button.props.disabled, false);
-  assert.equal(button.props["aria-label"], `Save to cart: ${pendingBook.title}`);
+  assert.equal(button.props["aria-label"], `Save to bag: ${pendingBook.title}`);
   button.props.onClick();
   assert.deepEqual(cart.slugs, [pendingBook.slug]);
-  assert.match(renderToStaticMarkup(React.createElement(AddToCart, props)), /In your cart/);
+  assert.match(renderToStaticMarkup(React.createElement(AddToCart, props)), /In your bag/);
   const CartContents = load("app/cart/CartContents.tsx").default;
   const selected = renderToStaticMarkup(React.createElement(CartContents, { books: [pendingBook], enabled: false }));
   assert.match(selected, /Actual title/);
@@ -246,105 +264,19 @@ async function checkCatalogue() {
 }
 
 async function checkHomepage() {
-  const { default: DiscoveryFeatures, SubjectNavigation } = load("components/DiscoveryFeatures.tsx");
-  const discoveryBooks = [
-    { ...record, title: "AYURVEDA", subtitle: null, description: null, subject: null },
-    { ...record, slug: "reference", title: "A volume", subtitle: "REFERENCE", description: null, subject: null },
-    { ...record, slug: "research", title: "Studies", subtitle: null, description: "RESEARCH methods", subject: null },
-    { ...record, slug: "natural", title: "Products", subtitle: null, description: null, subject: "NATURAL PRODUCTS" },
-    { ...record, slug: "hidden", title: "Phytopharmaceuticals", active: false },
-    { ...record, slug: "unreleased", title: "Phytopharmaceuticals", third_party: true, release_approved: false },
-  ].filter(visibleBook).map((book) => publicBook(book));
-  const interests = renderToStaticMarkup(React.createElement(SubjectNavigation, { books: discoveryBooks }));
-  for (const query of ["Ayurveda", "reference", "research", "natural%20products"]) assert.ok(interests.includes(`href="/catalogue?q=${query}"`));
-  assert.doesNotMatch(interests, /Phytopharmaceuticals/);
-  assert.match(interests, /All books/);
-  assert.equal(renderToStaticMarkup(React.createElement(SubjectNavigation, { books: [] })), "");
-  const unmatched = renderToStaticMarkup(React.createElement(SubjectNavigation, { books: [{ ...book, title: "Poetry", subtitle: null, description: null, subject: null }] }));
-  assert.equal((unmatched.match(/<a /g) || []).length, 1);
-  assert.match(unmatched, /All books/);
-  assert.equal(renderToStaticMarkup(React.createElement(DiscoveryFeatures, { books: [book] })), "");
-  const features = renderToStaticMarkup(React.createElement(DiscoveryFeatures, { books: [
-    { ...book, slug: "no-description", cover: "/assets/book1.png" },
-    { ...book, slug: "first", description: "About this book" },
-    { ...book, slug: "second", highlights: ["Supplied chapter highlight"] },
-    { ...book, slug: "third", description: "About this book" },
-  ] }));
-  assert.match(features, /href="\/books\/first"/);
-  assert.match(features, /href="\/books\/second"/);
-  assert.match(features, /Supplied chapter highlight/);
-  assert.doesNotMatch(features, /href="\/books\/(?:no-description|third)"|<img/);
   const content = load("lib/content.ts", { "./db": { sql() { throw new Error("Database access forbidden in UI tests"); } } });
   const helpers = load("components/content-data.ts", { "@/lib/content": content });
-  const moduleRecord = (value) => ({ id: "module", type: "text", title: "Editorial", body: "Supplied copy", image_url: null,
-    mobile_image_url: null, link_url: null, link_label: null, payload: {}, sort: 0, status: "published", publish_at: null, ...value });
-  const Hero = load("components/Hero.tsx", { "./content-data": helpers,
-    "@/lib/store": { STORE: { name: "Reading Room by INVENTAYU", kicker: "Digital editions", tagline: "Reference editions" } } }).default;
-  const cardOf = (book) => React.createElement("article", { "data-book": book.slug, key: book.slug }, book.title);
-  const Card = { default: ({ book }) => cardOf(book), Shelf: ({ books }) => books.map(cardOf) };
-  const Sections = load("components/ContentSections.tsx", { "./content-data": helpers, "./BookCard": Card }).default;
-  const publishedHero = moduleRecord({ type: "hero", title: "Published shelf", body: "Published introduction", image_url: "/assets/DrNarendraBhatt.jpg", link_url: "/catalogue", link_label: "Browse editions" });
-  const hero = renderToStaticMarkup(React.createElement(Hero, { books: [{ ...book, cover: "/assets/book1.png" }], module: publishedHero }));
-  assert.match(hero, /Published shelf/);
-  assert.match(hero, /Published introduction/);
-  assert.match(hero, /DrNarendraBhatt.jpg/);
-  assert.match(hero, /book1.png/);
-  assert.match(hero, /Browse editions/);
-  assert.match(hero, /<picture class="hero-editorial-media"/);
-  const externalCover = renderToStaticMarkup(React.createElement(Hero, { books: [{ ...book, cover: "https://approved.example/cover.png" }] }));
-  assert.match(externalCover, /src="https:\/\/approved.example\/cover.png"/);
-  const draft = renderToStaticMarkup(React.createElement(Hero, { books: [book], module: { ...publishedHero, status: "draft" } }));
-  assert.doesNotMatch(draft, /Published shelf|DrNarendraBhatt.jpg/);
-  assert.match(draft, /reading-room-botanical-v2.webp/);
   assert.equal(helpers.contentUrl("javascript:alert(1)"), null);
   assert.equal(helpers.videoUrl("https://assets.example.com/interview.mp4"), "https://assets.example.com/interview.mp4");
   for (const value of ["http://assets.example.com/interview.mp4", "https://127.0.0.1/interview.mp4", "https://localhost/interview.mp4", "https://files.internal/interview.mp4", "https://assets.example.com/page", "/assets/video.mp4"]) assert.equal(helpers.videoUrl(value), null);
-  const modules = [moduleRecord({ id: "last", title: "Last module", sort: 3 }), moduleRecord({ id: "hero", type: "hero" }),
-    moduleRecord({ id: "middle", type: "collection", title: "Middle collection", sort: 2, payload: { collection_slug: "linked" } }),
-    moduleRecord({ id: "first", title: "First module", sort: 1 }), moduleRecord({ id: "draft", title: "Hidden draft", status: "draft" }),
-    moduleRecord({ id: "future", title: "Hidden future", publish_at: "9999-01-01" })];
-  const collections = [{ slug: "linked", title: "Linked shelf", description: "Supplied description", book_slugs: [book.slug] },
-    { slug: "remaining", title: "Another shelf", description: null, book_slugs: [book.slug] },
-    { slug: "empty", title: "Empty shelf", book_slugs: [] }];
-  const renderSections = (extra = {}) => renderToStaticMarkup(React.createElement(Sections, { modules, collections, authors: [], books: [book], enabled: false, ...extra }));
-  const ordered = renderSections();
-  assert.ok(ordered.indexOf("First module") < ordered.indexOf("Middle collection"));
-  assert.ok(ordered.indexOf("Middle collection") < ordered.indexOf("Last module"));
-  assert.doesNotMatch(ordered, /Hidden draft|Hidden future|Empty shelf|data-book=/);
-  assert.equal((ordered.match(/collection=linked/g) || []).length, 1);
-  assert.equal((ordered.match(/collection=remaining/g) || []).length, 1);
-  assert.match(renderSections({ books: [book, { ...book, slug: "second" }, { ...book, slug: "third" }] }), /data-book="real-book"/);
-  const video = renderSections({ modules: [moduleRecord({ type: "media", link_url: "https://assets.example.com/interview.mp4" })], collections: [] });
-  assert.match(video, /<video[^>]+controls=""[^>]+preload="none"/);
-  assert.doesNotMatch(video, /autoPlay|<iframe/);
-  const payloadVideo = renderSections({ modules: [moduleRecord({ type: "media", payload: { video_url: "https://assets.example.com/interview.webm" }, link_url: "https://example.com/article" })], collections: [] });
-  assert.match(payloadVideo, /<video[^>]+src="https:\/\/assets.example.com\/interview.webm"/);
-  assert.match(payloadVideo, /href="https:\/\/example.com\/article"/);
-  assert.doesNotMatch(renderSections({ modules: [moduleRecord({ type: "testimonial", body: "Unattributed" })], collections: [] }), /Unattributed/);
-  const Home = load("app/page.tsx", { "@/lib/db": { getBooks: async () => [record,
-    { ...record, slug: "hidden", title: "Phytopharmaceuticals", active: false },
-    { ...record, slug: "unreleased", title: "Phytopharmaceuticals", third_party: true, release_approved: false },
-  ] },
-    "@/lib/content": { getPublicContent: async () => ({
-      modules: [moduleRecord({ type: "author", payload: { author_id: "narendra-bhatt" } })], collections: [],
-      authors: [{ id: "narendra-bhatt", name: "Dr. Narendra Bhatt", bio: "Author biography", photo_url: "/assets/DrNarendraBhatt.jpg" }],
-    }) },
-    "@/components/book-data": load("components/book-data.ts"), "@/components/content-data": helpers,
-    "@/components/DiscoveryFeatures": {
-      default: () => React.createElement("section", { "data-discovery-features": true }),
-      SubjectNavigation,
-    },
-    "@/components/Hero": { default: Hero }, "@/components/BookCard": Card, "@/components/ContentSections": { default: Sections } }).default;
-  const home = renderToStaticMarkup(await Home());
-  assert.match(home, /id="publish"/);
-  assert.match(home, /rights clearance/);
-  assert.match(home, /id="faq"/);
-  assert.equal((home.match(/<details>/g) || []).length, 6);
-  assert.match(home, /How do I choose a book\?/);
-  assert.match(home, /data-discovery-features/);
-  assert.doesNotMatch(home, /Phytopharmaceuticals|data-book="(?:hidden|unreleased)"/);
-  assert.doesNotMatch(home, /Can I buy books right now\?|Purchases are currently paused/);
-  assert.doesNotMatch(home, /author-section|Author biography|DrNarendraBhatt.jpg/);
+  const BannerView = load("components/home/BannerCarousel.tsx", { "motion/react": { useReducedMotion: () => true } }).default;
+  assert.equal(renderToStaticMarkup(React.createElement(BannerView, { banners: [] })), "");
+  const one = renderToStaticMarkup(React.createElement(BannerView, { banners: [{ id: "b", title: "Only offer", body: null, subtitle: null, image: null, mobileImage: null, href: "/search", label: null, theme: "coral" }] }));
+  assert.match(one, /Only offer/);
+  assert.doesNotMatch(one, /Pause offers|Next offer/, "a single banner has no controls");
+  const two = renderToStaticMarkup(React.createElement(BannerView, { banners: ["a", "b"].map(id => ({ id, title: id, body: null, subtitle: null, image: null, mobileImage: null, href: null, label: null, theme: "sky" })) }));
+  assert.match(two, /Next offer/);
+  assert.doesNotMatch(two, /Pause offers/, "reduced motion never autoplays, so no pause control");
   const sitemap = load("app/sitemap.ts", { "@/lib/db": { getBooks: async () => [record, { ...record, slug: "unapproved", third_party: true, release_approved: false }] },
     "@/components/book-data": load("components/book-data.ts") }).default;
   const urls = (await sitemap()).map(item => item.url).join("\n");
@@ -365,5 +297,5 @@ async function checkHomepage() {
   assert.match(shell, /aria-current="page"[^>]*>[^<]*Orders/);
 }
 
-Promise.resolve().then(checkPausedSelection).then(checkRetries).then(checkCatalogue).then(checkHomepage).then(() => console.log("Reading room checks passed: paused selection, cart, checkout, catalogue, hero settings, module order, collections, video validation, publishing invitation, and FAQ."))
+Promise.resolve().then(checkPausedSelection).then(checkRetries).then(checkCatalogue).then(checkHomepage).then(() => console.log("Reading room checks passed: paused selection, cart, checkout, catalogue, video validation, banners, header, admin shell."))
   .catch((error) => { console.error(error); process.exitCode = 1; });

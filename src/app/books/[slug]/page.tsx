@@ -10,7 +10,8 @@ import { siteUrl } from "@/lib/store";
 import { publicBook, visibleBook } from "@/components/book-data";
 import AddToCart from "@/components/AddToCart";
 import BookCopy from "@/components/BookCopy";
-import { Shelf } from "@/components/BookCard";
+import BookCard from "@/components/BookCard";
+import Carousel from "@/components/Carousel";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -79,7 +80,7 @@ export default async function BookDetail({ params }: { params: Promise<{ slug: s
     {related.length > 0 && <section className="related-books" aria-labelledby="related-title">
       <div className="section-heading"><div><p className="eyebrow">Keep reading</p><h2 id="related-title">{view.subject && related[0]?.subject === view.subject ? `More in ${view.subject}` : "More on the shelf"}</h2></div>
         <Link href="/catalogue" className="text-link">All books <ArrowRight size={18} aria-hidden="true" /></Link></div>
-      <Shelf books={related} enabled={enabled} label="Related books" />
+      <Carousel title="Related books">{related.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel>
     </section>}
   </div>;
 }
