@@ -13,6 +13,7 @@ try {
   assert.equal((await db.query("select count(*)::int count from information_schema.columns where table_name='books' and column_name='file_sha256'")).rows[0].count, 1, 'Publishing migration must add the manuscript checksum without the commerce migration');
   // Releases attribute the book to its author profile; the catalogue migration that adds author_slug follows in order.
   await db.exec(readFileSync(new URL('../migrations/004-catalogue.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../migrations/007-marketplace.sql', import.meta.url), 'utf8'));
   const defaults = (await db.query("select third_party,release_approved,scan_status from books where slug='existing-title'")).rows[0];
   assert.deepEqual(defaults, { third_party: false, release_approved: false, scan_status: 'pending' });
   globalThis.publishingTestSql = async (parts, ...values) => {
