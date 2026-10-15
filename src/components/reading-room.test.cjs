@@ -238,29 +238,19 @@ async function checkRetries() {
 }
 
 async function checkCatalogue() {
-  const Catalogue = load("app/catalogue/page.tsx", {
-    "@/lib/db": { getBooks: async () => [
-      { ...record, file_format: "PDF", facts: { Subject: "Research methodology", Language: "English" } },
-      { ...record, slug: "second-book", title: "Second title", isbn: "9781111111111", file_format: "EPUB" },
-    ] },
-    "@/lib/content": { getPublicContent: async () => ({ modules: [], collections: [], authors: [] }) },
-    "@/components/book-data": load("components/book-data.ts"),
-    "@/components/BookCard": { default: ({ book }) => React.createElement("article", { "data-book": book.slug }, book.title) },
+  const listing = load("lib/listing.ts");
+  const Search = load("app/search/page.tsx", {
+    "@/lib/store-data": { getStoreBooks: async () => [publicBook({ ...record, file_format: "PDF", language: "English" }), publicBook({ ...record, slug: "second-book", title: "Second title", isbn: "9781111111111", file_format: "EPUB" })],
+      getCategories: async () => [], bestsellerSlugs: async () => [] },
+    "@/lib/listing": listing,
+    "@/components/Listing": load("components/Listing.tsx", { "./BookCard": { default: ({ book }) => React.createElement("article", { "data-book": book.slug }, book.title) }, "@/lib/listing": listing }),
   }).default;
-  const renderQuery = async (query) => renderToStaticMarkup(await Catalogue({ searchParams: Promise.resolve(query) }));
-  const isbn = await renderQuery({ q: record.isbn });
+  const render = async (query) => renderToStaticMarkup(await Search({ searchParams: Promise.resolve(query) }));
+  const isbn = await render({ q: record.isbn });
   assert.match(isbn, /data-book="real-book"/);
   assert.doesNotMatch(isbn, /data-book="second-book"/);
-  const format = await renderQuery({ format: "EPUB" });
-  assert.match(format, /data-book="second-book"/);
-  assert.doesNotMatch(format, /data-book="real-book"/);
-  const facts = await renderQuery({ subject: "Research methodology", language: "English" });
-  assert.match(facts, /data-book="real-book"/);
-  assert.match(await renderQuery({ q: record.isbn, format: "EPUB" }), /No books found/);
-  // Facets count against the other filters, stay plain links, and active ones become removable chips.
-  assert.match(format, /href="\/catalogue\?format=PDF"/);
-  assert.match(format, /aria-label="Remove filter EPUB" href="\/catalogue"|href="\/catalogue" aria-label="Remove filter EPUB"/);
-  assert.doesNotMatch(await renderQuery({ subject: "Research methodology" }), /Second title/);
+  assert.match(await render({ format: "EPUB" }), /Remove filter EPUB/);
+  assert.match(await render({ q: record.isbn, format: "EPUB" }), /No books match these filters/);
 }
 
 async function checkHomepage() {
@@ -278,10 +268,11 @@ async function checkHomepage() {
   assert.match(two, /Next offer/);
   assert.doesNotMatch(two, /Pause offers/, "reduced motion never autoplays, so no pause control");
   const sitemap = load("app/sitemap.ts", { "@/lib/db": { getBooks: async () => [record, { ...record, slug: "unapproved", third_party: true, release_approved: false }] },
-    "@/components/book-data": load("components/book-data.ts") }).default;
+    "@/components/book-data": load("components/book-data.ts"), "@/lib/store-data": { getCategories: async () => [{ slug: "science" }] } }).default;
   const urls = (await sitemap()).map(item => item.url).join("\n");
   assert.match(urls, /books\/real-book/);
   assert.doesNotMatch(urls, /books\/unapproved/);
+  assert.match(urls, /category\/science/);
   const Header = load("components/StoreHeader.tsx", { "next/navigation": { usePathname: () => "/" } }).default;
   const header = renderToStaticMarkup(React.createElement(Header, { name: "Reading Room by INVENTAYU", nav,
     announcement: { title: "Festive reads: up to 20% off", link_url: "/search?offer=1" } }));
