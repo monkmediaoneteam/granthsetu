@@ -3,9 +3,6 @@ import type { ContentModule } from "./content";
 import type { Category } from "./store-data";
 import { contentUrl, publicModules } from "@/components/content-data";
 
-// Native-script glyphs for the language shelf (written as characters, not escapes).
-import { LANGUAGE_GLYPHS } from "./languages";
-export { LANGUAGE_FONT, LANGUAGE_GLYPHS, LANGUAGE_NATIVE } from "./languages";
 export type HomeInput = { books: PublicBook[]; categories: Category[]; modules: ContentModule[]; bestsellers: string[];
   authors: { id: string; name: string; photo_url: string | null }[]; now: Date };
 export type Banner = { id: string; title: string; body: string | null; subtitle: string | null; image: string | null; mobileImage: string | null; href: string | null; label: string | null; theme: string };
@@ -28,13 +25,13 @@ export function buildHome({ books, categories, modules, bestsellers, authors, no
   const bySlug = new Map(books.map((b) => [b.slug, b]));
   const released = books.filter((b) => !b.comingSoon);
   const rails: { key: RailKey; title: string; tagline: string; href: string; books: PublicBook[] }[] = [
-    { key: "bestsellers" as const, title: "Bestsellers", tagline: "What readers are buying most this season", href: "/search?sort=popular",
+    { key: "bestsellers" as const, title: "Bestsellers", tagline: "Most bought this season", href: "/search?sort=popular",
       books: bestsellers.flatMap((slug) => bySlug.get(slug) ?? []).slice(0, 12) },
-    { key: "new" as const, title: "New arrivals", tagline: "Fresh on the shelf this month", href: "/search?sort=new",
+    { key: "new" as const, title: "New arrivals", tagline: "Fresh on the shelf", href: "/search?sort=new",
       books: [...released].sort((a, b) => String(b.release_date ?? "").localeCompare(String(a.release_date ?? "")) || (b.year ?? 0) - (a.year ?? 0)).slice(0, 12) },
-    { key: "offers" as const, title: "On offer", tagline: "Great reads at a lower price, for a limited time", href: "/search?offer=1",
+    { key: "offers" as const, title: "On offer", tagline: "Lower prices, for a while", href: "/search?offer=1",
       books: books.filter((b) => b.onSale && b.saleable).sort((a, b) => b.saving - a.saving).slice(0, 12) },
-    { key: "soon" as const, title: "Coming soon", tagline: "Add to your wishlist and be first to read", href: "/search?sort=soon",
+    { key: "soon" as const, title: "Coming soon", tagline: "Wishlist now, read first", href: "/search?sort=soon",
       books: books.filter((b) => b.comingSoon).sort((a, b) => String(a.release_date).localeCompare(String(b.release_date))).slice(0, 12) },
   ].filter((rail) => rail.books.length > 0);
   const inCategory = (slug: string) => books.filter((b) => b.category_slug === slug);
@@ -49,7 +46,7 @@ export function buildHome({ books, categories, modules, bestsellers, authors, no
   const counts = new Map<string, number>();
   for (const b of books) if (b.language) counts.set(b.language, (counts.get(b.language) ?? 0) + 1);
   const languages = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([name, count]) => ({ name, count, glyph: LANGUAGE_GLYPHS[name] ?? name.slice(0, 2) }));
+    .map(([name, count]) => ({ name, count }));
   const categoryTiles = categories.filter((c) => inCategory(c.slug).length).slice(0, 12).map((c) => ({ slug: c.slug, name: c.name, colour: c.colour, count: inCategory(c.slug).length,
     image: contentUrl(c.image_url), covers: inCategory(c.slug).flatMap((b) => b.cover ? [b.cover] : []).slice(0, 3) }));
   const withBooks = new Set(books.map((b) => b.author_slug).filter(Boolean));

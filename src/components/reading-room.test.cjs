@@ -308,14 +308,35 @@ async function checkHomepage() {
   assert.equal(helpers.contentUrl("javascript:alert(1)"), null);
   assert.equal(helpers.videoUrl("https://assets.example.com/interview.mp4"), "https://assets.example.com/interview.mp4");
   for (const value of ["http://assets.example.com/interview.mp4", "https://127.0.0.1/interview.mp4", "https://localhost/interview.mp4", "https://files.internal/interview.mp4", "https://assets.example.com/page", "/assets/video.mp4"]) assert.equal(helpers.videoUrl(value), null);
-  const BannerView = load("components/home/BannerCarousel.tsx", { "motion/react": { useReducedMotion: () => true } }).default;
-  assert.equal(renderToStaticMarkup(React.createElement(BannerView, { banners: [] })), "");
-  const one = renderToStaticMarkup(React.createElement(BannerView, { banners: [{ id: "b", title: "Only offer", body: null, subtitle: null, image: null, mobileImage: null, href: "/search", label: null, theme: "coral" }] }));
-  assert.match(one, /Only offer/);
-  assert.doesNotMatch(one, /Pause offers|Next offer/, "a single banner has no controls");
-  const two = renderToStaticMarkup(React.createElement(BannerView, { banners: ["a", "b"].map(id => ({ id, title: id, body: null, subtitle: null, image: null, mobileImage: null, href: null, label: null, theme: "sky" })) }));
-  assert.match(two, /Next offer/);
-  assert.doesNotMatch(two, /Pause offers/, "reduced motion never autoplays, so no pause control");
+  const { copyViolations } = load("lib/copy.ts");
+  assert.deepEqual(copyViolations("<h2>Five words fit right here</h2><p>Short line.</p>"), []);
+  assert.equal(copyViolations("<h2>One two three four five six seven</h2>").length, 1);
+  assert.equal(copyViolations(`<p>${"x".repeat(121)}</p>`).length, 1);
+  const motionStub = { "motion/react": { ...require("motion/react"), useReducedMotion: () => true } };
+  const Hero = load("components/home/HeroCampaign.tsx", motionStub);
+  assert.deepEqual(Hero.splitAccent("Books worth keeping, delivered instantly"), ["Books worth keeping, ", "delivered instantly"]);
+  const heroCovers = [{ slug: "real-book", title: "Actual title", cover: "/assets/book1.png" }];
+  const none = renderToStaticMarkup(React.createElement(Hero.default, { banners: [], covers: heroCovers }));
+  assert.match(none, /delivered instantly/, "no banners shows the default slide");
+  assert.doesNotMatch(none, /Next slide|Pause slides/);
+  const banner = (id) => ({ id, title: `Offer ${id}`, body: null, subtitle: null, image: null, mobileImage: null, href: "/search", label: null, theme: "forest" });
+  const one = renderToStaticMarkup(React.createElement(Hero.default, { banners: [banner("a")], covers: heroCovers }));
+  assert.match(one, /Offer a/);
+  assert.doesNotMatch(one, /Next slide|Pause slides/, "a single banner has no controls");
+  const two = renderToStaticMarkup(React.createElement(Hero.default, { banners: [banner("a"), banner("b")], covers: heroCovers }));
+  assert.match(two, /Next slide/);
+  assert.doesNotMatch(two, /Pause slides/, "reduced motion never autoplays, so no pause control");
+  const homeBook = { ...saleBook, highlights: ["Method as the subject, not an appendix"] };
+  const sections = [
+    React.createElement(Hero.default, { banners: [], covers: heroCovers }),
+    React.createElement(load("components/home/CategoryTiles.tsx").default, { tiles: [{ slug: "science", name: "Science", count: 3, covers: ["/assets/book1.png"] }] }),
+    React.createElement(load("components/home/Featured.tsx", { ...motionStub, "next/navigation": { useRouter: () => ({ push() {} }) } }).default, { books: [homeBook], rails: [], enabled: true }),
+    React.createElement(load("components/home/LookInside.tsx").default, { books: [homeBook] }),
+    React.createElement(load("components/home/PublishBand.tsx", motionStub).default, { covers: heroCovers }),
+    React.createElement(load("components/home/FaqGrid.tsx").default),
+  ].map((el) => renderToStaticMarkup(el)).join("");
+  assert.deepEqual(copyViolations(sections), [], "homepage copy stays short");
+  assert.doesNotMatch(sections, /akshara|अ/);
   const sitemap = load("app/sitemap.ts", { "@/lib/db": { getBooks: async () => [record, { ...record, slug: "unapproved", third_party: true, release_approved: false }] },
     "@/components/book-data": load("components/book-data.ts"), "@/lib/store-data": { getCategories: async () => [{ slug: "science" }] } }).default;
   const urls = (await sitemap()).map(item => item.url).join("\n");
