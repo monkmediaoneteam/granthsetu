@@ -9,7 +9,7 @@ export default async function ReviewPage() {
   if (!(await isAdmin())) redirect("/admin/login");
   const submissions = await getReviewSubmissions();
   const events = await sql`select submission_id,action,actor_id,created_at from publishing_audit where submission_id is not null order by id desc limit 100`;
-  return <section><h1 className="mb-6 text-2xl font-medium">Submission reviews</h1>
+  return <section>
     {!submissions.length && <p className="text-sm text-ink-soft">No author submissions yet.</p>}
     {submissions.map(s => <article key={s.id} className="mb-8 border-b border-line pb-8">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3"><h2 className="break-words text-xl font-medium">{s.title}</h2><p className="text-sm capitalize">{s.status.replaceAll("_", " ")}</p></div>

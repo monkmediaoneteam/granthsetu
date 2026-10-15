@@ -24,12 +24,12 @@ try {
   await page.getByLabel('Name').first().fill('Poetry');
   await page.getByLabel('Slug').first().fill('poetry');
   await page.getByRole('button', { name: 'Add category' }).click();
-  await expect(page.getByText('Poetry')).toBeVisible();
+  await expect(page.locator('summary', { hasText: 'Poetry' })).toBeVisible();
   await page.goto(`${base}/admin/books`);
   await page.getByLabel('Title').first().fill('Admin check title');
   await page.getByLabel('Slug').first().fill('admin-check-title');
   await page.getByRole('button', { name: 'Create draft book' }).click();
-  await expect(page.getByText('Admin check title')).toBeVisible();
+  await expect(page.locator('summary', { hasText: 'Admin check title' })).toBeVisible();
   const demo = page.locator('details', { hasText: 'The Monsoon Ledger' });
   await demo.locator('summary').click();
   await demo.getByLabel('Sale price (₹)').fill('150');

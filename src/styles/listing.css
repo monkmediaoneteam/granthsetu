@@ -1,5 +1,5 @@
 @layer components {
-  .listing-banner { position: relative; overflow: hidden; background: var(--tile); color: #111; padding-block: 28px 32px; }
+  .listing-banner { position: relative; overflow: hidden; background: color-mix(in srgb, var(--tile) 22%, #fff); border-bottom: 6px solid var(--tile); color: #111; padding-block: 28px 32px; }
   .listing-banner h1 { font-size: clamp(30px, 4vw, 48px); font-weight: 800; margin-top: 8px; }
   .listing-banner p { margin-top: 6px; font-size: 16px; max-width: 60ch; }
   .listing-art { position: absolute; right: 0; top: 0; height: 100%; width: 40%; object-fit: cover; opacity: .9; }

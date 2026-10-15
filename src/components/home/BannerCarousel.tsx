@@ -11,6 +11,9 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hover, setHover] = useState(false);
+  // The reduced-motion preference is only known in the browser; render its control after mount so hydration matches.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const many = banners.length > 1;
   useEffect(() => {
     if (!many || paused || hover || reduced) return;
@@ -31,7 +34,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
       <button type="button" className="round-btn" onClick={() => go(-1)} aria-label="Previous offer"><ChevronLeft size={18} aria-hidden="true" /></button>
       <div className="banner-dots">{banners.map((b, i) => <button key={b.id} type="button" aria-label={`Show offer ${i + 1}`} aria-current={i === index ? "true" : undefined} onClick={() => setIndex(i)} />)}</div>
       <button type="button" className="round-btn" onClick={() => go(1)} aria-label="Next offer"><ChevronRight size={18} aria-hidden="true" /></button>
-      {!reduced && <button type="button" className="round-btn" onClick={() => setPaused((p) => !p)} aria-label={paused ? "Play offers" : "Pause offers"}>
+      {mounted && !reduced && <button type="button" className="round-btn" onClick={() => setPaused((p) => !p)} aria-label={paused ? "Play offers" : "Pause offers"}>
         {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}</button>}
     </div>}
   </section>;

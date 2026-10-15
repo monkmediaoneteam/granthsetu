@@ -1,7 +1,7 @@
 :root {
   --yellow: #FFD93D; --yellow-strong: #F5C400; --ink: #111111; --ink-2: #3F3F46; --muted: #71717A;
   --line: #E4E4E7; --page: #F7F7F7; --card: #FFFFFF; --offer: #15803D; --offer-bg: #DCFCE7;
-  --sale: #F04E37; --sky: #BAE6FD; --lilac: #DDD6FE; --green: #166534;
+  --sale: #D7351F; --sky: #BAE6FD; --lilac: #DDD6FE; --green: #166534;
   --radius-card: 12px; --radius-btn: 8px; --shadow-lift: 0 12px 28px rgb(0 0 0 / 12%);
   --font-head: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
@@ -59,4 +59,5 @@
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  .product-card:hover, .promo-tile:hover, .category-tile:hover, .circle-row a:hover .circle { transform: none; }
 }
