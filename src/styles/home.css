@@ -24,8 +24,9 @@
     background: rgb(255 255 255 / .82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: var(--shadow-e2); }
   .hero-controls .round-btn { width: 36px; height: 36px; box-shadow: none; }
   .hero-dots { display: flex; gap: 6px; padding-inline: 4px; }
-  .hero-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: var(--line-2); transition: width .35s var(--ease-out), background .35s; }
-  .hero-dots button[aria-current] { width: 24px; background: var(--brand); }
+  .hero-dots button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; }
+  .hero-dots button::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--line-2); transition: width .35s var(--ease-out), background .35s; }
+  .hero-dots button[aria-current]::before { width: 20px; background: var(--brand); }
   .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
   .cat-tile { display: flex; flex-direction: column; gap: 6px; height: 100%; padding: 14px 14px 18px; }
   .cat-fan { position: relative; display: grid; place-items: end center; height: 156px; margin-bottom: 10px; overflow: hidden; }

@@ -37,6 +37,10 @@ assert.doesNotMatch(layoutSource, /bricolage|mukta|fraunces|manrope/i);
 const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
 for (const token of ["--bg-2: #fafaf7", "--brand: #2f7a4d", "--gold: #b9852e", "--forest: #0b2416", "--ink: #0a0e0c", "--cream: #f4f1e6"]) assert.ok(tokens.includes(token), token);
 assert.doesNotMatch(fs.readFileSync(path.join(root, "app/globals.css"), "utf8"), /Fraunces|Manrope|Bricolage|Mukta/);
+const styleSources = fs.readdirSync(path.join(root, "styles")).map((f) => fs.readFileSync(path.join(root, "styles", f), "utf8")).join("\n")
+  + fs.readFileSync(path.join(root, "app/globals.css"), "utf8");
+assert.doesNotMatch(styleSources, /--neel|--kumkum|--paper|--mist|--font-head|--font-body|akshara|Bricolage|Mukta|Noto/, "no Akshara-era styles remain");
+assert.doesNotMatch(fs.readFileSync(path.join(root, "app/layout.tsx"), "utf8"), /noto-sans/);
 // Motion primitives degrade safely and never draw a book inside a mockup.
 const { isFlatCover } = load("components/motion/Book3D.tsx", { "motion/react": { ...require("motion/react"), useReducedMotion: () => true } });
 assert.equal(isFlatCover("/assets/book1.png"), false, "real covers are finished mockups");

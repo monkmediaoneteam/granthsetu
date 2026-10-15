@@ -28,7 +28,7 @@
   .category-row { display: flex; align-items: center; gap: 2px; min-height: 42px; }
   .category-row > a, .mega-trigger { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; transition: color .2s, background .2s; }
   .category-row > a:hover, .mega-trigger:hover, .mega:focus-within > .mega-trigger { color: var(--ink); background: var(--bg-2); }
-  .category-row > .deal-link { color: var(--gold); margin-left: auto; }
+  .category-row > .deal-link { color: #8a6420; margin-left: auto; }
   .mega { position: relative; }
   .mega-panel { position: absolute; top: calc(100% + 4px); left: 0; z-index: 45; display: none; grid-template-columns: minmax(150px, auto) auto; gap: 16px 28px; min-width: 320px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); box-shadow: var(--shadow-e4); animation: drop .22s var(--ease-out); }
   .mega:hover > .mega-panel, .mega:focus-within > .mega-panel { display: grid; }
@@ -53,11 +53,15 @@
   .site-footer .popular a.chip { padding-block: 4px; }
   .footer-legal { padding-block: 20px 28px; border-top: 1px solid var(--line); font: 400 11px/1.5 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-mute); }
   @media (max-width: 900px) { .footer-top { grid-template-columns: 1fr 1fr; } .footer-top > :first-child { grid-column: 1 / -1; } }
+  /* Below wide desktop the category row scrolls instead of overflowing; hover panels need the full width. */
+  @media (max-width: 1180px) {
+    .category-row { overflow-x: auto; scrollbar-width: none; }
+    .category-row::-webkit-scrollbar { display: none; }
+    .mega-panel { display: none !important; }
+  }
   @media (max-width: 760px) {
     .header-row { flex-wrap: wrap; gap: 8px 12px; padding-block: 10px; }
     .header-search { order: 3; flex-basis: 100%; max-width: none; }
     .search-key { display: none; }
-    .category-row { overflow-x: auto; scrollbar-width: none; }
-    .mega-panel { display: none !important; }
   }
 }

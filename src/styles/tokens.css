@@ -14,11 +14,6 @@
   --shadow-e2: 0 2px 4px rgb(12 38 24 / 0.04), 0 8px 16px -6px rgb(12 38 24 / 0.10);
   --shadow-e3: 0 4px 8px rgb(12 38 24 / 0.05), 0 18px 32px -12px rgb(12 38 24 / 0.16);
   --shadow-e4: 0 8px 16px rgb(12 38 24 / 0.06), 0 34px 60px -20px rgb(12 38 24 / 0.22);
-  /* Transitional aliases for styles not yet rewritten; Task 13 removes this block. */
-  --paper: var(--bg); --mist: var(--bg-2); --mist-2: var(--bg-3); --neel: var(--brand); --neel-deep: var(--brand-deep); --neel-tint: #e6f2ea;
-  --muted: var(--ink-soft); --kumkum: var(--gold); --kumkum-tint: #f6ecd9; --offer: var(--gold); --offer-bg: #f6ecd9; --sale: var(--gold);
-  --page: var(--bg-2); --card: var(--bg); --radius-card: 18px; --radius-btn: 12px; --shadow-lift: var(--shadow-e3); --ease: var(--ease-out);
-  --font-head: var(--font-sans); --font-body: var(--font-sans);
 }
 @layer base {
   * { box-sizing: border-box; }
@@ -74,8 +69,6 @@
   .field-input[aria-invalid="true"] { border-color: var(--danger); }
   .skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; padding: 12px 18px; border-radius: 12px; background: var(--forest); color: var(--cream); }
   .skip-link:focus { top: 12px; }
-  /* Transitional: the Akshara letterforms are retired; Task 13 deletes the markup and this rule. */
-  .akshara { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

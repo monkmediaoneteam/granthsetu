@@ -9,7 +9,7 @@
     "start": "next start",
     "seed": "node --env-file=.env.local scripts/seed.mjs",
     "test": "node scripts/test-all.mjs",
-    "test:browser": "node scripts/check-browser.mjs",
+    "test:browser": "node --import tsx scripts/check-browser.mjs",
     "test:admin": "node scripts/check-admin.mjs",
     "preview:isolated": "node scripts/dev-preview.mjs",
     "sample-pdf": "node scripts/make-sample-pdf.mjs"
@@ -17,12 +17,6 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
-    "@fontsource/noto-sans-bengali": "^5.3.0",
-    "@fontsource/noto-sans-devanagari": "^5.3.0",
-    "@fontsource/noto-sans-gujarati": "^5.3.0",
-    "@fontsource/noto-sans-kannada": "^5.3.0",
-    "@fontsource/noto-sans-tamil": "^5.3.0",
-    "@fontsource/noto-sans-telugu": "^5.3.0",
     "@neondatabase/serverless": "^0.10.4",
     "@tailwindcss/postcss": "^4.3.3",
     "@vercel/blob": "^2.8.1",

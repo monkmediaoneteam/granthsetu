@@ -27,8 +27,8 @@
   .empty-results h2 { font-size: 26px; }
   .pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 32px; font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
   @media (max-width: 900px) {
-    .listing-layout { grid-template-columns: 1fr; }
-    .filters { position: static; }
+    .listing-layout { grid-template-columns: minmax(0, 1fr); }
+    .filters { position: static; min-width: 0; grid-template-columns: minmax(0, 1fr); }
     .filter-group ul { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .listing-art { display: none; }
   }

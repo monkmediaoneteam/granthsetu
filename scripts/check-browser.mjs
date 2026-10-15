@@ -35,13 +35,16 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
         if (route === '/') {
           await page.evaluate(() => document.fonts.ready);
           assert.ok(await page.evaluate(() => document.fonts.check('500 32px "Geist Variable"') && document.fonts.check('500 12px "Geist Mono Variable"')), `${name}: local fonts loaded`);
-          const hero = await page.locator('.akshara-hero h1').boundingBox();
+          const hero = await page.locator('.hero-campaign h1').first().boundingBox();
           if (!hero || hero.y >= (width < 768 ? 800 : 1000)) failures.push(`${name}: no first-viewport hero at ${width}`);
-          if (!(await page.locator('.hero-book').count())) failures.push(`${name}: hero has no covers at ${width}`);
-          assert.equal(await page.locator('.banner-controls [aria-label="Pause offers"]').count(), 0, `${name}: reduced motion shows no autoplay control`);
-          await page.locator('.product-card').first().hover();
+          if (!(await page.locator('.hero-campaign .hero-cover').count())) failures.push(`${name}: hero has no covers at ${width}`);
+          assert.equal(await page.locator('.hero-controls [aria-label="Pause slides"]').count(), 0, `${name}: reduced motion shows no autoplay control`);
+          await page.locator('[data-book-card]').first().hover();
           await page.waitForTimeout(300);
-          assert.ok(await page.locator('.product-card').first().evaluate(el => ['none', 'matrix(1, 0, 0, 1, 0, 0)'].includes(getComputedStyle(el).transform)), `${name}: reduced motion respected`);
+          assert.ok(await page.locator('[data-book-card]').first().evaluate(el => ['none', 'matrix(1, 0, 0, 1, 0, 0)'].includes(getComputedStyle(el).transform)), `${name}: reduced motion respected`);
+          const copy = await page.locator('main').evaluate(el => el.innerHTML);
+          const { copyViolations } = await import('../src/lib/copy.ts');
+          for (const v of copyViolations(copy)) failures.push(`${name}: homepage copy ${v}`);
           await page.mouse.move(0, 0);
         }
         const shots = { '/': 'home', '/books/demo-the-monsoon-ledger': 'book', '/search': 'search' };
@@ -60,7 +63,7 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
     await expect(page.getByRole('heading', { name: 'No books match these filters' })).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + '/books/researching-research-for-ayurveda');
-    await expect(page.getByText('Online ordering is opening soon.', { exact: false })).toBeVisible();
+    await expect(page.getByText('Ordering opens soon.', { exact: false })).toBeVisible();
     await page.getByRole('button', { name: 'Save to bag: Researching Research for Ayurveda' }).click();
     await expect(page.getByRole('dialog', { name: /Your bag/ })).toBeVisible();
     await page.keyboard.press('Escape');
@@ -126,10 +129,26 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
     const noJs = await browser.newContext({ javaScriptEnabled: false });
     const staticPage = await noJs.newPage();
     await staticPage.goto(base);
-    await expect(staticPage.locator('.product-card').first()).toBeVisible();
+    await expect(staticPage.locator('[data-book-card]').first()).toBeVisible();
     await staticPage.goto(base + '/search?q=monsoon');
     await expect(staticPage.getByRole('link', { name: 'The Monsoon Ledger' }).first()).toBeVisible();
     await noJs.close();
+    if (name === 'chromium') {
+      const moving = await browser.newContext({ reducedMotion: 'no-preference' });
+      const live = await moving.newPage();
+      await live.goto(base + '/search', { waitUntil: 'networkidle' });
+      assert.ok(await live.evaluate(() => typeof document.startViewTransition === 'function'), 'view transitions available in Chromium');
+      const add = live.locator('[data-book-card] .card-foot button.card-add:not([disabled])').first();
+      if (await add.count()) {
+        await add.click();
+        await expect.poll(() => live.evaluate(() => [...document.querySelectorAll('body > img[aria-hidden="true"]')].some(i => i.style.position === 'fixed')), { timeout: 2000 }).toBeTruthy();
+      }
+      await live.keyboard.press('Escape');
+      await live.locator('[data-book-card] .card-title a').first().click();
+      await live.waitForURL(/\/books\//);
+      await expect(live.locator('.product-page .book3d').first()).toBeVisible();
+      await moving.close();
+    }
     await context.close();
   } finally { await browser.close(); }
 }
