@@ -35,7 +35,7 @@ export function demoCover(title, author, colour) {
     const last = lines.at(-1);
     if (last && (last + ' ' + word).length <= 14) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
   }
-  const text = lines.map((line, i) => `<text x="30" y="${120 + i * 44}" font-family="Arial,Helvetica,sans-serif" font-size="36" font-weight="800" fill="#ffffff">${escapeXml(line)}</text>`).join('');
+  const text = lines.map((line, i) => `<text x="30" y="${110 + i * 38}" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="800" fill="#ffffff">${escapeXml(line)}</text>`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">`
     + `<rect width="300" height="450" fill="${colour}"/><rect x="0" y="0" width="14" height="450" fill="#000" opacity=".18"/>`
     + `<circle cx="250" cy="390" r="90" fill="#fff" opacity=".12"/>${text}`

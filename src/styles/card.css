@@ -12,8 +12,8 @@
   .price-block { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-height: 24px; margin-top: auto; padding-top: 4px; }
   .price-regular { color: var(--muted); font-size: 13px; }
   .price-now { font: 800 17px/1.2 var(--font-body); }
-  .price-block.page .price-now { font-size: 32px; }
-  .price-block.page .price-regular { font-size: 18px; }
+  .price-block.price-page .price-now { font-size: 32px; }
+  .price-block.price-page .price-regular { font-size: 18px; }
   .soon-chip { padding: 3px 8px; border-radius: 6px; background: #E0F2FE; color: #075985; font: 700 12px/1.4 var(--font-body); }
   .card-add { width: 100%; margin-top: 8px; }
   .cart-control { width: 100%; }
