@@ -30,3 +30,19 @@
   .heart-btn.card { position: absolute; top: 18px; right: 18px; z-index: 2; }
   .heart-btn.page { width: 40px; height: 40px; }
 }
+@layer components {
+  .quick-view-btn { position: absolute; left: 50%; top: 40%; transform: translate(-50%, 0); display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
+    border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: 650 12px/1 var(--font-body); opacity: 0; transition: opacity .15s; z-index: 2; }
+  .product-card:hover .quick-view-btn, .quick-view-btn:focus-visible { opacity: 1; }
+  @media (hover: none) { .quick-view-btn { display: none; } }
+  .quick-view { width: min(760px, calc(100vw - 32px)); padding: 28px; border: 0; border-radius: 20px; box-shadow: var(--shadow-lift); }
+  .quick-view::backdrop { background: rgb(0 0 0 / 45%); }
+  .qv-close { position: absolute; top: 14px; right: 14px; }
+  .qv-grid { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; }
+  .qv-cover { background: var(--page); border-radius: 12px; padding: 16px; }
+  .qv-info { display: grid; align-content: start; gap: 10px; }
+  .qv-info h2 { font-size: 24px; padding-right: 40px; }
+  .qv-blurb { color: var(--ink-2); font-size: 14px; }
+  .qv-actions { display: flex; gap: 10px; align-items: center; } .qv-actions .cart-control { flex: 1; }
+  @media (max-width: 640px) { .qv-grid { grid-template-columns: 1fr; } .qv-cover { max-width: 200px; } }
+}

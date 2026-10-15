@@ -102,6 +102,13 @@ assert.match(cardHtml, /href="\/books\/real-book"/);
 assert.doesNotMatch(cardHtml, /private\/never-expose/);
 const dataCover = renderToStaticMarkup(React.createElement(CardView, { book: { ...saleBook, cover: "data:image/svg+xml;utf8,%3Csvg%3E" }, enabled: true }));
 assert.match(dataCover, /src="data:image\/svg\+xml/);
+assert.match(cardHtml, /Quick view/);
+const QuickViewView = load("components/QuickView.tsx", { "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true } }).default;
+const qv = renderToStaticMarkup(React.createElement(QuickViewView, { book: { ...saleBook, description: "x".repeat(600) }, enabled: true }));
+assert.match(qv, /<dialog/);
+assert.match(qv, /View full details/);
+assert.match(qv, /x{397}…/, "description is truncated with an ellipsis");
+assert.doesNotMatch(qv, /x{398}/);
 
 // Author names and book text are author-supplied; inline JSON-LD must never close its <script>.
 const { jsonLdHtml, bookJsonLd } = load("lib/catalogue.ts", { "./access-policy": load("lib/access-policy.ts"), "./store": { siteUrl: () => "https://store.example" } });

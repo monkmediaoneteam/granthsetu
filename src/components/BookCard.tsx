@@ -4,6 +4,7 @@ import AddToCart from "./AddToCart";
 import Cover from "./Cover";
 import Price from "./Price";
 import WishlistButton from "./WishlistButton";
+import QuickView from "./QuickView";
 
 const href = (book: PublicBook) => `/books/${encodeURIComponent(book.slug)}`;
 
@@ -14,6 +15,7 @@ export default function BookCard({ book, enabled }: { book: PublicBook; index?: 
       <Cover src={book.cover} title={book.title} sizes="(max-width: 640px) 45vw, 220px" />
       {book.comingSoon && <span className="card-flag">Coming soon</span>}
     </Link>
+    <QuickView book={book} enabled={enabled} />
     <div className="card-body">
       <h3><Link href={href(book)}>{book.title}</Link></h3>
       {book.authorship && <p className="card-author">{book.authorship}</p>}
