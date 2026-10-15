@@ -11,9 +11,10 @@ export async function stampPdf(
   licenseText: string
 ): Promise<Uint8Array> {
   try {
-    const pdfDoc = await PDFDocument.load(inputBuffer, { ignoreEncryption: true });
+    const pdfDoc = await PDFDocument.load(inputBuffer);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const pages = pdfDoc.getPages();
+    if (!pages.length) throw new Error("Empty PDF");
     const fontSize = 7.5;
     const color = rgb(0.29, 0.32, 0.31); // #4A524F ink-soft
 
@@ -21,13 +22,14 @@ export async function stampPdf(
       const { width } = page.getSize();
       const textWidth = font.widthOfTextAtSize(licenseText, fontSize);
       // Center the text in the bottom margin (14pt from page bottom)
-      const x = Math.max(16, (width - textWidth) / 2);
+      const size = Math.min(fontSize, fontSize * Math.max(1, width - 32) / Math.max(1, textWidth));
+      const x = Math.max(16, (width - font.widthOfTextAtSize(licenseText, size)) / 2);
       const y = 14;
 
       page.drawText(licenseText, {
         x,
         y,
-        size: fontSize,
+        size,
         font,
         color,
         opacity: 0.7,
@@ -37,7 +39,6 @@ export async function stampPdf(
     return await pdfDoc.save();
   } catch (err) {
     console.error("[pdf-stamp] Error stamping PDF:", err);
-    // If stamping fails, return original buffer without corrupting the download
-    return inputBuffer instanceof Uint8Array ? inputBuffer : new Uint8Array(inputBuffer);
+    throw new Error("PDF licensing failed", { cause: err });
   }
 }

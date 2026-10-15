@@ -8,18 +8,8 @@ import StatCard from "@/components/StatCard";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin", robots: { index: false, follow: false } };
 
-/**
- * ponytail: token rides in the URL, so it leaks via referrer and history.
- * Fine for a single operator on an unlinked page; move to a signed cookie the
- * moment anyone else gets access.
- */
-export default async function Admin({
-  searchParams,
-}: {
-  searchParams: Promise<{ token?: string }>;
-}) {
-  const { token = "" } = await searchParams;
-  if (!(await isAdmin(token))) redirect("/admin/login");
+export default async function Admin() {
+  if (!(await isAdmin())) redirect("/admin/login");
 
   const orders = (await sql`
     select id, name, email, phone, total, status, created_at, items
@@ -61,6 +51,11 @@ export default async function Admin({
   }[];
 
   const rate = conv.started ? Math.round((totals.units / conv.started) * 100) : 0;
+  const [health] = await sql`select
+    (select count(*)::int from orders where status='paid') incomplete,
+    (select count(*)::int from email_delivery where state in ('pending','sending','manual')) email_pending,
+    (select count(*)::int from payment_attempts where state in ('creating','unknown')) reconciliation,
+    (select count(*)::int from events where type='download.failed' and created_at>now()-interval '1 day') download_errors`;
   const allDownloads = downloadStats.reduce((a, d) => a + d.total_downloads, 0);
   const exportHref = "/api/admin/export";
 
@@ -75,6 +70,10 @@ export default async function Admin({
         </a>
       }
     >
+      <section className="mb-8 border-b border-line pb-6"><h2 className="title title-md">Delivery health</h2>
+        <p className="my-3">Incomplete paid orders: {health.incomplete} · Pending email: {health.email_pending} · Payment reconciliation: {health.reconciliation} · Download errors today: {health.download_errors}</p>
+        <a href="/admin/platform/delivery" className="text-link">Review delivery recovery</a>
+      </section>
       <div className="mb-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Revenue" value={rupees(totals.revenue)} accent />
         <StatCard

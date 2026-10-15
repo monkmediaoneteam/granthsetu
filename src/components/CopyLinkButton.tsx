@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Check, Copy } from 'lucide-react';
 
 export default function CopyLinkButton({ orderId }: { orderId: string }) {
   const [copied, setCopied] = useState(false);
@@ -20,7 +21,8 @@ export default function CopyLinkButton({ orderId }: { orderId: string }) {
       onClick={copy}
       className="btn btn-ghost text-xs py-2 px-3.5 inline-flex items-center gap-1.5"
     >
-      <span>{copied ? "\u2713 Copied link to clipboard" : "\ud83d\udd17 Copy permanent receipt link"}</span>
+      {copied ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
+      <span>{copied ? 'Copied' : 'Copy receipt link'}</span>
     </button>
   );
 }

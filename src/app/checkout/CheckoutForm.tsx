@@ -1,122 +1,123 @@
 "use client";
-import { useState } from "react";
+
+import Link from "next/link";
+import { useRef, useState } from "react";
+import { ArrowRight, LockKeyhole } from "lucide-react";
+import { cartTotals, useCart } from "@/components/CartProvider";
+import type { PublicBook } from "@/components/book-data";
+import { rupees } from "@/lib/money";
 
 type Field = "name" | "email" | "phone";
+const CHECKOUT_KEY = "inventayu-reading-room-checkout";
 
-export default function CheckoutForm({
-  slug,
-  amountLabel,
-}: {
-  slug: string;
-  amountLabel: string;
-  title?: string;
-}) {
+// Only known customer messages may cross from the API into the checkout page.
+const customerErrors: Record<string, { message: string; field?: Field }> = {
+  "Please enter your full name.": { message: "Please enter your full name.", field: "name" },
+  "That name is too long.": { message: "Use no more than 100 characters for your name.", field: "name" },
+  "Email is required.": { message: "Enter your email address.", field: "email" },
+  "Enter a valid email address.": { message: "Enter a valid email address.", field: "email" },
+  "Please use a permanent email address your book is delivered there.": { message: "Use a permanent email address so you can receive your book.", field: "email" },
+  "Phone number is required.": { message: "Enter your mobile number.", field: "phone" },
+  "Enter a 10-digit Indian mobile number.": { message: "Enter a 10-digit Indian mobile number.", field: "phone" },
+  "That is not a valid mobile number.": { message: "Enter a valid Indian mobile number.", field: "phone" },
+  "A selected book is not available for sale.": { message: "A selected edition is no longer available to buy. Please review your selection." },
+  "This order was refunded.": { message: "This order has been refunded. Please review it in your library." },
+};
+
+export function checkoutError(status: number, error: unknown): { message: string; field?: Field } {
+  if (typeof error === "string" && Object.hasOwn(customerErrors, error)) return customerErrors[error];
+  if (status === 429) return { message: "You've tried several times. Please wait a while before trying again." };
+  if (status === 400) return { message: "Please check your details and selected books, then try again." };
+  if (status === 403 || status === 409) return { message: "We could not continue this checkout. Please refresh the page and review your selection." };
+  return { message: "Online ordering is currently unavailable. Please try again later." };
+}
+
+export default function CheckoutForm({ books, initialSlug, enabled }: { books: PublicBook[]; initialSlug?: string; enabled: boolean }) {
+  const cart = useCart();
+  const slugs = initialSlug ? [initialSlug] : cart.slugs;
+  const selected = slugs.flatMap((slug) => books.filter((book) => book.slug === slug));
+  const totals = selected.every((book) => book.saleable) ? cartTotals(selected) : null;
+  const totalLabel = totals ? rupees(totals.total) : "Not yet on sale";
+  const unavailable = !totals || selected.length !== slugs.length || selected.some((book) => !book.saleable) || slugs.length > 20;
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ message: string; field?: Field } | null>(null);
+  const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
+  const submitting = useRef(false);
 
-  const set = (k: Field) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [k]: e.target.value });
-
-  async function pay(e: React.FormEvent) {
-    e.preventDefault();
-    setErr(null);
-    setBusy(true);
-
+  async function pay(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!enabled || unavailable || !slugs.length || submitting.current) return;
+    submitting.current = true;
+    setBusy(true); setErr(null);
     try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, ...form }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErr({ message: data.error || "Could not start the payment.", field: data.field });
-        setBusy(false);
-        return;
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({ slugs: [...slugs].sort(), ...form })));
+      const fingerprint = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      if (!attempt.current) {
+        try {
+          const saved = JSON.parse(sessionStorage.getItem(CHECKOUT_KEY) || "null");
+          if (saved && typeof saved.key === "string" && /^[A-Za-z0-9_-]{16,128}$/.test(saved.key) && typeof saved.fingerprint === "string") attempt.current = saved;
+        } catch { /* Storage can be unavailable; the in-memory key still survives retries. */ }
       }
-
-      // Razorpay hosts the payment page; we only redirect and wait for the webhook.
-      window.location.href = data.paymentUrl || `/order/${data.orderId}`;
+      if (attempt.current?.fingerprint !== fingerprint) attempt.current = { fingerprint, key: crypto.randomUUID() };
+      try { sessionStorage.setItem(CHECKOUT_KEY, JSON.stringify(attempt.current)); } catch { /* Keep the in-memory retry key. */ }
+      const idempotencyKey = attempt.current.key;
+      const response = await fetch("/api/checkout", {
+        method: "POST", headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
+        body: JSON.stringify({ ...(initialSlug ? { slug: initialSlug } : { slugs }), idempotencyKey, ...form }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setErr(checkoutError(response.status, data.error));
+      } else if (data.pending || response.status === 202) {
+        setErr({ message: "Your payment link is still being prepared. Please retry in a moment." });
+      } else if (typeof data.paymentUrl === "string") {
+        const destination = new URL(data.paymentUrl);
+        if (destination.protocol !== "https:") throw new Error("Invalid payment destination.");
+        window.location.assign(destination.href);
+        return;
+      } else if (typeof data.orderId === "string" && /^[A-Za-z0-9_-]+$/.test(data.orderId)) {
+        window.location.assign(`/order/${encodeURIComponent(data.orderId)}`);
+        return;
+      } else { throw new Error("No payment destination."); }
     } catch {
-      setErr({ message: "Network problem. Please try again." });
-      setBusy(false);
+      setErr({ message: "We could not open your payment page. Please try again." });
     }
+    setBusy(false); submitting.current = false;
   }
 
-  const fields: {
-    k: Field;
-    label: string;
-    type: string;
-    ac: string;
-    ph: string;
-    hint?: string;
-  }[] = [
-    {
-      k: "name",
-      label: "Full name",
-      type: "text",
-      ac: "name",
-      ph: "Narendra Bhatt",
-    },
-    {
-      k: "email",
-      label: "Email where your book is sent",
-      type: "email",
-      ac: "email",
-      ph: "you@example.com",
-      hint: "Use a permanent address. Disposable inboxes are rejected.",
-    },
-    {
-      k: "phone",
-      label: "Mobile number",
-      type: "tel",
-      ac: "tel",
-      ph: "98765 43210",
-      hint: "Indian mobile, 10 digits.",
-    },
-  ];
-
-  return (
-    <form onSubmit={pay}>
-      {fields.map((f) => (
-        <div className="mb-5" key={f.k}>
-          <label className="field-label" htmlFor={f.k}>
-            {f.label}
-          </label>
-          <input
-            id={f.k}
-            name={f.k}
-            type={f.type}
-            required
-            className="field-input"
-            value={form[f.k]}
-            onChange={set(f.k)}
-            placeholder={f.ph}
-            autoComplete={f.ac}
-            aria-invalid={err?.field === f.k || undefined}
-            aria-describedby={err?.field === f.k ? "checkout-error" : `${f.k}-hint`}
-          />
-          {f.hint && (
-            <p id={`${f.k}-hint`} className="mt-1.5 text-[13px] text-ink-soft">
-              {f.hint}
-            </p>
-          )}
-        </div>
-      ))}
-
-      <button className="btn btn-primary mt-2" type="submit" disabled={busy}>
-        {busy ? "Redirecting to payment\u2026" : `Pay ${amountLabel}`}{" "}
-        <span aria-hidden>&rarr;</span>
-      </button>
-
-      <p className="eyebrow mt-3">Secure payment handled by Razorpay</p>
-
-      {err && (
-        <p id="checkout-error" role="alert" className="mt-4 text-sm text-danger">
-          {err.message}
-        </p>
-      )}
-    </form>
-  );
+  if (!initialSlug && !cart.ready) return <p role="status">Loading your selection...</p>;
+  if (!slugs.length) return <div className="empty-state"><h2>Your cart is empty.</h2><p>Choose a digital edition before checking out.</p><Link className="btn btn-primary" href="/catalogue">Explore the books <ArrowRight size={17} aria-hidden="true" /></Link></div>;
+  return <>
+    <div className="checkout-layout">
+      <form onSubmit={pay} className="checkout-form" aria-label="Customer details">
+        {!enabled && <p className="purchase-paused">Online ordering is currently unavailable. <Link className="underline" href="/catalogue">Continue browsing</Link> or return later.</p>}
+        {enabled && unavailable && <p className="purchase-paused">{slugs.length > 20 ? "Choose up to twenty titles per checkout." : "A selected edition is not currently available to buy."} <Link className="underline" href={initialSlug ? `/books/${encodeURIComponent(initialSlug)}` : "/cart"}>{initialSlug ? "View book details" : "Review your cart"}</Link>.</p>}
+        {([{ key: "name", label: "Full name", type: "text", autoComplete: "name", maxLength: 100 },
+          { key: "email", label: "Email address", type: "email", autoComplete: "email", maxLength: 254 },
+          { key: "phone", label: "Indian mobile number", type: "tel", autoComplete: "tel", maxLength: 32 }] as const).map((field) => <div key={field.key}>
+            <label className="field-label" htmlFor={`checkout-${field.key}`}>{field.label}</label>
+            <input className="field-input" id={`checkout-${field.key}`} name={field.key} type={field.type} autoComplete={field.autoComplete}
+              required maxLength={field.maxLength} value={form[field.key]} disabled={busy || !enabled || unavailable}
+              onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+              aria-invalid={err?.field === field.key || undefined}
+              aria-describedby={err?.field === field.key ? "checkout-error" : field.key === "email" ? "email-hint" : field.key === "phone" ? "phone-hint" : undefined} />
+            {field.key === "email" && <p className="small muted" id="email-hint">Your receipt and access details will be sent here. Signed-in purchases use your account email.</p>}
+            {field.key === "phone" && <p className="small muted" id="phone-hint">Use your 10-digit Indian mobile number.</p>}
+          </div>)}
+        <button className="btn btn-primary" type="submit" disabled={busy || !enabled || unavailable || !selected.length}>
+          <LockKeyhole size={17} aria-hidden="true" />{!enabled || unavailable ? "Payment unavailable" : busy ? "Preparing payment..." : `Continue to pay ${rupees(totals!.total)}`}
+        </button>
+        {err && <p className="small text-danger mt-4" id="checkout-error" role="alert">{err.message}</p>}
+        <noscript><p className="small">JavaScript is required to complete checkout.</p></noscript>
+        <p className="checkout-policy">By continuing, you agree to our <Link href="/terms">terms</Link> and <Link href="/refund-policy">refund policy</Link>. Digital editions are licensed for personal use.</p>
+      </form>
+      <aside className="order-summary"><h2>Your editions</h2>{selected.map((book) => <div className="summary-line" key={book.slug}><span>{book.title}</span><span>{book.saleable && book.price_inr > 0 ? rupees(book.price_inr) : "Not yet on sale"}</span></div>)}
+        {totals && totals.tax > 0 && <div className="summary-line"><span>Tax</span><span>{rupees(totals.tax)}</span></div>}
+        <div className="summary-line summary-total"><span>Total</span><span>{totalLabel}</span></div>
+        <p className="small muted mt-4">Prices and availability are checked again before payment. <Link href="/delivery-policy" className="underline">Delivery details</Link></p>
+        <Link className="text-link mt-4" href={initialSlug ? `/books/${encodeURIComponent(initialSlug)}` : "/cart"}>Review selection <ArrowRight size={16} aria-hidden="true" /></Link>
+      </aside>
+    </div>
+  </>;
 }

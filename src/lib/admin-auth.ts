@@ -1,49 +1,50 @@
-import { cookies } from "next/headers";
-import crypto from "node:crypto";
-import { env } from "./env";
+import { cookies, headers } from 'next/headers';
+import crypto from 'node:crypto';
+import { env } from './env';
+import { sql } from './db';
+import { getReader } from './reader-auth';
 
-const COOKIE = "admin_session";
+const COOKIE = 'admin_session';
+const hash = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
-/** Constant-time compare so the token cannot be guessed by timing. */
-function same(a: string, b: string) {
-  const A = Buffer.from(a);
-  const B = Buffer.from(b);
-  return A.length === B.length && crypto.timingSafeEqual(A, B);
-}
-
-/**
- * Admin auth. The token now lives in an httpOnly cookie set by a login form,
- * not in the URL — a URL token leaks through browser history, referrers and
- * anything the operator pastes into chat.
- *
- * The ?token= query is still accepted so existing bookmarks keep working.
- */
-export async function isAdmin(queryToken?: string): Promise<boolean> {
-  const expected = env("ADMIN_TOKEN");
-  if (!expected) return false;
-
-  if (queryToken && same(queryToken, expected)) return true;
-
-  const jar = await cookies();
-  const cookie = jar.get(COOKIE)?.value;
-  return !!cookie && same(cookie, expected);
+export async function isAdmin(_legacyToken?: string): Promise<boolean> {
+  const allowed = env('ADMIN_EMAIL');
+  if (process.env.AUTH_SECRET) {
+    const reader = await getReader();
+    if (reader) {
+      if (allowed && reader.email.toLowerCase() === allowed.toLowerCase()) {
+        await sql`insert into user_roles(user_id,role) values(${reader.id},'admin') on conflict(user_id) do nothing`;
+      }
+      const roles = await sql`select role from user_roles where user_id=${reader.id}`;
+      if (roles[0]?.role === 'admin') return true;
+    }
+  }
+  const token = (await cookies()).get(COOKIE)?.value;
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) return false;
+  const sessions = await sql`select 1 from admin_sessions where token_hash = ${hash(token)} and expires_at > now()`;
+  return sessions.length > 0;
 }
 
 export async function signIn(token: string): Promise<boolean> {
-  const expected = env("ADMIN_TOKEN");
-  if (!expected || !same(token, expected)) return false;
-
-  const jar = await cookies();
-  jar.set(COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  const expected = env('ADMIN_TOKEN');
+  if (!expected || token.length > 256) return false;
+  const requestHeaders = await headers();
+  const key = hash(`admin:${requestHeaders.get('x-vercel-forwarded-for') || 'local'}`);
+  const attempts = await sql`insert into request_limits (key, count, expires_at)
+    values (${key}, 1, now() + interval '1 hour') on conflict (key) do update set
+    count = case when request_limits.expires_at < now() then 1 else request_limits.count + 1 end,
+    expires_at = case when request_limits.expires_at < now() then now() + interval '1 hour' else request_limits.expires_at end
+    returning count`;
+  if (attempts[0].count > 5 || !crypto.timingSafeEqual(Buffer.from(hash(token)), Buffer.from(hash(expected)))) return false;
+  const session = crypto.randomBytes(32).toString('hex');
+  await sql`insert into admin_sessions (token_hash, expires_at) values (${hash(session)}, now() + interval '7 days')`;
+  (await cookies()).set(COOKIE, session, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 604800 });
   return true;
 }
 
 export async function signOut() {
-  (await cookies()).delete(COOKIE);
+  const jar = await cookies();
+  const token = jar.get(COOKIE)?.value;
+  if (token) await sql`delete from admin_sessions where token_hash = ${hash(token)}`;
+  jar.delete(COOKIE);
 }

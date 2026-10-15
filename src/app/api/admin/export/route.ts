@@ -25,8 +25,7 @@ function csvCell(value: unknown): string {
 }
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  if (!(await isAdmin(url.searchParams.get("token") || undefined))) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: "Not authorised." }, { status: 401 });
   }
 

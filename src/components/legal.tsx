@@ -33,14 +33,12 @@ export function Legal({
       <h1 className="title title-lg mb-3">{title}</h1>
       <hr className="gold-rule mb-10" />
       {children}
-      <hr className="mt-12 mb-5 border-line" />
-      <address className="text-sm not-italic text-ink-soft">
-        {ENTITY.name}
-        <br />
-        {ENTITY.address}
-        <br />
-        {ENTITY.email} &middot; {ENTITY.phone}
-      </address>
+      {(ENTITY.name || ENTITY.address || ENTITY.email || ENTITY.phone) && <address className="mt-12 border-t border-line pt-5 text-sm not-italic text-ink-soft">
+        {ENTITY.name && <div>{ENTITY.name}</div>}
+        {ENTITY.address && <div>{ENTITY.address}</div>}
+        {ENTITY.email && <a href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a>}
+        {ENTITY.email && ENTITY.phone && " · "}{ENTITY.phone}
+      </address>}
     </div>
   );
 }

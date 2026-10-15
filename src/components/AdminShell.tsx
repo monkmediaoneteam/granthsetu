@@ -12,7 +12,7 @@ export default function AdminShell({
   actions,
   children,
 }: {
-  active: "overview" | "books";
+  active: "overview" | "books" | "platform";
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
@@ -21,6 +21,7 @@ export default function AdminShell({
   const nav = [
     { key: "overview", label: "Overview", href: "/admin" },
     { key: "books", label: "Books", href: "/admin/books" },
+    { key: "platform", label: "Publishing & content", href: "/admin/platform" },
   ];
 
   return (
@@ -64,6 +65,7 @@ export default function AdminShell({
                 View storefront
               </a>
             </li>
+            <li><form action="/api/reader/sign-out" method="post"><button type="submit" className="block w-full px-3 py-2 text-left text-[15px] text-ink-soft">Sign out</button></form></li>
           </ul>
         </nav>
       </aside>

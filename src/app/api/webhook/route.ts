@@ -1,78 +1,53 @@
 import { NextResponse } from "next/server";
-import { sql, logEvent } from "@/lib/db";
+import { sql, type Order } from "@/lib/db";
 import { verifyWebhook } from "@/lib/razorpay";
 import { fulfilOrder } from "@/lib/fulfil";
-import { alertAdmin } from "@/lib/email";
+import { settleFromRazorpay } from "@/lib/settle";
+import { readLimitedBody, PublishingError } from "@/lib/submissions";
 
 export const runtime = "nodejs";
-
-/**
- * The only place a real payment becomes `paid`. The browser redirect is never
- * trusted a buyer can close the tab, and a hostile one can forge the callback.
- */
 export async function POST(req: Request) {
-  const raw = await req.text();
-  const signature = req.headers.get("x-razorpay-signature");
-
-  if (!verifyWebhook(raw, signature)) {
-    console.warn("[webhook] bad signature");
-    await alertAdmin(
-      "Webhook Signature Verification Failed",
-      "A request to /api/webhook failed signature verification. This could indicate misconfigured secrets or an invalid callback.",
-      { signature, bodyPreview: raw.slice(0, 300) }
-    );
-    return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
+  let raw: string;
+  try { raw = new TextDecoder().decode(await readLimitedBody(req, 262144)); }
+  catch (error) {
+    if (error instanceof PublishingError && error.status === 413)
+      return NextResponse.json({ error: "Payload too large." }, { status: 413 });
+    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
-
-  let event: Record<string, any>;
+  if (!verifyWebhook(raw, req.headers.get("x-razorpay-signature")))
+    return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
+  let event;
   try {
     event = JSON.parse(raw);
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
-  }
-
-  // Payment Links fire payment_link.*; the Orders API fires payment.*.
-  // Both are handled, so changing payment method later needs no webhook change.
-  if (event.event === "payment_link.paid") {
-    const link = event?.payload?.payment_link?.entity;
-    if (!link) return NextResponse.json({ ok: true });
-
-    const paid = event?.payload?.payment?.entity;
-    const fresh = await fulfilOrder(link.id, paid?.id ?? null);
-    return NextResponse.json({ ok: true, duplicate: !fresh });
-  }
-
-  if (event.event === "payment_link.cancelled" || event.event === "payment_link.expired") {
-    const link = event?.payload?.payment_link?.entity;
-    if (link) {
-      await sql`
-        update orders set status = 'payment_failed'
-        where razorpay_link_id = ${link.id} and status = 'created'
-      `;
-      await logEvent(null, event.event, { linkId: link.id });
+    if (!event || typeof event !== "object" || Array.isArray(event)) throw new Error("Invalid event");
+  } catch { return NextResponse.json({ error: "Invalid payload." }, { status: 400 }); }
+  try {
+    const type = event.event;
+    const link = event.payload?.payment_link?.entity;
+    const payment = event.payload?.payment?.entity;
+    const refund = event.payload?.refund?.entity;
+    if (type === "payment_link.paid" || type === "payment_link.cancelled" || type === "payment_link.expired") {
+      if (typeof link?.id !== "string" || typeof link?.reference_id !== "string")
+        return NextResponse.json({ error: "Missing link reference." }, { status: 400 });
+      const rows = await sql`select * from orders where id = ${link.reference_id}` as Order[];
+      if (!rows.length) return NextResponse.json({ error: "Order not yet available." }, { status: 503 });
+      await settleFromRazorpay(rows[0]);
+    } else if (type === "payment.captured" || type === "payment.refunded" || type === "refund.processed") {
+      const id = type === "refund.processed" ? refund?.payment_id : payment?.id;
+      if (typeof id !== "string" || !/^pay_[A-Za-z0-9]+$/.test(id))
+        return NextResponse.json({ error: "Missing payment reference." }, { status: 400 });
+      const rows = await sql`
+        select * from orders where razorpay_payment_id = ${id}
+          or razorpay_order_id = ${typeof payment?.order_id === "string" ? payment.order_id : null}
+      ` as Order[];
+      if (!rows.length) return NextResponse.json({ error: "Payment association pending." }, { status: 503 });
+      const order = rows[0];
+      await fulfilOrder(order.razorpay_link_id || order.razorpay_order_id!, id);
     }
     return NextResponse.json({ ok: true });
+  } catch {
+    console.error("[webhook] recovery required");
+    return NextResponse.json({ error: "Payment processing will be retried." }, { status: 503 });
   }
-
-  const payment = event?.payload?.payment?.entity;
-  if (!payment) return NextResponse.json({ ok: true });
-
-  if (event.event === "payment.failed") {
-    await sql`
-      update orders set status = 'payment_failed'
-      where razorpay_order_id = ${payment.order_id} and status = 'created'
-    `;
-    await logEvent(null, "payment.failed", {
-      orderId: payment.order_id,
-      paymentId: payment.id,
-      errorDescription: payment.error_description,
-    });
-    return NextResponse.json({ ok: true });
-  }
-
-  if (event.event !== "payment.captured") return NextResponse.json({ ok: true });
-
-  const fresh = await fulfilOrder(payment.order_id, payment.id);
-  return NextResponse.json({ ok: true, duplicate: !fresh });
 }
 
