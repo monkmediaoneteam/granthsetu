@@ -7,20 +7,20 @@ import { contentSections, getAdminContent, type ContentSection } from "@/lib/con
 import ActionForm from "@/app/author/ActionForm";
 import ModuleFields from "../ModuleFields";
 
-export default async function ContentPage({ params }: { params: Promise<{ section: string }> }) {
+export default async function ContentPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<{ type?: string }> }) {
   if (!(await isAdmin())) redirect("/admin/login");
   const { section } = await params;
   if (!contentSections.includes(section as ContentSection)) notFound();
   const selected = section as ContentSection;
-  const records = await getAdminContent(selected);
+  const { type } = await searchParams;
+  const records = (await getAdminContent(selected)).filter(record => !(selected === "modules" && type) || record.type === type);
   const books = selected === "collections" ? await sql`select slug,title from books order by title` as { slug: string; title: string }[] : [];
   const collections = selected === "modules" ? await sql`select slug,title from content_collections order by title` as { slug: string; title: string }[] : [];
   const authors = selected === "modules" ? await sql`select id,name from author_profiles order by name` as { id: string; name: string }[] : [];
   const categories = selected === "modules" ? await sql`select slug,name from categories order by sort,name` as { slug: string; name: string }[] : [];
   const options = { books, collections, authors, categories };
   return <section>
-    <h1 className="mb-6 text-2xl font-medium capitalize">{section}</h1>
-    <details className="mb-8 border-y border-line py-4"><summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><Plus size={16} aria-hidden />New {section === "collections" ? "collection" : section === "authors" ? "author" : section === "testimonials" ? "testimonial" : section === "media" ? "media item" : "module"}</summary><div className="pt-5"><Editor section={selected} {...options} /></div></details>
+    <details className="mb-8 border-y border-line py-4"><summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><Plus size={16} aria-hidden />New {section === "collections" ? "collection" : section === "authors" ? "author" : section === "testimonials" ? "testimonial" : section === "media" ? "media item" : "module"}</summary><div className="pt-5"><Editor section={selected} record={selected === "modules" && type ? { type } : {}} {...options} /></div></details>
     {!records.length && <p className="text-sm text-ink-soft">No {section} yet.</p>}
     {records.map(record => <section key={String(record.id ?? record.slug)} className="mb-8 border-b border-line pb-8"><h2 className="mb-4 break-words text-lg font-medium">{String(record.title)}</h2><Editor section={selected} record={record} {...options} /></section>)}
   </section>;

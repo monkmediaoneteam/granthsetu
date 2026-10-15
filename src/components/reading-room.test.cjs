@@ -331,6 +331,11 @@ async function checkHomepage() {
   const urls = (await sitemap()).map(item => item.url).join("\n");
   assert.match(urls, /books\/real-book/);
   assert.doesNotMatch(urls, /books\/unapproved/);
+  const Shell = load("components/AdminShell.tsx").default;
+  const shell = renderToStaticMarkup(React.createElement(Shell, { active: "orders", title: "Orders" }, "body"));
+  for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/platform/modules?type=banner", "/admin/platform/delivery"])
+    assert.ok(shell.includes(`href="${href.replace("&", "&amp;")}"`), href);
+  assert.match(shell, /aria-current="page"[^>]*>[^<]*Orders/);
 }
 
 Promise.resolve().then(checkPausedSelection).then(checkRetries).then(checkCatalogue).then(checkHomepage).then(() => console.log("Reading room checks passed: paused selection, cart, checkout, catalogue, hero settings, module order, collections, video validation, publishing invitation, and FAQ."))
