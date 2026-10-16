@@ -32,7 +32,7 @@ function load(relative, overrides = {}) {
 
 const layoutSource = fs.readFileSync(path.join(root, "app/layout.tsx"), "utf8");
 assert.match(layoutSource, /@fontsource-variable\/geist"/);
-assert.match(layoutSource, /@fontsource-variable\/geist-mono"/);
+assert.doesNotMatch(layoutSource, /geist-mono/, "labels use the sans font; mono hurt readability");
 assert.doesNotMatch(layoutSource, /bricolage|mukta|fraunces|manrope/i);
 const tokens = fs.readFileSync(path.join(root, "styles/tokens.css"), "utf8");
 for (const token of ["--bg-2: #fafaf7", "--brand: #2f7a4d", "--gold: #b9852e", "--forest: #0b2416", "--ink: #0a0e0c", "--cream: #f4f1e6"]) assert.ok(tokens.includes(token), token);
