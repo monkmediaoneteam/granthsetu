@@ -11,51 +11,26 @@ export const metadata = { title: "Admin", robots: { index: false, follow: false 
 export default async function Admin() {
   if (!(await isAdmin())) redirect("/admin/login");
 
-  const orders = (await sql`
-    select id, name, email, phone, total, status, created_at, items
-    from orders order by created_at desc limit 100
-  `) as {
-    id: string;
-    name: string | null;
-    email: string;
-    phone: string | null;
-    total: number;
-    status: string;
-    created_at: string;
-    items: { title: string }[];
-  }[];
-
-  const [totals] = (await sql`
-    select coalesce(sum(total),0)::int as revenue, count(*)::int as units
-    from orders where status in ('paid','fulfilled')
-  `) as { revenue: number; units: number }[];
-
-  const [conv] = (await sql`
-    select count(*)::int as started from orders
-  `) as { started: number }[];
-
-  const downloadStats = (await sql`
-    select book_slug, sum(count)::int as total_downloads, count(*)::int as active_orders
-    from downloads group by book_slug order by total_downloads desc
-  `) as { book_slug: string; total_downloads: number; active_orders: number }[];
-
-  const recentEvents = (await sql`
-    select id, order_id, type, payload, created_at
-    from events order by created_at desc limit 40
-  `) as {
-    id: number;
-    order_id: string | null;
-    type: string;
-    payload: Record<string, unknown>;
-    created_at: string;
-  }[];
-
-  const rate = conv.started ? Math.round((totals.units / conv.started) * 100) : 0;
-  const [health] = await sql`select
+  // One round of parallel queries instead of six in a row: each query to the database costs a network round trip.
+  const [ordersRows, totalsRows, convRows, downloadRows, eventRows, healthRows] = await Promise.all([
+    sql`select id, name, email, phone, total, status, created_at, items from orders order by created_at desc limit 100`,
+    sql`select coalesce(sum(total),0)::int as revenue, count(*)::int as units from orders where status in ('paid','fulfilled')`,
+    sql`select count(*)::int as started from orders`,
+    sql`select book_slug, sum(count)::int as total_downloads, count(*)::int as active_orders from downloads group by book_slug order by total_downloads desc`,
+    sql`select id, order_id, type, payload, created_at from events order by created_at desc limit 40`,
+    sql`select
     (select count(*)::int from orders where status='paid') incomplete,
     (select count(*)::int from email_delivery where state in ('pending','sending','manual')) email_pending,
     (select count(*)::int from payment_attempts where state in ('creating','unknown')) reconciliation,
-    (select count(*)::int from events where type='download.failed' and created_at>now()-interval '1 day') download_errors`;
+    (select count(*)::int from events where type='download.failed' and created_at>now()-interval '1 day') download_errors`,
+  ]);
+  const orders = ordersRows as { id: string; name: string | null; email: string; phone: string | null; total: number; status: string; created_at: string; items: { title: string }[] }[];
+  const [totals] = totalsRows as { revenue: number; units: number }[];
+  const [conv] = convRows as { started: number }[];
+  const downloadStats = downloadRows as { book_slug: string; total_downloads: number; active_orders: number }[];
+  const recentEvents = eventRows as { id: number; order_id: string | null; type: string; payload: Record<string, unknown>; created_at: string }[];
+  const [health] = healthRows as Record<string, number>[];
+  const rate = conv.started ? Math.round((totals.units / conv.started) * 100) : 0;
   const allDownloads = downloadStats.reduce((a, d) => a + d.total_downloads, 0);
   const exportHref = "/api/admin/export";
 

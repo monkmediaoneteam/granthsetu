@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import crypto from 'node:crypto';
 import { env } from './env';
@@ -8,7 +9,8 @@ import { consumeLimit, clientKey } from './rate-limit';
 const COOKIE = 'admin_session';
 const hash = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
-export async function isAdmin(_legacyToken?: string): Promise<boolean> {
+// Cached per request: layouts, pages and actions all ask, but the session lookup runs once.
+export const isAdmin = cache(async (_legacyToken?: string): Promise<boolean> => {
   const allowed = env('ADMIN_EMAIL');
   if (process.env.AUTH_SECRET) {
     const reader = await getReader();
@@ -24,7 +26,7 @@ export async function isAdmin(_legacyToken?: string): Promise<boolean> {
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return false;
   const sessions = await sql`select 1 from admin_sessions where token_hash = ${hash(token)} and expires_at > now()`;
   return sessions.length > 0;
-}
+});
 
 export async function signIn(token: string): Promise<boolean> {
   const expected = env('ADMIN_TOKEN');

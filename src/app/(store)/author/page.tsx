@@ -3,7 +3,7 @@ import { Save, Send, Plus } from "lucide-react";
 import { getReader } from "@/lib/reader-auth";
 import { sql } from "@/lib/db";
 import { getAuthorSubmissions } from "@/lib/submissions";
-import ActionForm from "./ActionForm";
+import ActionForm from "@/components/ActionForm";
 import UploadForm from "./UploadForm";
 
 export const dynamic = "force-dynamic";

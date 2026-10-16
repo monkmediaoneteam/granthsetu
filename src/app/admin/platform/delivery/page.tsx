@@ -1,7 +1,7 @@
 import { sql } from '@/lib/db';
 import { isAdmin } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
-import ActionForm from '@/app/author/ActionForm';
+import ActionForm from '@/components/ActionForm';
 import { RefreshCw } from 'lucide-react';
 export default async function DeliveryPage() {
   if (!(await isAdmin())) redirect('/admin/login');
