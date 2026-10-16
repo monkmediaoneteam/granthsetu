@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/AdminShell";
 import StatCard from "@/components/StatCard";
+import { checkoutProblems } from "@/lib/razorpay";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin", robots: { index: false, follow: false } };
@@ -33,6 +34,7 @@ export default async function Admin() {
   const rate = conv.started ? Math.round((totals.units / conv.started) * 100) : 0;
   const allDownloads = downloadStats.reduce((a, d) => a + d.total_downloads, 0);
   const exportHref = "/api/admin/export";
+  const checkoutIssues = checkoutProblems();
 
   return (
     <AdminShell
@@ -45,6 +47,13 @@ export default async function Admin() {
         </a>
       }
     >
+      <section className={`mb-6 rounded-xl border px-5 py-4 ${checkoutIssues.length ? "border-danger/30 bg-danger/5" : "border-brand/30 bg-brand/5"}`} aria-labelledby="checkout-status">
+        <h2 id="checkout-status" className="text-base font-semibold">{checkoutIssues.length ? "Checkout is off: customers see \"Online ordering is currently unavailable\"" : "Checkout is on"}</h2>
+        {checkoutIssues.length > 0 && <>
+          <p className="mt-1 text-sm text-ink-soft">Fix these in Vercel, then Settings, then Environment Variables (Production), and redeploy:</p>
+          <ul className="mt-2 grid gap-1 font-mono text-[13px]">{checkoutIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul>
+        </>}
+      </section>
       <section className="mb-8 border-b border-line pb-6"><h2 className="title title-md">Delivery health</h2>
         <p className="my-3">Incomplete paid orders: {health.incomplete} · Pending email: {health.email_pending} · Payment reconciliation: {health.reconciliation} · Download errors today: {health.download_errors}</p>
         <a href="/admin/platform/delivery" className="text-link">Review delivery recovery</a>
