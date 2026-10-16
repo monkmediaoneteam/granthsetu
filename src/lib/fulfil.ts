@@ -96,6 +96,12 @@ export async function fulfilOrder(ref: string, paymentId: string | null): Promis
     select id from paid
   ` as { id: string }[];
   if (!rows.length) return false;
+  // Redemptions count toward offer limits; repeated fulfilment is a no-op.
+  if (Array.isArray(order.offers) && order.offers.length) await sql`
+    insert into offer_redemptions (offer_id, order_id, email, discount)
+    select x->>'id', ${order.id}, ${order.email}, (x->>'saving')::int from jsonb_array_elements(${JSON.stringify(order.offers)}::jsonb) x
+    on conflict (offer_id, order_id) do nothing
+  `;
   if (!dev) await retryOrderEmail(order.id);
   return true;
 }

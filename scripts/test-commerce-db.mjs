@@ -9,6 +9,7 @@ import { load, check, finish } from './test-commerce.mjs';
 const database = new PGlite();
 await database.exec(readFileSync(new URL('../schema.sql', import.meta.url), 'utf8'));
 await database.exec(readFileSync(new URL('../migrations/002-commerce.sql', import.meta.url), 'utf8'));
+await database.exec(readFileSync(new URL('../migrations/008-offers.sql', import.meta.url), 'utf8'));
 const sql = async (parts, ...parameters) => (await database.query(parts.reduce((s, p, i) => s + (i ? `$${i}` : '') + p, ''), parameters)).rows;
 const getOrder = async id => (await sql`select * from orders where id = ${id}`)[0] || null;
 const books = new Map([
@@ -18,8 +19,11 @@ const books = new Map([
 const db = { sql, getOrder, getBook: async slug => books.get(slug) || null, logEvent: async () => {} };
 let authorized = true;
 const readerAuth = { checkOrigin: req => req.headers.get('origin') === 'https://example.com', getReader: async () => ({ id: 'reader1', email: 'reader@example.com', name: 'Reader Name' }), canAccessOrder: async () => authorized, grantGuestOrder: async () => {} };
+let liveOffers = [];
+const offerData = { loadOffers: async () => liveOffers, customerHistory: async () => ({ paidOrders: 0, uses: {} }),
+  cartLines: async (list, now) => list.map((b) => { const p = load('src/lib/money.ts').currentPrice(b, now); return { slug: b.slug, price: p.price, regular: p.regular, categories: [], collections: [] }; }) };
 let blobReads = 0;
-const mocks = { './db': db, '@/lib/db': db, '@/lib/reader-auth': readerAuth, '@vercel/blob': { get: async (_url, options) => {
+const mocks = { '@/lib/offer-data': offerData, './db': db, '@/lib/db': db, '@/lib/reader-auth': readerAuth, '@vercel/blob': { get: async (_url, options) => {
   assert.equal(options.access, 'private');
   assert.equal(options.useCache, false);
   blobReads++;
@@ -565,6 +569,44 @@ try {
     process.env.NODE_ENV = 'production';
     process.env.RAZORPAY_KEY_ID = key;
     delete process.env.ALLOW_DEV_CHECKOUT;
+  });
+  const twenty = { id: 'off20', name: 'Twenty off', kind: 'percent', scope: 'all', targets: [], value: 20, cap: null, buy_qty: null, get_qty: null, get_percent: null,
+    bundle_qty: null, bundle_price: null, min_items: 0, min_subtotal: 0, code: null, combinable: false, first_order_only: false, usage_limit: null,
+    per_customer_limit: null, priority: 0, starts_at: null, ends_at: null, status: 'active', uses: 0, created_at: '2026-10-01T00:00:00Z' };
+  let offerOrderId;
+  await check('checkout charges the server-priced offer and records it on the order', async () => {
+    await sql`insert into offers(id,name,kind,scope,value,status) values('off20','Twenty off','percent','all',20,'active') on conflict do nothing`;
+    liveOffers = [twenty];
+    const response = await checkout.POST(request('checkout-offer-00001', { slugs: ['book-a'], expectedTotal: 15920 }));
+    assert.equal(response.status, 200);
+    offerOrderId = (await response.json()).orderId;
+    const order = await getOrder(offerOrderId);
+    assert.equal(order.subtotal, 19900); assert.equal(order.discount, 3980); assert.equal(order.total, 15920);
+    assert.equal(order.items[0].price, 15920); assert.equal(order.items[0].discount, 3980); assert.equal(order.items[0].list_price, 19900);
+    assert.deepEqual(order.offers, [{ id: 'off20', name: 'Twenty off', code: null, saving: 3980 }]);
+    assert.equal(links.get(order.razorpay_link_id).amount, 15920, 'Razorpay is asked for the discounted total');
+  });
+  await check('a changed total is refused before any payment link exists', async () => {
+    await sql`update orders set created_at = created_at - interval '2 hours'`; // clear the hourly attempt cap for this fixture
+    const before = creations;
+    const response = await checkout.POST(request('checkout-offer-00002', { slugs: ['book-a'], email: 'other@example.com', expectedTotal: 19900 }));
+    assert.equal(response.status, 409);
+    const body = await response.json();
+    assert.equal(body.error, 'Prices changed.'); assert.equal(body.pricing.total, 15920);
+    assert.equal(creations, before);
+  });
+  await check('the coupon is part of the idempotency hash', async () => {
+    assert.equal((await checkout.POST(request('checkout-offer-00001', { slugs: ['book-a'], expectedTotal: 15920, coupon: 'SAVE10' }))).status, 409);
+  });
+  await check('fulfilment records one redemption per offer, once', async () => {
+    const order = await getOrder(offerOrderId);
+    const link = links.get(order.razorpay_link_id);
+    link.status = 'paid'; link.amount_paid = order.total; link.payments = [{ payment_id: 'pay_offer', status: 'captured' }];
+    payments.set('pay_offer', { id: 'pay_offer', order_id: 'order_provider1', amount: order.total, currency: 'INR', status: 'captured', captured: true, amount_refunded: 0 });
+    assert.equal(await fulfil.fulfilOrder(link.id, 'pay_offer'), true);
+    await fulfil.fulfilOrder(link.id, 'pay_offer');
+    assert.deepEqual(await sql`select offer_id,order_id,email,discount from offer_redemptions`, [{ offer_id: 'off20', order_id: offerOrderId, email: 'reader@example.com', discount: 3980 }]);
+    liveOffers = [];
   });
 } finally { globalThis.fetch = originalFetch; await database.close(); }
 finish();

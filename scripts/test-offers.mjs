@@ -76,4 +76,41 @@ assert.equal(offerBadge(offer({ kind: 'bxgy', buy_qty: 2, get_qty: 1, get_percen
 assert.equal(offerBadge(offer({ kind: 'bundle', bundle_qty: 2, bundle_price: 40000 })), 'Any 2 for ₹400');
 assert.equal(offerBadge(save10), 'Code SAVE10');
 
+// Data loading on a real (in-memory) database.
+{
+  const { createIsolatedDatabase } = await import('./isolated-db.mjs');
+  const loadData = async (db) => {
+    globalThis.offerTestSql = async (parts, ...values) => (await db.query(parts.reduce((t, p, i) => t + (i ? `$${i}` : '') + p, ''), values)).rows;
+    const src = readFileSync(new URL('../src/lib/offer-data.ts', import.meta.url), 'utf8')
+      .replace(/import \{ sql, type Book \} from "\.\/db";/, 'const sql = globalThis.offerTestSql;')
+      .replace('"./money"', JSON.stringify('data:text/javascript;base64,' + Buffer.from(ts.transpileModule(readFileSync(new URL('../src/lib/money.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText).toString('base64')));
+    const out = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+    return import('data:text/javascript;base64,' + Buffer.from(out + `
+// ${Math.random()}`).toString('base64'));
+  };
+  const { db } = await createIsolatedDatabase();
+  try {
+    const data = await loadData(db);
+    await db.exec(`insert into categories(slug,name) values('health','Health') on conflict do nothing;
+      insert into categories(slug,name,parent_slug) values('ayur','Ayurveda','health') on conflict do nothing;
+      insert into books(slug,title,price_inr,sale_price_inr,category_slug) values('x','X',30000,24000,'ayur');
+      insert into content_collections(slug,title,book_slugs,status) values('picks','Picks','["x"]','published');
+      insert into offers(id,name,kind,scope,value,status) values('live','Live','percent','all',10,'active'),('old','Old','percent','all',10,'active'),('draft','Draft','percent','all',10,'draft');
+      update offers set ends_at = now() - interval '1 day', starts_at = now() - interval '2 days' where id='old';
+      insert into orders(id,email,subtotal,total,status) values('p1','Buyer@Example.com',100,100,'fulfilled'),('p2','buyer@example.com',100,100,'created');
+      insert into offer_redemptions(offer_id,order_id,email,discount) values('live','p1','buyer@example.com',10);`);
+    const offers = await data.loadOffers();
+    assert.deepEqual(offers.map((o) => o.id), ['live'], 'only active, unexpired offers load');
+    assert.equal(offers[0].uses, 1); assert.ok(isLive(offers[0], new Date()), 'timestamps come back parseable');
+    const [x] = await data.cartLines([(await db.query(`select * from books where slug='x'`)).rows[0]]);
+    assert.deepEqual([x.price, x.regular, x.categories, x.collections], [24000, 30000, ['ayur', 'health'], ['picks']]);
+    assert.deepEqual(await data.customerHistory('BUYER@example.com'), { paidOrders: 1, uses: { live: 1 } }, 'email match ignores case; unpaid orders do not count');
+    await db.exec('drop table offer_redemptions; drop table offers; drop table content_collections;');
+    const fresh = await loadData(db);
+    assert.deepEqual(await fresh.loadOffers(), [], 'before setup the store sells at normal prices');
+    assert.deepEqual((await fresh.customerHistory('buyer@example.com')).uses, {});
+    assert.deepEqual((await fresh.cartLines([(await db.query(`select * from books where slug='x'`)).rows[0]]))[0].collections, []);
+  } finally { await db.close(); }
+}
+
 console.log('Offers engine checks passed: percent, cap, flat, minimums, buy x get y, bundles, stacking, coupons, ₹1 floor, live rules, customer limits, badges.');

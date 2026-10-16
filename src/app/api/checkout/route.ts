@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { sql, getBook, type Order } from "@/lib/db";
-import { computeTotals, currentPrice } from "@/lib/money";
+import { sql, getBook, type Book, type Order } from "@/lib/db";
+import { computeTotals } from "@/lib/money";
 import { checkoutConfiguration, createPaymentLink, PaymentLinkCreationRejected } from "@/lib/razorpay";
 import { fulfilOrder } from "@/lib/fulfil";
 import { isSaleable } from "@/lib/catalogue";
@@ -9,6 +9,8 @@ import { canAccessOrder, getReader, grantGuestOrder, checkOrigin } from "@/lib/r
 import { validateEmail, validatePhone, validateName } from "@/lib/validate";
 import { env } from "@/lib/env";
 import { readLimitedBody, PublishingError } from "@/lib/submissions";
+import { normaliseCode, priceCart } from "@/lib/offers";
+import { cartLines, customerHistory, loadOffers } from "@/lib/offer-data";
 
 export const runtime = "nodejs";
 type CheckoutOrder = Order & { checkout_hash: string; payment_url: string | null; is_dev: boolean };
@@ -40,6 +42,9 @@ export async function POST(req: Request) {
     return reply("Choose between one and twenty distinct books.", 400);
   if (typeof body.name !== "string" || typeof body.email !== "string" || typeof body.phone !== "string" ||
       body.email.length > 254 || body.phone.length > 32) return reply("Invalid customer details.", 400);
+  if ((body.coupon !== undefined && (typeof body.coupon !== "string" || body.coupon.length > 40)) ||
+      (body.expectedTotal !== undefined && !Number.isSafeInteger(body.expectedTotal))) return reply("Bad request.", 400);
+  const coupon = typeof body.coupon === "string" ? normaliseCode(body.coupon) : "";
   try {
     const reader = await getReader();
     const nameCheck = validateName(body.name);
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
     if (!emailCheck.ok) return reply(emailCheck.error, 400);
     if (!phoneCheck.ok) return reply(phoneCheck.error, 400);
     const name = nameCheck.value, email = emailCheck.value, phone = phoneCheck.value;
-    const hash = crypto.createHash("sha256").update(JSON.stringify({ slugs: [...slugs].sort(), name, email, phone, reader: reader?.id || null })).digest("hex");
+    const hash = crypto.createHash("sha256").update(JSON.stringify({ slugs: [...slugs].sort(), name, email, phone, reader: reader?.id || null, ...(coupon ? { coupon } : {}) })).digest("hex");
     const respond = async (order: CheckoutOrder) => {
       if (order.checkout_hash !== hash) return reply("Idempotency key was already used for a different checkout.", 409);
       if (!await canAccessOrder(order)) return reply("Order access denied.", 403);
@@ -120,19 +125,31 @@ export async function POST(req: Request) {
       }
     }
     const now = new Date();
-    const items = books.map(book => ({
-      slug: book!.slug, title: book!.title, price: currentPrice(book!, now).price, list_price: book!.price_inr,
+    // The only pricing path: offers are priced on the server, and the customer must have seen this exact total.
+    const [offers, lines, customer] = await Promise.all([loadOffers(), cartLines(books as Book[], now), customerHistory(email)]);
+    const pricing = priceCart(lines, offers, { now, code: coupon || null, customer });
+    if (body.expectedTotal !== undefined && body.expectedTotal !== pricing.total)
+      return NextResponse.json({ error: "Prices changed.", pricing }, { status: 409 });
+    const items = books.map((book, i) => ({
+      slug: book!.slug, title: book!.title, price: pricing.lines[i].price, discount: pricing.lines[i].discount, list_price: book!.price_inr,
       file_url: book!.file_url, file_format: book!.file_format, file_sha256: book!.file_sha256,
       edition: book!.edition || null,
     }));
-    const { subtotal, tax, total } = computeTotals(items.map(i => i.price));
+    const { subtotal, tax } = computeTotals(pricing.lines.map(l => l.base));
+    const total = pricing.total + tax;
     const id = crypto.randomBytes(18).toString("base64url");
-    const inserted = await sql`
+    // Offer columns exist only once the admin turned offers on, and offers apply only then.
+    const inserted = (pricing.applied.length ? await sql`
+      insert into orders (id,name,email,phone,items,subtotal,tax,total,discount,offers,checkout_key,checkout_hash,reader_id,is_dev,razorpay_order_id)
+      values (${id},${name},${email},${phone},${JSON.stringify(items)}::jsonb,${subtotal},${tax},${total},${pricing.discount},${JSON.stringify(pricing.applied)}::jsonb,
+        ${key},${hash},${reader?.id || null},${configuration.dev},${configuration.dev ? `nopay_${id}` : null})
+      on conflict (checkout_key) do nothing returning *
+    ` : await sql`
       insert into orders (id,name,email,phone,items,subtotal,tax,total,checkout_key,checkout_hash,reader_id,is_dev,razorpay_order_id)
       values (${id},${name},${email},${phone},${JSON.stringify(items)}::jsonb,${subtotal},${tax},${total},
         ${key},${hash},${reader?.id || null},${configuration.dev},${configuration.dev ? `nopay_${id}` : null})
       on conflict (checkout_key) do nothing returning *
-    ` as CheckoutOrder[];
+    `) as CheckoutOrder[];
     if (!inserted.length) {
       const raced = await sql`select * from orders where checkout_key = ${key}` as CheckoutOrder[];
       return raced[0] ? await respond(raced[0]) : reply("Checkout is pending.", 202);
