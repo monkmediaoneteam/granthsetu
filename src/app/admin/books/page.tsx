@@ -6,6 +6,7 @@ import { Archive, BookCheck, Check, Eye, Rocket, X } from "lucide-react";
 import { releaseChecklist } from "@/lib/admin-catalogue";
 import { fileCheck } from "@/lib/admin-sale";
 import BookForm from "./BookForm";
+import BookUpload from "./BookUpload";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Books", robots: { index: false, follow: false } };
@@ -33,7 +34,7 @@ export default async function AdminBooks({
   const authorList = authors as { id: string; name: string }[];
   const categoryName = new Map(categoryList.map((c) => [c.slug, c.name]));
   const stats = new Map((sold as { book_slug: string; orders: number; downloads: number }[]).map((s) => [s.book_slug, s]));
-  const files = new Map(await Promise.all(books.filter((b) => !b.third_party).map(async (b) => [b.slug, await fileCheck(process.cwd(), b.file_url)] as const)));
+  const files = new Map(await Promise.all(books.filter((b) => !b.third_party).map(async (b) => [b.slug, await fileCheck(process.cwd(), b.file_url, b.file_sha256 ?? null)] as const)));
 
   return (
     <AdminShell active="books" title="Books" subtitle="Price, offers and what is on sale.">
@@ -106,6 +107,7 @@ export default async function AdminBooks({
                     <label className="text-sm">Price (₹)<input name="price" required inputMode="decimal" pattern="\d+(\.\d{1,2})?" defaultValue={(b.price_inr / 100).toFixed(2)} className="field-input mt-1 w-32" /></label>
                     <button className="btn btn-ghost" type="submit">Save price</button>
                   </form>
+                  <div className="grid grid-cols-2 gap-2"><BookUpload slug={b.slug} kind="pdf" /><BookUpload slug={b.slug} kind="cover" /></div>
                   {!b.release_approved && <form action="/api/admin/book" method="post">
                     <input type="hidden" name="action" value="put-on-sale" /><input type="hidden" name="slug" value={b.slug} />
                     <button className="btn btn-primary w-full" type="submit" disabled={!canRelease} title={canRelease ? undefined : file.reason ?? "Set a price first."}>

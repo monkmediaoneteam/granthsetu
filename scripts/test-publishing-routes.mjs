@@ -57,6 +57,7 @@ try {
   dependencies['@/lib/admin-sale'] = await load('../src/lib/admin-sale.ts');
   dependencies['@/lib/money'] = await load('../src/lib/money.ts');
   dependencies['./BookForm'] = await load('../src/app/admin/books/BookForm.tsx');
+  dependencies['./BookUpload'] = { default: () => null };
   const authorRoute = await load('../src/app/api/submissions/route.ts');
   const uploads = await load('../src/app/api/submissions/uploads/route.ts');
   const scanner = await load('../src/app/api/submissions/scan/route.ts');
