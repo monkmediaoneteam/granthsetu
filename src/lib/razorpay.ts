@@ -7,7 +7,7 @@ export function checkoutConfiguration() {
   const dev = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEV_CHECKOUT === "true";
   if (dev) return { dev: true, site: env("NEXT_PUBLIC_SITE_URL") || "http://localhost:3000" };
   if (!flag("COMMERCE_POLICIES_APPROVED")) throw new Error("Commerce policies require signoff");
-  for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
+  for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
     requireEnv(name, "Required before enabling commerce.");
   if (env("AUTH_SECRET")!.length < 32 || env("DOWNLOAD_SECRET")!.length < 32) throw new Error("Commerce requires strong authentication and download secrets");
   if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(env("SUPPORT_EMAIL")!)) throw new Error("Invalid support email");
@@ -23,7 +23,7 @@ export function checkoutProblems(): string[] {
   const problems: string[] = [];
   if (!flag("COMMERCE_ENABLED")) problems.push("COMMERCE_ENABLED must be exactly true");
   if (!flag("COMMERCE_POLICIES_APPROVED")) problems.push("COMMERCE_POLICIES_APPROVED must be exactly true");
-  for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
+  for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
     if (!env(name)) problems.push(`${name} is missing or still a placeholder`);
   for (const name of ["AUTH_SECRET", "DOWNLOAD_SECRET"]) if (env(name) && env(name)!.length < 32) problems.push(`${name} must be at least 32 characters`);
   if (env("SUPPORT_EMAIL") && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(env("SUPPORT_EMAIL")!)) problems.push("SUPPORT_EMAIL is not a valid email");
