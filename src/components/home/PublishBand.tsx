@@ -5,7 +5,7 @@ export default function PublishBand({ covers }: { covers: { slug: string; title:
   return <section className="wrap section"><div className="publish-band reveal">
     <div><p className="eyebrow">For authors</p><h2>Publish your book with us</h2>
       <p>Editorial review, fair terms, readers across India.</p>
-      <Link className="btn btn-light" href="/publish">Start publishing <span aria-hidden="true">→</span></Link></div>
+      <Link className="btn btn-primary" href="/publish">Start publishing <span aria-hidden="true">→</span></Link></div>
     <div className="publish-stack" aria-hidden="true">{covers.slice(0, 3).map((c) => <span key={c.slug}><Book3D src={c.cover} title={c.title} sizes="120px" tilt={false} /></span>)}</div>
   </div></section>;
 }

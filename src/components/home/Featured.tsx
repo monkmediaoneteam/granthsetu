@@ -1,15 +1,16 @@
 import BookCard from "../BookCard";
-import CatalogueEntry from "../CatalogueEntry";
+import Link from "next/link";
 import Carousel from "../Carousel";
 import type { PublicBook } from "../book-data";
 import type { Home } from "@/lib/home";
 
-// Fewer than five titles read best as full catalogue cards; a larger shelf becomes rails.
+// A small shelf is one product grid; a larger shelf becomes rails.
 export default function Featured({ books, rails, enabled }: { books: PublicBook[]; rails: Home["rails"]; enabled: boolean }) {
   if (!books.length) return <section className="wrap section"><p className="eyebrow">New titles on the way</p></section>;
   if (books.length < 5) return <section id="catalogue" className="wrap section">
-    <div className="section-head reveal"><h2>The catalogue</h2><span className="pill">Prices in INR</span></div>
-    <div className="entries">{books.map((b, i) => <CatalogueEntry key={b.slug} book={b} index={i + 1} enabled={enabled} />)}</div>
+    <div className="section-head reveal"><div><h2>Shop the collection</h2><p>{books.length} {books.length === 1 ? "title" : "titles"} · instant download</p></div>
+      <Link className="link-line" href="/search">View all <span aria-hidden="true">→</span></Link></div>
+    <ul className="book-grid home-grid">{books.map((b) => <li key={b.slug} className="reveal"><BookCard book={b} enabled={enabled} /></li>)}</ul>
   </section>;
   const seen = new Set<string>();
   const once = (slug: string) => (seen.has(slug) ? false : (seen.add(slug), true));

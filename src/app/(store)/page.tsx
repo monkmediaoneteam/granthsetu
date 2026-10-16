@@ -10,6 +10,8 @@ import LanguageStrip from "@/components/home/LanguageStrip";
 import AuthorChips from "@/components/home/AuthorChips";
 import PublishBand from "@/components/home/PublishBand";
 import FaqGrid from "@/components/home/FaqGrid";
+import HomeSide from "@/components/home/HomeSide";
+import ShopStrip from "@/components/home/ShopStrip";
 
 export const dynamic = "force-dynamic";
 export const metadata = { alternates: { canonical: siteUrl() } };
@@ -23,7 +25,11 @@ export default async function Home() {
     .filter((b, i, all) => b.cover && all.findIndex((x) => x.slug === b.slug) === i).slice(0, 3)
     .map(({ slug, title, cover }) => ({ slug, title, cover }));
   return <>
-    <HeroCampaign banners={home.banners} covers={covers} />
+    <div className="wrap home-top">
+      <HeroCampaign banners={home.banners} covers={covers} />
+      <HomeSide books={books} />
+    </div>
+    <ShopStrip />
     <CategoryTiles tiles={home.categoryTiles.map(({ slug, name, count, covers: c }) => ({ slug, name, count, covers: c }))} />
     <Featured books={books} rails={home.rails} enabled={enabled} />
     <LookInside books={books} />
