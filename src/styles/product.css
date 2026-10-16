@@ -1,5 +1,5 @@
 @layer components {
-  .product-page { padding-bottom: 40px; background: linear-gradient(180deg, var(--bg) 0, var(--bg-2) 380px); }
+  .product-page { padding-bottom: 40px; }
   .crumbs { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 18px; font: 400 11px/1.5 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-mute); }
   .crumbs a:hover { color: var(--brand); }
   .product-main { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 32px 56px; align-items: start; }

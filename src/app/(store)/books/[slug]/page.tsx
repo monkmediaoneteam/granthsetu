@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { flag } from "@/lib/env";
 import { notFound } from "next/navigation";
 import { BadgeCheck, BookOpen, Download, FileText, Globe2, Hash, Infinity as Lifetime, Layers, Lock, Building2 } from "lucide-react";
 import { getBook, getBooks } from "@/lib/db";
@@ -34,7 +35,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const [book, records, content, categories] = await Promise.all([getBook((await params).slug), getBooks(), getPublicContent(), getCategories()]);
   if (!book || !visibleBook(book)) notFound();
   const view = publicBook(book, now);
-  const enabled = process.env.COMMERCE_ENABLED === "true";
+  const enabled = flag("COMMERCE_ENABLED");
   const url = `${siteUrl()}/books/${encodeURIComponent(book.slug)}`;
   const category = categories.find((c) => c.slug === book.category_slug);
   const author = book.author_slug ? content.authors.find((a) => a.id === book.author_slug) : undefined;

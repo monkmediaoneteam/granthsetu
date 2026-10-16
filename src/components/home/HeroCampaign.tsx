@@ -55,7 +55,7 @@ export default function HeroCampaign({ banners, covers }: { banners: Banner[]; c
         aria-roledescription={many ? "slide" : undefined} aria-label={many ? `${i + 1} of ${slides.length}` : undefined}>
         <picture className="hero-art" aria-hidden="true">{s.mobileImage && <source media="(max-width: 640px)" srcSet={s.mobileImage} />}
           <img src={s.image ?? "/assets/reading-room-botanical-v2.webp"} alt="" fetchPriority={i === 0 ? "high" : undefined} /></picture>
-        <div className="wrap hero-grid">
+        <div className="hero-grid">
           <div className="hero-copy enter">
             {s.subtitle && <span className="pill"><span className="dot" />{s.subtitle}</span>}
             <h1>{lead}<span className="grad">{accent}</span></h1>

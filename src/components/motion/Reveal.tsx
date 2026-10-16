@@ -12,18 +12,18 @@ export default function Reveal() {
       el.style.setProperty("--i", String(Math.min(Math.max(index, 0), 4)));
     };
     if (typeof IntersectionObserver === "undefined") {
-      document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+      document.querySelectorAll(".reveal").forEach((el) => el.setAttribute("data-in", ""));
       return;
     }
     const io = new IntersectionObserver((entries) => {
-      for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add("in"); io.unobserve(entry.target); }
-    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
-    const watch = (root: ParentNode) => root.querySelectorAll<HTMLElement>(".reveal:not(.in)").forEach((el) => { stagger(el); io.observe(el); });
+      for (const entry of entries) if (entry.isIntersecting) { entry.target.setAttribute("data-in", ""); io.unobserve(entry.target); }
+    }, { threshold: 0.01, rootMargin: "0px 0px 10% 0px" });
+    const watch = (root: ParentNode) => root.querySelectorAll<HTMLElement>(".reveal:not([data-in])").forEach((el) => { stagger(el); io.observe(el); });
     watch(document);
     const mo = new MutationObserver((records) => {
       for (const record of records) record.addedNodes.forEach((node) => {
         if (!(node instanceof HTMLElement)) return;
-        if (node.matches(".reveal:not(.in)")) { stagger(node); io.observe(node); }
+        if (node.matches(".reveal:not([data-in])")) { stagger(node); io.observe(node); }
         watch(node);
       });
     });

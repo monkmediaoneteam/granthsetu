@@ -1,4 +1,5 @@
 import { getCategories, getStoreBooks, bestsellerSlugs } from "@/lib/store-data";
+import { flag } from "@/lib/env";
 import { parseListing } from "@/lib/listing";
 import Listing from "@/components/Listing";
 
@@ -13,5 +14,5 @@ export default async function Search({ searchParams }: { searchParams: Promise<Q
   const [query, books, categories, popularity] = await Promise.all([searchParams, getStoreBooks(), getCategories(), bestsellerSlugs(90, 200)]);
   const params = parseListing(query);
   return <Listing base="/search" title={params.q ? `Results for "${params.q}"` : params.offer ? "Offers" : "All books"} books={books} params={params}
-    categories={categories} popularity={popularity} enabled={process.env.COMMERCE_ENABLED === "true"} />;
+    categories={categories} popularity={popularity} enabled={flag("COMMERCE_ENABLED")} />;
 }

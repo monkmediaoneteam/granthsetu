@@ -6,6 +6,9 @@
  */
 const PLACEHOLDER = /xxxxxxxx|user:password@|@host\/|change-this|your-|<[a-z-]+>/i;
 
+// On/off switches: "true", "TRUE", " true " and a quoted "true" all count, so a stray quote or space can't silently turn checkout off.
+export const flag = (name: string) => /^["']?true["']?$/i.test(process.env[name]?.trim() ?? "");
+
 export function env(name: string): string | undefined {
   const v = process.env[name]?.trim();
   if (!v || PLACEHOLDER.test(v)) return undefined;

@@ -1,12 +1,12 @@
 import crypto from "node:crypto";
-import { env, requireEnv } from "./env";
+import { env, flag, requireEnv } from "./env";
 import type { Order } from "./db";
 
 export function checkoutConfiguration() {
-  if (process.env.COMMERCE_ENABLED !== "true") throw new Error("Commerce is disabled");
+  if (!flag("COMMERCE_ENABLED")) throw new Error("Commerce is disabled");
   const dev = process.env.NODE_ENV !== "production" && process.env.ALLOW_DEV_CHECKOUT === "true";
   if (dev) return { dev: true, site: env("NEXT_PUBLIC_SITE_URL") || "http://localhost:3000" };
-  if (process.env.COMMERCE_POLICIES_APPROVED !== "true") throw new Error("Commerce policies require signoff");
+  if (!flag("COMMERCE_POLICIES_APPROVED")) throw new Error("Commerce policies require signoff");
   for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
     requireEnv(name, "Required before enabling commerce.");
   if (env("AUTH_SECRET")!.length < 32 || env("DOWNLOAD_SECRET")!.length < 32) throw new Error("Commerce requires strong authentication and download secrets");
@@ -21,8 +21,8 @@ export function checkoutConfiguration() {
 // For the admin dashboard: every reason checkout is off, by variable name only (never values).
 export function checkoutProblems(): string[] {
   const problems: string[] = [];
-  if (process.env.COMMERCE_ENABLED !== "true") problems.push("COMMERCE_ENABLED must be exactly true");
-  if (process.env.COMMERCE_POLICIES_APPROVED !== "true") problems.push("COMMERCE_POLICIES_APPROVED must be exactly true");
+  if (!flag("COMMERCE_ENABLED")) problems.push("COMMERCE_ENABLED must be exactly true");
+  if (!flag("COMMERCE_POLICIES_APPROVED")) problems.push("COMMERCE_POLICIES_APPROVED must be exactly true");
   for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
     if (!env(name)) problems.push(`${name} is missing or still a placeholder`);
   for (const name of ["AUTH_SECRET", "DOWNLOAD_SECRET"]) if (env(name) && env(name)!.length < 32) problems.push(`${name} must be at least 32 characters`);

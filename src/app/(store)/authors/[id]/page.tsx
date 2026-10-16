@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { flag } from "@/lib/env";
 import { notFound } from "next/navigation";
 import { getBooks } from "@/lib/db";
 import { getPublicContent, safeUrl } from "@/lib/content";
@@ -32,7 +33,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ id: str
   if (!author) notFound();
   let photo: string | null = null;
   try { photo = safeUrl(author.profile?.photo_url); } catch { /* An unusable photo is omitted. */ }
-  const enabled = process.env.COMMERCE_ENABLED === "true";
+  const enabled = flag("COMMERCE_ENABLED");
   const url = `${siteUrl()}/authors/${encodeURIComponent(id)}`;
   const jsonLd = { "@context": "https://schema.org", "@type": "Person", "@id": url, url, name: author.name,
     ...(author.profile?.bio && { description: author.profile.bio }), ...(photo && { image: photo.startsWith("/") ? `${siteUrl()}${photo}` : photo }) };
