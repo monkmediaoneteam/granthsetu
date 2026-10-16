@@ -507,6 +507,14 @@ try {
     assert.equal((await checkout.POST(request('checkout-release001'))).status, 503);
     process.env.RESEND_API_KEY = 'offline';
   });
+  await check('checkout runs without a webhook secret, and the webhook then rejects every call', () => {
+    const saved = process.env.RAZORPAY_WEBHOOK_SECRET;
+    delete process.env.RAZORPAY_WEBHOOK_SECRET;
+    try {
+      assert.equal(razorpay.checkoutConfiguration().dev, false);
+      assert.equal(razorpay.verifyWebhook('{}', 'a'.repeat(64)), false);
+    } finally { process.env.RAZORPAY_WEBHOOK_SECRET = saved; }
+  });
   await check('production release requires legal, support, auth, and policy approval', () => {
     for (const field of ['LEGAL_ENTITY_NAME', 'LEGAL_ENTITY_ADDRESS', 'SUPPORT_EMAIL', 'AUTH_SECRET', 'COMMERCE_POLICIES_APPROVED']) {
       const saved = process.env[field];
