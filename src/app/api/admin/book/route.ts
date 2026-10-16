@@ -6,6 +6,7 @@ import { checkOrigin } from '@/lib/reader-auth';
 import { PublishingError, readLimitedForm, releaseExistingBook } from '@/lib/submissions';
 import { ContentError, safeUrl, textField } from '@/lib/content';
 import { parseSale } from '@/lib/admin-catalogue';
+import { putOnSale, setRegularPrice, SaleError } from '@/lib/admin-sale';
 
 export const runtime = "nodejs";
 
@@ -25,10 +26,16 @@ export async function POST(req: Request) {
       : action === 'archive' || action === 'restore' ? ['action', 'slug', 'reason', 'confirmed']
       : action === 'create' ? ['action', 'slug', 'title']
       : action === 'pricing' ? ['action', 'slug', 'sale_price', 'sale_starts_at', 'sale_ends_at']
+      : action === 'put-on-sale' ? ['action', 'slug']
+      : action === 'price' ? ['action', 'slug', 'price']
       : ['action', 'slug', 'title', 'subtitle', 'price_inr', 'publisher', 'isbn', 'pages', 'year', 'cover', 'description', 'long_description', 'authorship', 'facts', 'highlights', 'active',
          'category_slug', 'release_date', 'language', 'edition', 'file_format', 'author_slug'];
-    if (!['save', 'release', 'archive', 'restore', 'create', 'pricing'].includes(String(action)) || [...form.keys()].some(key => !allowed.includes(key) || form.getAll(key).length !== 1)) throw new PublishingError('Invalid book fields.');
-    if (action === 'release') {
+    if (!['save', 'release', 'archive', 'restore', 'create', 'pricing', 'put-on-sale', 'price'].includes(String(action)) || [...form.keys()].some(key => !allowed.includes(key) || form.getAll(key).length !== 1)) throw new PublishingError('Invalid book fields.');
+    if (action === 'put-on-sale') {
+      await putOnSale(sql, { slug, root: process.cwd() });
+    } else if (action === 'price') {
+      await setRegularPrice(sql, { slug, rupees: textField(form.get('price'), 20, true) });
+    } else if (action === 'release') {
       await releaseExistingBook(textField(form.get('submission_id'), 120, true), slug, textField(form.get('reason'), 2000, true), form.get('confirmed') === 'on');
     } else if (action === 'archive' || action === 'restore') {
       const reason = textField(form.get('reason'), 2000, true);
@@ -152,6 +159,11 @@ export async function POST(req: Request) {
 
     return NextResponse.redirect(new URL(`/admin/books?saved=${encodeURIComponent(slug)}`, req.url), 303);
   } catch (error) {
+    const known = error instanceof PublishingError || error instanceof ContentError || error instanceof SaleError;
+    // Browser form posts go back to the Books screen with the message; API callers keep JSON.
+    if (known && req.headers.get('accept')?.includes('text/html'))
+      return NextResponse.redirect(new URL(`/admin/books?error=${encodeURIComponent((error as Error).message)}`, req.url), 303);
+    if (error instanceof SaleError) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof PublishingError || error instanceof ContentError) return NextResponse.json({ error: error.message }, { status: error instanceof PublishingError ? error.status : 400 });
     console.error('Admin book update failed', error);
     return NextResponse.json({ error: 'Could not save the book.' }, { status: 503 });

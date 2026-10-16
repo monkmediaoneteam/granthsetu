@@ -9,6 +9,8 @@ const config: NextConfig = {
   // They still must be bundled into the serverless function that reads them.
   outputFileTracingIncludes: {
     "/api/download": ["./private/books/**"],
+    // Admin "Put on sale" reads the file to record its checksum.
+    "/api/admin/book": ["./private/books/**"],
   },
   async headers() {
     return [
