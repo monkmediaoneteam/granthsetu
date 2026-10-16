@@ -1,4 +1,5 @@
 import { getPublicContent } from "@/lib/content";
+import { flag } from "@/lib/env";
 import { bestsellerSlugs, getCategories, getPublishedAuthors, getStoreBooks } from "@/lib/store-data";
 import { buildHome } from "@/lib/home";
 import { siteUrl } from "@/lib/store";
@@ -20,7 +21,7 @@ export default async function Home() {
   const now = new Date();
   const [books, categories, content, bestsellers, authors] = await Promise.all([getStoreBooks(now), getCategories(), getPublicContent(), bestsellerSlugs(), getPublishedAuthors()]);
   const home = buildHome({ books, categories, modules: content.modules, bestsellers, authors, now });
-  const enabled = process.env.COMMERCE_ENABLED === "true";
+  const enabled = flag("COMMERCE_ENABLED");
   const covers = [...(home.rails.find((r) => r.key === "bestsellers")?.books ?? []), ...books]
     .filter((b, i, all) => b.cover && all.findIndex((x) => x.slug === b.slug) === i).slice(0, 3)
     .map(({ slug, title, cover }) => ({ slug, title, cover }));

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { flag } from "@/lib/env";
 import { notFound } from "next/navigation";
 import { getCategories, getStoreBooks, bestsellerSlugs } from "@/lib/store-data";
 import { parseListing } from "@/lib/listing";
@@ -22,7 +23,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const listing = { ...parseListing(query), category: "" };
   return <Listing base={`/category/${slug}`} title={category.name} intro={`Digital editions in ${category.name.toLowerCase()}.`} books={books} params={listing}
     banner={{ colour: category.colour, image: contentUrl(category.image_url) }} categories={categories} family={[slug, ...children.map((c) => c.slug)]}
-    popularity={popularity} enabled={process.env.COMMERCE_ENABLED === "true"}>
+    popularity={popularity} enabled={flag("COMMERCE_ENABLED")}>
     {children.length > 0 && <ul className="subcategory-chips">{children.map((c) => <li key={c.slug}><Link className="chip" href={`/category/${c.slug}`}>{c.name}</Link></li>)}</ul>}
   </Listing>;
 }
