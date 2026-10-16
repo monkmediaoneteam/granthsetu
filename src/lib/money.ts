@@ -1,6 +1,7 @@
 /** All money is paise (integer). Never floats. */
+// Whole rupees print without decimals; any paise (offers can leave some) are shown, so the shown total is the charged total.
 export const rupees = (paise: number) =>
-  "₹" + (paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  "₹" + (paise / 100).toLocaleString("en-IN", paise % 100 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : { maximumFractionDigits: 0 });
 
 export function computeTotals(prices: number[]) {
   if (!prices.length || prices.length > 20 || prices.some(p => !Number.isSafeInteger(p) || p <= 0 || p > 2147483647)) throw new Error("Invalid prices");

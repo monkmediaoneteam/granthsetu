@@ -104,7 +104,9 @@ export async function offerStats(): Promise<Record<string, { uses: number; given
 }
 
 export async function offersReady(): Promise<boolean> {
-  const [row] = await sql`select to_regclass('public.offers') is not null as ok` as { ok: boolean }[];
+  // Every piece of setup must exist; a half-applied run brings the button back and re-running repairs it.
+  const [row] = await sql`select to_regclass('public.offers') is not null and to_regclass('public.offer_redemptions') is not null
+    and (select count(*) from information_schema.columns where table_name = 'orders' and column_name in ('discount','offers')) = 2 as ok` as { ok: boolean }[];
   return !!row?.ok;
 }
 

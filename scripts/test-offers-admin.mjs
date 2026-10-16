@@ -38,6 +38,10 @@ try {
   assert.equal(await admin.offersReady(), false);
   await admin.setupOffers(readFileSync(new URL('../migrations/008-offers.sql', import.meta.url), 'utf8'));
   assert.equal(await admin.offersReady(), true);
+  await db.exec('alter table orders drop column offers;');
+  assert.equal(await admin.offersReady(), false, 'a half-applied setup shows the button again');
+  await admin.setupOffers(readFileSync(new URL('../migrations/008-offers.sql', import.meta.url), 'utf8'));
+  assert.equal(await admin.offersReady(), true, 're-running setup repairs it');
 
   const id = await admin.saveOffer(parsed);
   await admin.setOfferStatus(id, 'paused');

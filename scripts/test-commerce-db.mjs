@@ -598,6 +598,11 @@ try {
   await check('the coupon is part of the idempotency hash', async () => {
     assert.equal((await checkout.POST(request('checkout-offer-00001', { slugs: ['book-a'], expectedTotal: 15920, coupon: 'SAVE10' }))).status, 409);
   });
+  await check('a reused key with a different total never returns the old payment link', async () => {
+    const before = creations;
+    assert.equal((await checkout.POST(request('checkout-offer-00001', { slugs: ['book-a'], expectedTotal: 15000 }))).status, 409);
+    assert.equal(creations, before);
+  });
   await check('fulfilment records one redemption per offer, once', async () => {
     const order = await getOrder(offerOrderId);
     const link = links.get(order.razorpay_link_id);

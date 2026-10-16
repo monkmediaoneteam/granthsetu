@@ -54,7 +54,9 @@ export async function POST(req: Request) {
     if (!emailCheck.ok) return reply(emailCheck.error, 400);
     if (!phoneCheck.ok) return reply(phoneCheck.error, 400);
     const name = nameCheck.value, email = emailCheck.value, phone = phoneCheck.value;
-    const hash = crypto.createHash("sha256").update(JSON.stringify({ slugs: [...slugs].sort(), name, email, phone, reader: reader?.id || null, ...(coupon ? { coupon } : {}) })).digest("hex");
+    const hash = crypto.createHash("sha256").update(JSON.stringify({ slugs: [...slugs].sort(), name, email, phone, reader: reader?.id || null, ...(coupon ? { coupon } : {}),
+      // The shown total is part of the request: a reused key with a new total never gets the old payment link.
+      ...(body.expectedTotal !== undefined ? { total: body.expectedTotal } : {}) })).digest("hex");
     const respond = async (order: CheckoutOrder) => {
       if (order.checkout_hash !== hash) return reply("Idempotency key was already used for a different checkout.", 409);
       if (!await canAccessOrder(order)) return reply("Order access denied.", 403);

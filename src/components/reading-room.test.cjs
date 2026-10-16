@@ -113,6 +113,16 @@ assert.match(priceHtml, /₹252/);
 assert.match(priceHtml, /₹47 off/);
 assert.equal(renderToStaticMarkup(React.createElement(PriceView, { book: { ...saleBook, saleable: false, comingSoon: false } })), "");
 assert.match(renderToStaticMarkup(React.createElement(PriceView, { book: { ...saleBook, saleable: false, comingSoon: true } })), /Coming soon/);
+{
+  const Failed = load("app/(store)/checkout/CheckoutForm.tsx", { "@/components/usePricing": { useCoupon: () => ["", () => {}], usePricing: () => ({ pricing: null, loading: false, failed: true, setPricing() {} }) } }).default;
+  const failedHtml = renderToStaticMarkup(React.createElement(Failed, { books: [book], enabled: true, initialSlug: book.slug }));
+  assert.match(failedHtml, /Prices could not be loaded/, "a failed price check says so instead of waiting forever");
+}
+{
+  const { rupees } = load("lib/money.ts");
+  assert.equal(rupees(16915), "₹169.15", "paise from percent offers are shown, so the shown total is the charged total");
+  assert.equal(rupees(25200), "₹252");
+}
 const CardView = load("components/BookCard.tsx", {
   "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true },
 }).default;
@@ -301,6 +311,12 @@ async function checkRetries() {
     await submit({ enabled: false, books: [pendingBook] });
     await submit({ enabled: true, books: [pendingBook] });
     assert.equal(requests.length, 4, "saving a pending edition must never make it purchasable");
+    const before = requests.length;
+    global.fetch = async (_url, options) => { requests.push(options); return { ok: true, status: 202, json: async () => ({ pending: true }) }; };
+    await submit();
+    quoted = { ...quoted, total: 14000 };
+    await submit();
+    assert.notEqual(JSON.parse(requests[before + 1].body).idempotencyKey, JSON.parse(requests[before].body).idempotencyKey, "a new total starts a new checkout, never the old payment link");
     const changed = { ...quoted, total: 9900 };
     global.fetch = async (_url, options) => { requests.push(options); return { ok: false, status: 409, json: async () => ({ error: "Prices changed.", pricing: changed }) }; };
     await submit();

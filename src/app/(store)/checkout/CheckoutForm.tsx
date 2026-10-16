@@ -47,7 +47,7 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
   const [err, setErr] = useState<{ message: string; field?: Field } | null>(null);
   const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
   const [coupon, setCoupon] = useCoupon();
-  const { pricing, setPricing } = usePricing(unavailable ? [] : slugs, coupon);
+  const { pricing, failed: pricingFailed, setPricing } = usePricing(unavailable ? [] : slugs, coupon);
   const submitting = useRef(false);
 
   async function pay(event: React.FormEvent<HTMLFormElement>) {
@@ -57,7 +57,7 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
     submitting.current = true;
     setBusy(true); setErr(null);
     try {
-      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({ slugs: [...slugs].sort(), ...form })));
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({ slugs: [...slugs].sort(), ...form, coupon, total: pricing.total })));
       const fingerprint = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
       if (!attempt.current) {
         try {
@@ -115,8 +115,9 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
             {field.key === "phone" && <p className="small muted" id="phone-hint">Use your 10-digit Indian mobile number.</p>}
           </div>)}
         <button className="btn btn-primary" type="submit" disabled={busy || !enabled || unavailable || !pricing || !selected.length}>
-          <LockKeyhole size={17} aria-hidden="true" />{!enabled || unavailable ? "Payment unavailable" : busy ? "Preparing payment..." : !pricing ? "Checking prices..." : `Continue to pay ${rupees(pricing.total)}`}
+          <LockKeyhole size={17} aria-hidden="true" />{!enabled || unavailable ? "Payment unavailable" : busy ? "Preparing payment..." : !pricing ? (pricingFailed ? "Payment unavailable" : "Checking prices...") : `Continue to pay ${rupees(pricing.total)}`}
         </button>
+        {pricingFailed && enabled && !unavailable && <p className="small text-danger mt-4" role="alert">Prices could not be loaded. <a className="underline" href="">Refresh the page</a> to try again.</p>}
         {err && <p className="small text-danger mt-4" id="checkout-error" role="alert">{err.message}</p>}
         <noscript><p className="small">JavaScript is required to complete checkout.</p></noscript>
         <p className="checkout-policy">By continuing, you agree to our <Link href="/terms">terms</Link> and <Link href="/refund-policy">refund policy</Link>. Digital editions are licensed for personal use.</p>
