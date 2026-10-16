@@ -88,12 +88,14 @@ export type Book = {
   release_date?: string | null;
 };
 
-export type OrderItem = { slug: string; title: string; price: number; file_url?: string | null; file_format?: string | null; edition?: string | null; file_sha256?: string | null; list_price?: number };
+export type OrderItem = { slug: string; title: string; price: number; discount?: number; file_url?: string | null; file_format?: string | null; edition?: string | null; file_sha256?: string | null; list_price?: number };
 
 export type Order = {
   id: string;
   name: string | null;
   email: string;
+  discount?: number;
+  offers?: { id: string; name: string; code: string | null; saving: number }[];
   phone: string | null;
   items: OrderItem[];
   subtotal: number;

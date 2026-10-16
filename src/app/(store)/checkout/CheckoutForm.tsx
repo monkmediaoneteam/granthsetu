@@ -7,6 +7,8 @@ import { ArrowRight, LockKeyhole } from "lucide-react";
 import { cartTotals, useCart } from "@/components/CartProvider";
 import type { PublicBook } from "@/components/book-data";
 import { rupees } from "@/lib/money";
+import PricingSummary from "@/components/PricingSummary";
+import { useCoupon, usePricing } from "@/components/usePricing";
 
 type Field = "name" | "email" | "phone";
 const CHECKOUT_KEY = "inventayu-reading-room-checkout";
@@ -44,15 +46,18 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ message: string; field?: Field } | null>(null);
   const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
+  const [coupon, setCoupon] = useCoupon();
+  const { pricing, failed: pricingFailed, setPricing } = usePricing(unavailable ? [] : slugs, coupon);
   const submitting = useRef(false);
 
   async function pay(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!enabled || unavailable || !slugs.length || submitting.current) return;
+    // Pay only a total the customer has seen, priced by the server with offers applied.
+    if (!enabled || unavailable || !pricing || !slugs.length || submitting.current) return;
     submitting.current = true;
     setBusy(true); setErr(null);
     try {
-      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({ slugs: [...slugs].sort(), ...form })));
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify({ slugs: [...slugs].sort(), ...form, coupon, total: pricing.total })));
       const fingerprint = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
       if (!attempt.current) {
         try {
@@ -65,10 +70,13 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
       const idempotencyKey = attempt.current.key;
       const response = await fetch("/api/checkout", {
         method: "POST", headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
-        body: JSON.stringify({ ...(initialSlug ? { slug: initialSlug } : { slugs }), idempotencyKey, ...form }),
+        body: JSON.stringify({ ...(initialSlug ? { slug: initialSlug } : { slugs }), idempotencyKey, ...form, expectedTotal: pricing.total, ...(coupon ? { coupon } : {}) }),
       });
       const data = await response.json();
-      if (!response.ok) {
+      if (response.status === 409 && data.error === "Prices changed." && data.pricing) {
+        setPricing(data.pricing);
+        setErr({ message: "Prices were updated. Check the new total." });
+      } else if (!response.ok) {
         setErr(checkoutError(response.status, data.error));
       } else if (data.pending || response.status === 202) {
         setErr({ message: "Your payment link is still being prepared. Please retry in a moment." });
@@ -106,16 +114,17 @@ export default function CheckoutForm({ books, initialSlug, enabled }: { books: P
             {field.key === "email" && <p className="small muted" id="email-hint">Your receipt and access details will be sent here. Signed-in purchases use your account email.</p>}
             {field.key === "phone" && <p className="small muted" id="phone-hint">Use your 10-digit Indian mobile number.</p>}
           </div>)}
-        <button className="btn btn-primary" type="submit" disabled={busy || !enabled || unavailable || !selected.length}>
-          <LockKeyhole size={17} aria-hidden="true" />{!enabled || unavailable ? "Payment unavailable" : busy ? "Preparing payment..." : `Continue to pay ${rupees(totals!.total)}`}
+        <button className="btn btn-primary" type="submit" disabled={busy || !enabled || unavailable || !pricing || !selected.length}>
+          <LockKeyhole size={17} aria-hidden="true" />{!enabled || unavailable ? "Payment unavailable" : busy ? "Preparing payment..." : !pricing ? (pricingFailed ? "Payment unavailable" : "Checking prices...") : `Continue to pay ${rupees(pricing.total)}`}
         </button>
+        {pricingFailed && enabled && !unavailable && <p className="small text-danger mt-4" role="alert">Prices could not be loaded. <a className="underline" href="">Refresh the page</a> to try again.</p>}
         {err && <p className="small text-danger mt-4" id="checkout-error" role="alert">{err.message}</p>}
         <noscript><p className="small">JavaScript is required to complete checkout.</p></noscript>
         <p className="checkout-policy">By continuing, you agree to our <Link href="/terms">terms</Link> and <Link href="/refund-policy">refund policy</Link>. Digital editions are licensed for personal use.</p>
       </form>
       <aside className="order-summary"><h2>Your editions</h2>{selected.map((book) => <div className="summary-line with-cover" key={book.slug}><span className="summary-cover"><Cover src={book.cover} title={book.title} sizes="40px" /></span><span>{book.title}</span><span>{book.saleable && book.price > 0 ? rupees(book.price) : "Not yet on sale"}</span></div>)}
         {totals && totals.tax > 0 && <div className="summary-line"><span>Tax</span><span>{rupees(totals.tax)}</span></div>}
-        <div className="summary-line summary-total"><span>Total</span><span>{totalLabel}</span></div>
+        <PricingSummary pricing={pricing} coupon={coupon} setCoupon={setCoupon} fallback={totalLabel} />
         <p className="small muted mt-4">Prices and availability are checked again before payment. <Link href="/delivery-policy" className="underline">Delivery details</Link></p>
         <Link className="text-link mt-4" href={initialSlug ? `/books/${encodeURIComponent(initialSlug)}` : "/cart"}>Review selection <ArrowRight size={16} aria-hidden="true" /></Link>
       </aside>

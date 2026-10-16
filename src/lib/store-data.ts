@@ -1,4 +1,6 @@
 // Server-only by convention: it imports the database client. (The `server-only` package is not installed; do not add it.)
+import { cartLines, loadOffers } from "./offer-data";
+import { offerBadges } from "./offers";
 import { sql, getBooks } from "./db";
 import { publicBook, visibleBook, type PublicBook } from "@/components/book-data";
 
@@ -10,7 +12,11 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getStoreBooks(now: Date = new Date()): Promise<PublicBook[]> {
-  return (await getBooks()).filter(visibleBook).map((book) => publicBook(book, now));
+  const [rows, offers] = await Promise.all([getBooks(), loadOffers()]);
+  const visible = rows.filter(visibleBook);
+  if (!offers.length) return visible.map((book) => publicBook(book, now));
+  const lines = await cartLines(visible, now);
+  return visible.map((book, i) => ({ ...publicBook(book, now), offers: offerBadges(lines[i], offers, now) }));
 }
 
 /** Real paid or fulfilled orders only; never a claim the data cannot support. */

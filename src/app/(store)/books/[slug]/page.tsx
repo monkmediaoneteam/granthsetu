@@ -20,6 +20,9 @@ import ShareButton from "@/components/product/ShareButton";
 import WishlistButton from "@/components/WishlistButton";
 import BuyNow from "@/components/BuyNow";
 import RecentlyViewed from "@/components/RecentlyViewed";
+import { cartLines, loadOffers } from "@/lib/offer-data";
+import { offerBadges } from "@/lib/offers";
+import { TicketPercent } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -34,7 +37,8 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const now = new Date();
   const [book, records, content, categories] = await Promise.all([getBook((await params).slug), getBooks(), getPublicContent(), getCategories()]);
   if (!book || !visibleBook(book)) notFound();
-  const view = publicBook(book, now);
+  const live = await loadOffers();
+  const view = { ...publicBook(book, now), offers: live.length ? offerBadges((await cartLines([book], now))[0], live, now) : [] };
   const enabled = flag("COMMERCE_ENABLED");
   const url = `${siteUrl()}/books/${encodeURIComponent(book.slug)}`;
   const category = categories.find((c) => c.slug === book.category_slug);
@@ -75,6 +79,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
             {book.pages && <li><span className="chip">{book.pages} pages</span></li>}</ul>
           <div className="buy-panel surface surface-lit">
             <Price book={view} size="page" />
+            {view.offers.length > 0 && <ul className="offer-chips" aria-label="Offers">{view.offers.map((o) => <li key={o}><TicketPercent size={15} aria-hidden="true" />{o}</li>)}</ul>}
             <div className="buy-row"><BuyNow slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} />
               <AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={view.saleable} saveable={view.saveable} variant="page" /></div>
             {!enabled && <p className="notice">Ordering opens soon. Save it to your bag.</p>}

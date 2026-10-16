@@ -14,6 +14,7 @@ export default function CartDrawer() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [lines, setLines] = useState<Line[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [discount, setDiscount] = useState(0);
   useEffect(() => {
     const el = dialog.current;
     if (!el) return;
@@ -25,7 +26,7 @@ export default function CartDrawer() {
     let live = true;
     setFailed(false);
     fetch("/api/cart/summary", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ slugs: cart.slugs }) })
-      .then((r) => r.ok ? r.json() : Promise.reject()).then((d: { books: Line[] }) => { if (live) setLines(d.books); })
+      .then((r) => r.ok ? r.json() : Promise.reject()).then((d: { books: Line[]; pricing: { discount: number } | null }) => { if (live) { setLines(d.books); setDiscount(d.pricing?.discount ?? 0); } })
       .catch(() => { if (live) { setLines(null); setFailed(true); } });
     return () => { live = false; };
   }, [cart.drawerOpen, cart.slugs]);
@@ -44,7 +45,8 @@ export default function CartDrawer() {
             <span>{l.saleable ? <>{l.onSale && <s>{rupees(l.regular)}</s>} <strong>{rupees(l.price)}</strong></> : "Not yet on sale"}</span></span>
           <button type="button" className="icon-plain" onClick={() => cart.remove(l.slug)} aria-label={`Remove ${l.title} from bag`}><Trash2 size={17} aria-hidden="true" /></button></li>)}</ul>}
     <div className="drawer-foot">
-      {lines && payable.length > 0 && <p className="drawer-subtotal"><span>Subtotal</span><strong>{rupees(subtotal)}</strong></p>}
+      {lines && payable.length > 0 && discount > 0 && <p className="drawer-offer"><span>Offers</span><span>−{rupees(discount)}</span></p>}
+      {lines && payable.length > 0 && <p className="drawer-subtotal"><span>{discount > 0 ? "Total" : "Subtotal"}</span><strong>{rupees(subtotal - discount)}</strong></p>}
       <p className="drawer-note">Final prices are confirmed at checkout.</p>
       <div className="drawer-actions"><Link className="btn btn-outline" href="/cart" onClick={cart.closeDrawer}>View bag</Link>
         <Link className="btn btn-neel" href="/checkout" onClick={cart.closeDrawer}>Checkout</Link></div>

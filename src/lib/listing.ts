@@ -28,7 +28,7 @@ const tests = (p: ListingParams, o: Opts) => ({
   language: (b: PublicBook) => !p.language || b.language === p.language,
   format: (b: PublicBook) => !p.format || b.file_format === p.format,
   price: (b: PublicBook) => !p.price || (b.price >= BANDS[p.price][0] && b.price < BANDS[p.price][1]),
-  offer: (b: PublicBook) => !p.offer || b.onSale,
+  offer: (b: PublicBook) => !p.offer || b.onSale || (b.offers?.length ?? 0) > 0,
 });
 const matching = (books: PublicBook[], p: ListingParams, o: Opts, except?: keyof ReturnType<typeof tests>) =>
   books.filter((b) => Object.entries(tests(p, o)).every(([k, t]) => k === except || t(b)));
@@ -58,7 +58,7 @@ export function facets(books: PublicBook[], p: ListingParams, categories: { slug
   const priceOptions = (Object.keys(BANDS) as (keyof typeof BANDS)[]).map((band) => ({ value: band,
     label: band === "1000+" ? "₹1,000 and above" : `₹${band.replace("-", " to ₹")}`,
     count: matching(books, p, o, "price").filter((b) => b.price >= BANDS[band][0] && b.price < BANDS[band][1]).length, active: p.price === band })).filter((x) => x.count);
-  const offers = matching(books, p, o, "offer").filter((b) => b.onSale).length;
+  const offers = matching(books, p, o, "offer").filter((b) => b.onSale || (b.offers?.length ?? 0) > 0).length;
   return ([
     { key: "category", title: "Category", options: count("category", (b) => b.category_slug, (v) => name.get(v) ?? v, p.category) },
     { key: "author", title: "Author", options: count("author", (b) => b.author_slug, (_v, b) => b.authorship ?? "Unknown", p.author) },
