@@ -6,11 +6,12 @@
 import Link from "next/link";
 import { STORE } from "@/lib/store";
 
-export type AdminSection = "overview" | "orders" | "books" | "categories" | "authors" | "collections" | "banners" | "modules" | "reviews" | "delivery";
+export type AdminSection = "overview" | "orders" | "books" | "offers" | "categories" | "authors" | "collections" | "banners" | "modules" | "reviews" | "delivery";
 const nav: { key: AdminSection; label: string; href: string }[] = [
   { key: "overview", label: "Dashboard", href: "/admin" },
   { key: "orders", label: "Orders", href: "/admin/orders" },
   { key: "books", label: "Books", href: "/admin/books" },
+  { key: "offers", label: "Offers", href: "/admin/offers" },
   { key: "categories", label: "Categories", href: "/admin/categories" },
   { key: "authors", label: "Authors", href: "/admin/platform/authors" },
   { key: "collections", label: "Collections", href: "/admin/platform/collections" },

@@ -12,6 +12,8 @@ const config: NextConfig = {
     // Admin "Put on sale" reads the file to record its checksum.
     "/api/admin/book": ["./private/books/**"],
     "/admin/books": ["./private/books/**"],
+    // "Turn on offers" applies this migration from admin.
+    "/api/admin/offers": ["./migrations/008-offers.sql"],
   },
   async headers() {
     return [
