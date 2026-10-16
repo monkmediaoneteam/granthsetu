@@ -18,6 +18,23 @@ export function checkoutConfiguration() {
   if (site.protocol !== "https:" || site.username || site.password) throw new Error("Commerce requires an HTTPS site URL");
   return { dev: false, site: site.origin };
 }
+// For the admin dashboard: every reason checkout is off, by variable name only (never values).
+export function checkoutProblems(): string[] {
+  const problems: string[] = [];
+  if (process.env.COMMERCE_ENABLED !== "true") problems.push("COMMERCE_ENABLED must be exactly true");
+  if (process.env.COMMERCE_POLICIES_APPROVED !== "true") problems.push("COMMERCE_POLICIES_APPROVED must be exactly true");
+  for (const name of ["DATABASE_URL", "DOWNLOAD_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET", "RESEND_API_KEY", "MAIL_FROM", "NEXT_PUBLIC_SITE_URL", "CRON_SECRET", "LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL", "AUTH_SECRET"])
+    if (!env(name)) problems.push(`${name} is missing or still a placeholder`);
+  for (const name of ["AUTH_SECRET", "DOWNLOAD_SECRET"]) if (env(name) && env(name)!.length < 32) problems.push(`${name} must be at least 32 characters`);
+  if (env("SUPPORT_EMAIL") && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(env("SUPPORT_EMAIL")!)) problems.push("SUPPORT_EMAIL is not a valid email");
+  for (const name of ["LEGAL_ENTITY_NAME", "LEGAL_ENTITY_ADDRESS", "SUPPORT_EMAIL"])
+    if (env(name) && /placeholder|example\.(com|org|net)|awaiting confirmation|^your\b|\b(tbd|todo)\b/i.test(env(name)!)) problems.push(`${name} still looks like a placeholder`);
+  if (env("NEXT_PUBLIC_SITE_URL")) {
+    try { if (new URL(env("NEXT_PUBLIC_SITE_URL")!).protocol !== "https:") problems.push("NEXT_PUBLIC_SITE_URL must start with https://"); }
+    catch { problems.push("NEXT_PUBLIC_SITE_URL is not a valid URL"); }
+  }
+  return problems;
+}
 export class PaymentLinkCreationRejected extends Error {}
 
 async function request(endpoint: string, body?: unknown) {
