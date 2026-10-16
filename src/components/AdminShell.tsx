@@ -14,7 +14,7 @@ const nav: { key: AdminSection; label: string; href: string }[] = [
   { key: "categories", label: "Categories", href: "/admin/categories" },
   { key: "authors", label: "Authors", href: "/admin/platform/authors" },
   { key: "collections", label: "Collections", href: "/admin/platform/collections" },
-  { key: "banners", label: "Banners", href: "/admin/platform/modules?type=banner" },
+  { key: "banners", label: "Banners", href: "/admin/banners" },
   { key: "modules", label: "Homepage sections", href: "/admin/platform/modules" },
   { key: "reviews", label: "Submissions", href: "/admin/platform/reviews" },
   { key: "delivery", label: "Delivery recovery", href: "/admin/platform/delivery" },

@@ -361,7 +361,7 @@ async function checkHomepage() {
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(Header, { name: "x", nav, announcement: null, previews: {} })), /announcement-bar/);
   const Shell = load("components/AdminShell.tsx").default;
   const shell = renderToStaticMarkup(React.createElement(Shell, { active: "orders", title: "Orders" }, "body"));
-  for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/platform/modules?type=banner", "/admin/platform/delivery"])
+  for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/banners", "/admin/platform/delivery"])
     assert.ok(shell.includes(`href="${href.replace("&", "&amp;")}"`), href);
   assert.match(shell, /aria-current="page"[^>]*>[^<]*Orders/);
 }

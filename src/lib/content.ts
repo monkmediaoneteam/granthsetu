@@ -154,3 +154,21 @@ export async function deleteContent(section: ContentSection, id: string, expecte
   else rows = await sql`with changed as (delete from content_modules where id=${id} and updated_at=${expected}::timestamptz returning id), audit as (insert into publishing_audit(actor_id,action,payload) select 'admin','content.module.deleted',jsonb_build_object('id',id) from changed) select id from changed`;
   if (!rows.length) throw new ContentError("Record changed or has submissions. Reload before deleting.");
 }
+
+// Moves a module one place among modules of its type and renumbers them 0, 10, 20... in one audited statement.
+export async function moveModule(id: string, direction: string) {
+  if (direction !== "up" && direction !== "down") throw new ContentError("Invalid direction.");
+  const target = await sql`select type from content_modules where id=${id}` as { type: string }[];
+  if (!target.length) throw new ContentError("Module not found.");
+  const list = (await sql`select id from content_modules where type=${target[0].type} order by sort, id` as { id: string }[]).map((r) => r.id);
+  const i = list.indexOf(id);
+  const j = direction === "up" ? i - 1 : i + 1;
+  if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  await sql`with ordered as (
+      select value as id, ((ordinality - 1) * 10)::int as sort from jsonb_array_elements_text(${JSON.stringify(list)}::jsonb) with ordinality
+    ), changed as (update content_modules m set sort=ordered.sort, updated_at=now() from ordered where m.id=ordered.id returning m.id),
+    audit as (insert into publishing_audit(actor_id,action,payload)
+      select 'admin','content.module.moved',jsonb_build_object('id',${id}::text,'direction',${direction}::text) where exists(select 1 from changed))
+    select count(*)::int as n from changed`;
+}
