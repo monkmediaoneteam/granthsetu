@@ -186,7 +186,8 @@ try {
   const adminMarkup = renderToStaticMarkup(await adminBooksPage.default({ searchParams: Promise.resolve({}) }));
   assert.equal(adminMarkup.includes('name="file_url"'), false);
   assert.equal((adminMarkup.match(/name="action" value="release"/g) ?? []).length, 1);
-  assert.equal((adminMarkup.match(/<form\b/g) ?? []).length, 6); // create, search, offer, details, release, archive
+  assert.equal((adminMarkup.match(/<form\b/g) ?? []).length, 7); // create, search, price, offer, details, release, archive
+  assert.equal((adminMarkup.match(/name="action" value="price"/g) ?? []).length, 1, "inline price form");
   assert.ok(adminMarkup.includes('id="existing-firstparty-release-submission"'));
   assert.ok(adminMarkup.includes('name="reason"'));
   assert.ok(adminMarkup.includes('name="confirmed"'));
@@ -196,7 +197,9 @@ try {
   const firstparty = (await db.query("select third_party,release_approved,file_sha256,file_format from books where slug='existing-firstparty'")).rows[0];
   assert.deepEqual(firstparty, { third_party: false, release_approved: true, file_sha256: registered[0].hash, file_format: 'PDF' });
   assert.equal((await adminBooks.POST(form('/api/admin/book', bookMetadata))).status, 303);
-  assert.equal((await db.query("select release_approved from books where slug='existing-firstparty'")).rows[0].release_approved, false);
+  assert.equal((await db.query("select release_approved from books where slug='existing-firstparty'")).rows[0].release_approved, true, 'editing details keeps a released book on sale');
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { ...bookMetadata, file_format: 'EPUB' }))).status, 303);
+  assert.equal((await db.query("select release_approved from books where slug='existing-firstparty'")).rows[0].release_approved, false, 'changing the file format needs a new release');
   assert.equal((await adminBooks.POST(form('/api/admin/book', releaseForm))).status, 303);
   admin = false;
   assert.equal((await assets.GET(new Request(origin), { params: Promise.resolve({ id: registered[0].id }) })).status, 404);

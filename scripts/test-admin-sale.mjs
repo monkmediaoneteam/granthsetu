@@ -6,12 +6,18 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createIsolatedDatabase } from './isolated-db.mjs';
 
-const { putOnSale, setRegularPrice, SaleError } = await import('../src/lib/admin-sale.ts');
+const { putOnSale, setRegularPrice, SaleError, fileCheck } = await import('../src/lib/admin-sale.ts');
 const root = await mkdtemp(path.join(tmpdir(), 'admin-sale-'));
 await mkdir(path.join(root, 'private', 'books'), { recursive: true });
 const real = Buffer.alloc(5000, 3);
 await writeFile(path.join(root, 'private', 'books', 'real.pdf'), real);
 await writeFile(path.join(root, 'private', 'books', 'sample.pdf'), Buffer.alloc(696, 1));
+
+assert.deepEqual(await fileCheck(root, 'private:real.pdf'), { ok: true, reason: null });
+assert.match((await fileCheck(root, 'private:sample.pdf')).reason, /placeholder/);
+assert.match((await fileCheck(root, 'private:gone.pdf')).reason, /missing/);
+assert.match((await fileCheck(root, null)).reason, /No file/);
+assert.match((await fileCheck(root, 'https://files.example.com/x.pdf')).reason, /private/);
 
 const { db } = await createIsolatedDatabase();
 const sql = async (parts, ...values) => (await db.query(parts.reduce((s, p, i) => s + (i ? `$${i}` : '') + p, ''), values)).rows;

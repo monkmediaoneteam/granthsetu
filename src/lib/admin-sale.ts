@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 // The database client is passed in so this logic runs the same against Neon and the offline test database.
@@ -10,6 +10,17 @@ export class SaleError extends Error {
 }
 
 const MIN_BYTES = 1024;
+
+// What the Books screen shows before anyone clicks "Put on sale".
+export async function fileCheck(root: string, fileUrl: string | null): Promise<{ ok: boolean; reason: string | null }> {
+  if (!fileUrl) return { ok: false, reason: "No file attached yet." };
+  if (!fileUrl.startsWith("private:")) return { ok: false, reason: "The file is not in private/books, so it cannot be put on sale from here." };
+  const file = fileUrl.slice(8);
+  try {
+    const { size } = await stat(path.join(root, "private", "books", file));
+    return size < MIN_BYTES ? { ok: false, reason: `${file} is a ${size}-byte placeholder. Upload the real PDF first.` } : { ok: true, reason: null };
+  } catch { return { ok: false, reason: `private/books/${file} is missing.` }; }
+}
 
 // First-party books go on sale from admin: the server reads the file, records its checksum,
 // marks the scan clean and the title released, and writes an audit event.

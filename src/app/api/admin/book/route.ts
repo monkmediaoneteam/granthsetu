@@ -142,7 +142,7 @@ export async function POST(req: Request) {
           pages            = ${pages},
           year             = ${year},
           cover            = ${cover},
-          release_approved = false,
+          release_approved = release_approved and file_format is not distinct from ${fileFormat}, -- detail edits keep the release unless the file format changes
           active           = ${form.get("active") === "on"}
         where slug = ${slug} and not third_party returning slug
       ), audit as (insert into events(order_id,type,payload)

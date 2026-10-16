@@ -11,6 +11,7 @@ const config: NextConfig = {
     "/api/download": ["./private/books/**"],
     // Admin "Put on sale" reads the file to record its checksum.
     "/api/admin/book": ["./private/books/**"],
+    "/admin/books": ["./private/books/**"],
   },
   async headers() {
     return [
