@@ -3,7 +3,7 @@ import { Save, Check, Send, Search } from "lucide-react";
 import { isAdmin } from "@/lib/admin-auth";
 import { sql } from "@/lib/db";
 import { getReviewSubmissions, canRelease, type Submission } from "@/lib/submissions";
-import ActionForm from "@/app/author/ActionForm";
+import ActionForm from "@/components/ActionForm";
 
 export default async function ReviewPage() {
   if (!(await isAdmin())) redirect("/admin/login");

@@ -160,8 +160,8 @@ assert.equal(ld.offers.priceValidUntil, "2026-10-19");
 assert.equal(bookJsonLd({ ...record, price_inr: 29900, sale_price_inr: 25200, sale_ends_at: "2026-10-01T00:00:00Z" }, "u", true, new Date("2026-10-15T00:00:00Z")).offers.price, "299.00");
 assert.equal(publicBook({ ...record, third_party: true, release_approved: false }).saveable, false);
 
-const CheckoutForm = load("app/checkout/CheckoutForm.tsx").default;
-const { checkoutError } = load("app/checkout/CheckoutForm.tsx");
+const CheckoutForm = load("app/(store)/checkout/CheckoutForm.tsx").default;
+const { checkoutError } = load("app/(store)/checkout/CheckoutForm.tsx");
 for (const raw of ["Purchased file storage is not configured.", "Development order unavailable.",
   "Could not start checkout. Please try again with the same idempotency key.", "Payment setup could not be completed.",
   "Unexpected provider secret", "__proto__", null, {}]) {
@@ -189,7 +189,7 @@ assert.match(render({ enabled: true, initialSlug: "missing-title" }), /Payment u
 assert.match(render({ enabled: true, initialSlug: book.slug, books: [pendingBook] }), /href="\/books\/real-book">View book details/);
 
 let loginState = "sent";
-const Login = load("app/login/LoginForm.tsx", { react: { ...React, useState: () => [loginState, value => { loginState = value; }] } }).default;
+const Login = load("app/(store)/login/LoginForm.tsx", { react: { ...React, useState: () => [loginState, value => { loginState = value; }] } }).default;
 const login = Login({ next: "/library" });
 assert.equal(login.props.children[1].props.disabled, true);
 login.props.children[0].props.children[1].props.onChange();
@@ -208,7 +208,7 @@ async function checkPausedSelection() {
   button.props.onClick();
   assert.deepEqual(cart.slugs, [pendingBook.slug]);
   assert.match(renderToStaticMarkup(React.createElement(AddToCart, props)), /In your bag/);
-  const CartContents = load("app/cart/CartContents.tsx").default;
+  const CartContents = load("app/(store)/cart/CartContents.tsx").default;
   const selected = renderToStaticMarkup(React.createElement(CartContents, { books: [pendingBook], enabled: false }));
   assert.match(selected, /Actual title/);
   assert.match(selected, /Saved for later/);
@@ -230,7 +230,7 @@ async function checkPausedSelection() {
   assert.equal(AddToCart({ ...props, enabled: true }).props.children[0].props.disabled, true);
   assert.equal(AddToCart({ ...props, enabled: true }).props.children[0].props["aria-label"], `Unavailable: ${pendingBook.title}`);
   assert.equal(AddToCart({ ...props, saveable: false }).props.children[0].props.disabled, true);
-  const CartPage = load("app/cart/page.tsx", { "@/lib/db": { getBooks: async () => [
+  const CartPage = load("app/(store)/cart/page.tsx", { "@/lib/db": { getBooks: async () => [
     { ...record, price_inr: 0, release_approved: false },
     { ...record, slug: "unapproved-third-party", third_party: true, release_approved: false },
   ] }, "@/components/book-data": load("components/book-data.ts"),
@@ -248,7 +248,7 @@ async function checkRetries() {
   let customer = { name: "Test Reader", email: "reader@example.com", phone: "9876543210" };
   let refIndex = 0;
   const refs = [];
-  const Form = load("app/checkout/CheckoutForm.tsx", {
+  const Form = load("app/(store)/checkout/CheckoutForm.tsx", {
     react: { ...React, useState: (value) => [value && typeof value === "object" && "name" in value ? customer : value, () => {}],
       useRef: (value) => refs[refIndex++] ||= { current: value } },
   }).default;
@@ -292,7 +292,7 @@ async function checkRetries() {
 
 async function checkCatalogue() {
   const listing = load("lib/listing.ts");
-  const Search = load("app/search/page.tsx", {
+  const Search = load("app/(store)/search/page.tsx", {
     "@/lib/store-data": { getStoreBooks: async () => [publicBook({ ...record, file_format: "PDF", language: "English" }), publicBook({ ...record, slug: "second-book", title: "Second title", isbn: "9781111111111", file_format: "EPUB" })],
       getCategories: async () => [], bestsellerSlugs: async () => [] },
     "@/lib/listing": listing,
@@ -361,7 +361,7 @@ async function checkHomepage() {
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(Header, { name: "x", nav, announcement: null, previews: {} })), /announcement-bar/);
   const Shell = load("components/AdminShell.tsx").default;
   const shell = renderToStaticMarkup(React.createElement(Shell, { active: "orders", title: "Orders" }, "body"));
-  for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/platform/modules?type=banner", "/admin/platform/delivery"])
+  for (const href of ["/admin/orders", "/admin/categories", "/admin/platform/collections", "/admin/banners", "/admin/platform/delivery"])
     assert.ok(shell.includes(`href="${href.replace("&", "&amp;")}"`), href);
   assert.match(shell, /aria-current="page"[^>]*>[^<]*Orders/);
 }

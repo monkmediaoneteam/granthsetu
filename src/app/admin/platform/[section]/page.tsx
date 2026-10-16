@@ -4,7 +4,7 @@ import Link from "next/link";
 import { isAdmin } from "@/lib/admin-auth";
 import { sql } from "@/lib/db";
 import { contentSections, getAdminContent, type ContentSection } from "@/lib/content";
-import ActionForm from "@/app/author/ActionForm";
+import ActionForm from "@/components/ActionForm";
 import ModuleFields from "../ModuleFields";
 import BookPicker from "../BookPicker";
 

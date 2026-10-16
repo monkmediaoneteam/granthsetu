@@ -193,5 +193,18 @@ try {
   await assert.rejects(c.deleteContent('authors', author.id, author.updated_at));
   await c.saveContent('authors', author.id, author.updated_at, { title: 'Test author', body: 'Reviewed biography', status: 'published' });
   assert.equal((await c.getPublicContent()).authors[0].name, 'Test author');
+  // Banner ordering: move swaps neighbours of the same type, is audited, and stops at the ends.
+  for (const [id, sort] of [['b1', 0], ['b2', 0], ['b3', 5]]) await c.saveContent('modules', id, null, { title: `Banner ${id}`, type: 'banner', status: 'published', sort });
+  const bannerOrder = async () => (await q("select id from content_modules where type='banner' order by sort, id")).map(r => r.id);
+  assert.deepEqual(await bannerOrder(), ['b1', 'b2', 'b3']);
+  await c.moveModule('b3', 'up');
+  assert.deepEqual(await bannerOrder(), ['b1', 'b3', 'b2']);
+  await c.moveModule('b1', 'up');
+  assert.deepEqual(await bannerOrder(), ['b1', 'b3', 'b2'], 'the first banner cannot move further up');
+  await c.moveModule('b1', 'down');
+  assert.deepEqual(await bannerOrder(), ['b3', 'b1', 'b2']);
+  assert.ok((await q("select count(*)::int n from publishing_audit where action='content.module.moved'"))[0].n >= 2);
+  await assert.rejects(c.moveModule('m1', 'sideways'), /direction/);
+  await assert.rejects(c.moveModule('missing', 'up'), /not found/i);
   console.log('Isolated publishing database: ownership, review, audited atomic release, bypass protection, scheduling, and CMS CRUD passed.');
 } finally { await db.close(); delete globalThis.publishingTestSql; }
