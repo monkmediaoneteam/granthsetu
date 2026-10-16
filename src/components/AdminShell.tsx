@@ -6,9 +6,10 @@
 import Link from "next/link";
 import { STORE } from "@/lib/store";
 
-export type AdminSection = "overview" | "orders" | "books" | "offers" | "categories" | "authors" | "collections" | "banners" | "modules" | "reviews" | "delivery";
+export type AdminSection = "overview" | "analytics" | "orders" | "books" | "offers" | "categories" | "authors" | "collections" | "banners" | "modules" | "reviews" | "delivery";
 const nav: { key: AdminSection; label: string; href: string }[] = [
   { key: "overview", label: "Dashboard", href: "/admin" },
+  { key: "analytics", label: "Analytics", href: "/admin/analytics" },
   { key: "orders", label: "Orders", href: "/admin/orders" },
   { key: "books", label: "Books", href: "/admin/books" },
   { key: "offers", label: "Offers", href: "/admin/offers" },
