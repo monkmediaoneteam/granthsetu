@@ -17,6 +17,7 @@ export default function Featured({ books, rails, enabled }: { books: PublicBook[
   </section>;
   const seen = new Set<string>();
   const once = (slug: string) => (seen.has(slug) ? false : (seen.add(slug), true));
-  return <>{rails.map((r) => <div className="wrap section" key={r.key}><Carousel title={r.title} tagline={r.tagline} href={r.href}>
+  // A row needs at least four books; one or two cards in a full-width row reads as broken.
+  return <>{rails.filter((r) => r.books.length >= 4).map((r) => <div className="wrap section" key={r.key}><Carousel title={r.title} tagline={r.tagline} href={r.href}>
     {r.books.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} morph={once(b.slug)} />)}</Carousel></div>)}</>;
 }

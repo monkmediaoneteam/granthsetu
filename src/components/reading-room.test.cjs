@@ -375,6 +375,14 @@ async function checkHomepage() {
     React.createElement(load("components/home/FaqGrid.tsx").default),
   ].map((el) => renderToStaticMarkup(el)).join("");
   assert.deepEqual(copyViolations(sections), [], "homepage copy stays short");
+  {
+    const Featured = load("components/home/Featured.tsx", { ...motionStub, "next/navigation": { useRouter: () => ({ push() {} }) } }).default;
+    const shelf = Array.from({ length: 6 }, (_, i) => ({ ...homeBook, slug: `b${i}` }));
+    const rows = renderToStaticMarkup(React.createElement(Featured, { books: shelf, enabled: true, rails: [
+      { key: "bestsellers", title: "Bestsellers", tagline: "", href: "/search", books: shelf.slice(0, 1) },
+      { key: "new", title: "New arrivals", tagline: "", href: "/search", books: shelf.slice(0, 5) }] }));
+    assert.match(rows, /New arrivals/); assert.doesNotMatch(rows, /Bestsellers/, "a row of one or two books is hidden, not shown half-empty");
+  }
   assert.doesNotMatch(sections, /akshara|अ/);
   const sitemap = load("app/sitemap.ts", { "@/lib/db": { getBooks: async () => [record, { ...record, slug: "unapproved", third_party: true, release_approved: false }] },
     "@/components/book-data": load("components/book-data.ts"), "@/lib/store-data": { getCategories: async () => [{ slug: "science" }] } }).default;

@@ -134,7 +134,10 @@
     .home-side { grid-template-columns: 1fr; }
     .shop-strip { display: flex; overflow-x: auto; scrollbar-width: none; }
     .shop-link { flex: 0 0 auto; }
-    .tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .tile-grid { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 42%; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 6px; }
+    .tile-grid > li { scroll-snap-align: start; }
+    .hero-stage { height: 200px; }
+    .hero-cover { width: 30%; }
     .home-grid { gap: 12px; }
     .home-grid > li { flex: 0 1 calc(50% - 6px); }
     .home-grid > .grid-cta { flex: 1 1 100%; min-height: 0; }
