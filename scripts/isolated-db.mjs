@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFile, readdir, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { seedDemo } from './demo-catalogue.mjs';
+import { seedDemo } from '../src/lib/demo-catalogue.mjs';
 
 export async function createIsolatedDatabase({ seed = false } = {}) {
   const directory = await mkdtemp(path.join(tmpdir(), 'reading-room-'));

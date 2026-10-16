@@ -1,6 +1,6 @@
 // Offline: preview demo covers use only the theme palette.
 import assert from 'node:assert/strict';
-import { demoCover } from './demo-catalogue.mjs';
+import { demoCover } from '../src/lib/demo-catalogue.mjs';
 
 const PALETTE = ['#0b2416', '#123a24', '#1f5a3a', '#2f7a4d', '#1b201e', '#3f4743', '#7a5a1e', '#b9852e', '#f4f1e6', '#e9d8ae'];
 for (let seed = 0; seed < 12; seed++) {

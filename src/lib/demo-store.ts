@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { sql, logEvent } from "./db";
-// Shared with the isolated preview (scripts/demo-catalogue.mjs).
-import { demoCatalogue } from "../../scripts/demo-catalogue.mjs";
+// Shared with the isolated preview (scripts/isolated-db.mjs).
+import { demoCatalogue } from "./demo-catalogue.mjs";
 
 type Demo = {
   categories: { slug: string; name: string; colour: string; sort: number }[];

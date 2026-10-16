@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createIsolatedDatabase } from './isolated-db.mjs';
-import { demoCatalogue } from './demo-catalogue.mjs';
+import { demoCatalogue } from '../src/lib/demo-catalogue.mjs';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 
@@ -37,7 +37,7 @@ try {
     globalThis.demoTestLog = async () => {};
     const source = readFileSync(new URL('../src/lib/demo-store.ts', import.meta.url), 'utf8')
       .replace(/import \{ sql, logEvent \} from "\.\/db";/, 'const sql = globalThis.demoTestSql, logEvent = globalThis.demoTestLog;')
-      .replace('"../../scripts/demo-catalogue.mjs"', JSON.stringify(new URL('./demo-catalogue.mjs', import.meta.url).href));
+      .replace('"./demo-catalogue.mjs"', JSON.stringify(new URL('../src/lib/demo-catalogue.mjs', import.meta.url).href));
     const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
     const store = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
     await store.loadDemo(new Date('2026-10-15T00:00:00Z'));
