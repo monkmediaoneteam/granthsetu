@@ -175,6 +175,14 @@ try {
     assert.equal((await checkout.POST(request('checkout-thirdparty01'))).status, 409);
     books.set('book-b', book);
   });
+  await check('demo preview titles can never be bought', async () => {
+    const book = books.get('book-b');
+    const before = creations;
+    books.set('book-b', { ...book, facts: { ...(book.facts || {}), _demo: 'true' } });
+    assert.equal((await checkout.POST(request('checkout-demo-title01'))).status, 409);
+    assert.equal(creations, before, 'no payment link for a demo title');
+    books.set('book-b', book);
+  });
   await check('new checkout rejects missing or malformed catalogue checksums before payment creation', async () => {
     const book = books.get('book-b');
     const before = creations;

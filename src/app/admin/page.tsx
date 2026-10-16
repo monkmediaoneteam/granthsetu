@@ -5,12 +5,15 @@ import { isAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/AdminShell";
 import StatCard from "@/components/StatCard";
 import { checkoutProblems } from "@/lib/razorpay";
+import { demoCount } from "@/lib/demo-store";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin", robots: { index: false, follow: false } };
 
-export default async function Admin() {
+export default async function Admin({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   if (!(await isAdmin())) redirect("/admin/login");
+  const { demo } = await searchParams;
+  const demoBooks = await demoCount().catch(() => 0);
 
   // One round of parallel queries instead of six in a row: each query to the database costs a network round trip.
   const [ordersRows, totalsRows, convRows, downloadRows, eventRows, healthRows] = await Promise.all([
@@ -53,6 +56,12 @@ export default async function Admin() {
           <p className="mt-1 text-sm text-ink-soft">Fix these in Vercel, then Settings, then Environment Variables (Production), and redeploy:</p>
           <ul className="mt-2 grid gap-1 font-mono text-[13px]">{checkoutIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul>
         </>}
+      </section>
+      <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-white px-5 py-4" aria-labelledby="demo-status">
+        <div><h2 id="demo-status" className="text-base font-semibold">Demo catalogue {demoBooks > 0 ? `· ${demoBooks} preview titles live` : "· off"}</h2>
+          <p className="text-sm text-ink-soft">{demo === "failed" ? "That did not work. Try again." : "Fictional titles, subjects, authors and banners to preview the full store. They show prices but can't be bought."}</p></div>
+        <form action="/api/admin/demo" method="post"><input type="hidden" name="action" value={demoBooks > 0 ? "remove" : "load"} />
+          <button className={demoBooks > 0 ? "btn btn-ghost" : "btn btn-primary"} type="submit">{demoBooks > 0 ? "Remove demo catalogue" : "Load demo catalogue"}</button></form>
       </section>
       <section className="mb-8 border-b border-line pb-6"><h2 className="title title-md">Delivery health</h2>
         <p className="my-3">Incomplete paid orders: {health.incomplete} · Pending email: {health.email_pending} · Payment reconciliation: {health.reconciliation} · Download errors today: {health.download_errors}</p>

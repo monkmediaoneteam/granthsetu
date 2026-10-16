@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { createIsolatedDatabase } from './isolated-db.mjs';
 import { demoCatalogue } from './demo-catalogue.mjs';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
 
 const data = demoCatalogue(new Date('2026-10-15T00:00:00Z'));
 assert.ok(data.categories.length >= 12);
@@ -24,4 +26,31 @@ try {
   const real = (await db.query(`select count(*)::int n from books where coalesce(facts->>'_demo','') <> 'true'`)).rows[0].n;
   assert.ok(real >= 2, 'the real titles are still seeded');
 } finally { await db.close(); }
+// Admin switch on a live-shaped database: two real titles, no subjects. Load, load again, then remove.
+{
+  const { db } = await createIsolatedDatabase();
+  try {
+    const q = async (text, values = []) => (await db.query(text, values)).rows;
+    await q(`insert into books(slug,title,price_inr,release_approved,scan_status) values('real-one','Real one',100,true,'clean'),('real-two','Real two',9900,true,'clean')`);
+    await q(`insert into categories(slug,name) values('own-subject','Own subject')`);
+    globalThis.demoTestSql = async (parts, ...values) => (await db.query(parts.reduce((t, p, i) => t + (i ? `$${i}` : '') + p, ''), values)).rows;
+    globalThis.demoTestLog = async () => {};
+    const source = readFileSync(new URL('../src/lib/demo-store.ts', import.meta.url), 'utf8')
+      .replace(/import \{ sql, logEvent \} from "\.\/db";/, 'const sql = globalThis.demoTestSql, logEvent = globalThis.demoTestLog;')
+      .replace('"../../scripts/demo-catalogue.mjs"', JSON.stringify(new URL('./demo-catalogue.mjs', import.meta.url).href));
+    const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+    const store = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
+    await store.loadDemo(new Date('2026-10-15T00:00:00Z'));
+    await store.loadDemo(new Date('2026-10-15T00:00:00Z'));
+    assert.equal(await store.demoCount(), data.books.length, 'loading twice adds nothing');
+    assert.equal((await q(`select count(*)::int n from content_modules where id like 'demo-%'`))[0].n, 9);
+    assert.equal((await q(`select count(*)::int n from orders`))[0].n, 0, 'no fake orders: admin revenue stays real');
+    assert.deepEqual((await q(`select distinct category_slug from books where slug like 'real-%'`)).map(r => r.category_slug), ['ayurveda']);
+    await store.removeDemo();
+    assert.equal(await store.demoCount(), 0);
+    assert.equal((await q(`select count(*)::int n from books`))[0].n, 2, 'real titles survive removal');
+    assert.equal((await q(`select count(*)::int n from content_modules where id like 'demo-%'`))[0].n, 0);
+    assert.deepEqual((await q(`select slug from categories order by slug`)).map(r => r.slug), ['ayurveda', 'own-subject'], 'only empty demo subjects go');
+  } finally { await db.close(); }
+}
 console.log('Demo catalogue checks passed: 60+ unique demo titles, offers, coming soon, languages, banners, real titles kept.');

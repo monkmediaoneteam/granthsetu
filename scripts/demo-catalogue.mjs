@@ -1,5 +1,5 @@
 // Isolated-preview demo data only. Covers are generated typography, clearly fictional titles.
-// Never imported by production code or scripts/seed.mjs.
+// Production loads it only through the admin "Load demo catalogue" switch (src/lib/demo-store.ts).
 import crypto from 'node:crypto';
 
 const CATEGORIES = [
