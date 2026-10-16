@@ -4,7 +4,7 @@ import ts from 'typescript';
 
 const source = readFileSync(new URL('../src/lib/offers.ts', import.meta.url), 'utf8');
 const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { priceCart, isLive, offerBadge, normaliseCode } = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
+const { priceCart, isLive, offerBadge, offerBadges, normaliseCode } = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
 
 const now = new Date('2026-10-16T12:00:00Z');
 const line = (slug, price) => ({ slug, price, regular: price, categories: ['ayurveda'], collections: [] });
@@ -75,6 +75,10 @@ assert.equal(offerBadge(b2g1), 'Buy 2 get 1');
 assert.equal(offerBadge(offer({ kind: 'bxgy', buy_qty: 2, get_qty: 1, get_percent: 50 })), 'Buy 2 get 1 at 50% off');
 assert.equal(offerBadge(offer({ kind: 'bundle', bundle_qty: 2, bundle_price: 40000 })), 'Any 2 for ₹400');
 assert.equal(offerBadge(save10), 'Code SAVE10');
+
+// Badges a book shows: live offers that can apply to it; whole-order offers are not shown per book.
+assert.deepEqual(offerBadges(cart[0], [offer({ scope: 'category', targets: ['ayurveda'] }), offer({ kind: 'flat', value: 5000, scope: 'order' }),
+  offer({ scope: 'books', targets: ['zzz'] }), offer({ status: 'paused' }), save10], now), ['20% off', 'Code SAVE10']);
 
 // Data loading on a real (in-memory) database.
 {

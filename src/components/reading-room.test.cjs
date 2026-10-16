@@ -126,6 +126,11 @@ assert.match(dataCover, /src="data:image\/svg\+xml/);
 assert.match(cardHtml, /Quick view/);
 const realCoverHtml = renderToStaticMarkup(React.createElement(CardView, { book: { ...saleBook, cover: "/assets/book1.png" }, enabled: true }));
 assert.match(realCoverHtml, /class="book3d"/, "real covers get the tilt without drawn edges");
+assert.match(renderToStaticMarkup(React.createElement(CardView, { book: { ...saleBook, offers: ["Buy 2 get 1"] }, enabled: true })), /card-flag[^>]*>Buy 2 get 1</, "a live offer becomes the card flag");
+{
+  const { CouponBox } = load("components/PricingSummary.tsx");
+  assert.match(renderToStaticMarkup(React.createElement(CouponBox, { coupon: "NOPE", setCoupon() {}, result: { code: "NOPE", ok: false, message: "This code is not valid." } })), /This code is not valid\./);
+}
 assert.match(dataCover, /class="book3d flat"/, "flat demo covers get the drawn spine");
 const EntryView = load("components/CatalogueEntry.tsx", {
   "./CartProvider": { useCart: () => cart }, "motion/react": { ...require("motion/react"), useReducedMotion: () => true },
@@ -181,10 +186,10 @@ assert.match(gated, /Online ordering is currently unavailable/);
 assert.doesNotMatch(gated, /Purchases are.*paused/);
 assert.match(gated, /<button[^>]+disabled=""[^>]*>.*Payment unavailable/);
 assert.doesNotMatch(gated, /private\/never-expose/);
-assert.match(render({ enabled: true }), /Continue to pay/);
+assert.match(render({ enabled: true }), /Checking prices/);
 assert.match(render({ enabled: true, books: [{ ...book, saleable: false }] }), /Payment unavailable/);
 cart = { ...cart, slugs: [] };
-assert.match(render({ enabled: true, initialSlug: book.slug }), /Continue to pay/);
+assert.match(render({ enabled: true, initialSlug: book.slug }), /Checking prices/);
 assert.match(render({ enabled: true, initialSlug: "missing-title" }), /Payment unavailable/);
 assert.match(render({ enabled: true, initialSlug: book.slug, books: [pendingBook] }), /href="\/books\/real-book">View book details/);
 
@@ -225,6 +230,10 @@ async function checkPausedSelection() {
   const bag = renderToStaticMarkup(React.createElement(CartContents, { books: [priced], enabled: true }));
   assert.match(bag, /₹252/);
   assert.match(bag, /<s[^>]*>₹299<\/s>/);
+  const pricing = { lines: [], applied: [{ id: "o1", name: "Ayurveda buy 2 get 1", code: null, saving: 25200 }], subtotal: 50400, discount: 25200, total: 25200, coupon: null };
+  const PricedCart = load("app/(store)/cart/CartContents.tsx", { "@/components/usePricing": { useCoupon: () => ["", () => {}], usePricing: () => ({ pricing, loading: false, failed: false, setPricing() {} }) } }).default;
+  const offerBag = renderToStaticMarkup(React.createElement(PricedCart, { books: [priced], enabled: true }));
+  assert.match(offerBag, /Ayurveda buy 2 get 1/); assert.match(offerBag, /−₹252/); assert.match(offerBag, /You save ₹252/);
   assert.match(renderToStaticMarkup(React.createElement(CheckoutForm, { books: [priced], enabled: true, initialSlug: priced.slug })), /₹252/);
   cart.slugs = [];
   assert.equal(AddToCart({ ...props, enabled: true }).props.children[0].props.disabled, true);
@@ -248,9 +257,12 @@ async function checkRetries() {
   let customer = { name: "Test Reader", email: "reader@example.com", phone: "9876543210" };
   let refIndex = 0;
   const refs = [];
+  let quoted = { lines: [], applied: [], subtotal: 15900, discount: 0, total: 15900, coupon: null };
+  const repriced = [];
   const Form = load("app/(store)/checkout/CheckoutForm.tsx", {
     react: { ...React, useState: (value) => [value && typeof value === "object" && "name" in value ? customer : value, () => {}],
       useRef: (value) => refs[refIndex++] ||= { current: value } },
+    "@/components/usePricing": { useCoupon: () => ["SAVE10", () => {}], usePricing: () => ({ pricing: quoted, loading: false, failed: false, setPricing: (p) => repriced.push(p) }) },
   }).default;
   global.sessionStorage = { getItem: (key) => store.get(key) || null, setItem: (key, value) => store.set(key, value) };
   global.window = { location: { assign: (value) => redirects.push(value) } };
@@ -269,6 +281,8 @@ async function checkRetries() {
   try {
     await submit(); await submit();
     const first = JSON.parse(requests[0].body), second = JSON.parse(requests[1].body);
+    assert.equal(first.expectedTotal, 15900, "checkout sends the total the customer saw");
+    assert.equal(first.coupon, "SAVE10");
     assert.equal(first.idempotencyKey, second.idempotencyKey);
     assert.equal(requests[0].headers["idempotency-key"], first.idempotencyKey);
     assert.deepEqual(first.slugs, [book.slug]);
@@ -287,6 +301,11 @@ async function checkRetries() {
     await submit({ enabled: false, books: [pendingBook] });
     await submit({ enabled: true, books: [pendingBook] });
     assert.equal(requests.length, 4, "saving a pending edition must never make it purchasable");
+    const changed = { ...quoted, total: 9900 };
+    global.fetch = async (_url, options) => { requests.push(options); return { ok: false, status: 409, json: async () => ({ error: "Prices changed.", pricing: changed }) }; };
+    await submit();
+    assert.deepEqual(repriced, [changed], "a changed price is shown again before paying");
+    assert.equal(redirects.length, 0);
   } finally { Object.assign(global, originals); }
 }
 

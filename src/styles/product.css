@@ -41,4 +41,6 @@
     .gallery-stage { padding: 24px; }
     .gallery-stage .book3d { width: min(190px, 60%); }
   }
+  .offer-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .offer-chips li { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px dashed #d9b46a; border-radius: 999px; background: #fbf4e6; color: #6b4a12; font-size: 14px; font-weight: 500; }
 }

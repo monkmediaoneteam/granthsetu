@@ -97,6 +97,11 @@ function evaluate(offer: Offer, lines: Work[]): Result {
   return saving > 0 ? { saving, perLine, used: used.map((l) => l.slug) } : none;
 }
 
+/** Labels a book shows: live offers that can apply to it (whole-order offers are not shown per book). */
+export function offerBadges(line: CartLine, offers: Offer[], now: Date): string[] {
+  return [...new Set(offers.filter((o) => o.scope !== "order" && isLive(o, now) && eligible(o, line)).map(offerBadge))];
+}
+
 const better = (a: { r: Result; o: Offer }, b: { r: Result; o: Offer }) =>
   a.r.saving - b.r.saving || a.o.priority - b.o.priority || Date.parse(a.o.created_at) - Date.parse(b.o.created_at);
 

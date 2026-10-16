@@ -59,6 +59,7 @@
   .icon-plain { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 10px; background: none; color: var(--ink-soft); }
   .icon-plain:hover { background: var(--bg-2); color: var(--danger); }
   .drawer-foot { display: grid; gap: 10px; padding: 18px 22px 22px; border-top: 1px solid var(--line); background: var(--bg-2); }
+  .drawer-offer { display: flex; justify-content: space-between; color: var(--brand-deep); font-size: 15px; font-weight: 500; }
   .drawer-subtotal { display: flex; justify-content: space-between; font-size: 17px; }
   .drawer-note { font: 500 13px/1.5 var(--font-sans); color: var(--ink-mute); }
   .drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
