@@ -19,7 +19,7 @@
   --color-gold: #b9852e; --color-danger: #b3261e;
   --color-forest: #0b2416; --color-forest-2: #123a24; --color-forest-line: #1e4d33; --color-cream: #f4f1e6;
   --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
+  --font-mono: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
   --radius-1: 4px; --radius-2: 10px; --radius-3: 18px;
 }
 

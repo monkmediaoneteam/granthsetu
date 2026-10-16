@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import BookCard from "./BookCard";
 import type { PublicBook } from "./book-data";
 import { facets, filterBooks, listingHref, paginate, type ListingParams } from "@/lib/listing";
@@ -23,6 +23,10 @@ export default function Listing({ base, title, intro, banner, books, params, cat
     </div>
     <div className="wrap listing-layout">
       <aside className="filters" aria-label="Filters">
+        {/* Phones and tablets: filters fold behind one button (pure CSS); desktop always shows them. */}
+        <input type="checkbox" id="filters-open" className="filters-check sr-only" />
+        <label htmlFor="filters-open" className="btn btn-ghost filters-toggle"><SlidersHorizontal size={16} aria-hidden="true" />Filters{chips.length > 0 && <span className="count-badge filters-count">{chips.length}</span>}</label>
+        <div className="filters-body">
         <form action={base} className="filter-search" role="search">
           {(["category", "author", "language", "format", "price", "sort"] as const).filter((k) => params[k]).map((k) => <input key={k} type="hidden" name={k} value={params[k]} />)}
           {params.offer && <input type="hidden" name="offer" value="1" />}
@@ -32,6 +36,7 @@ export default function Listing({ base, title, intro, banner, books, params, cat
         {groups.map((g) => <details key={g.key} open className="filter-group"><summary>{g.title}</summary><ul>{g.options.map((o) =>
           <li key={o.value}><Link href={listingHref(base, params, { [g.key]: o.active ? (g.key === "offer" ? false : "") : (g.key === "offer" ? true : o.value) } as Partial<ListingParams>)}
             aria-current={o.active ? "true" : undefined} className="filter-option"><span className="check" aria-hidden="true" />{o.label}<span className="count">{o.count}</span></Link></li>)}</ul></details>)}
+        </div>
       </aside>
       <section className="results" aria-label="Results">
         <div className="results-bar"><p role="status">{page.total} {page.total === 1 ? "book" : "books"}</p>
