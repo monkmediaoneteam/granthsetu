@@ -79,6 +79,7 @@ assert.equal(offerBadge(save10), 'Code SAVE10');
 // Badges a book shows: live offers that can apply to it; whole-order offers are not shown per book.
 assert.deepEqual(offerBadges(cart[0], [offer({ scope: 'category', targets: ['ayurveda'] }), offer({ kind: 'flat', value: 5000, scope: 'order' }),
   offer({ scope: 'books', targets: ['zzz'] }), offer({ status: 'paused' }), save10], now), ['20% off', 'Code SAVE10']);
+assert.deepEqual(offerBadges(cart[0], [save10, offer()], now), ['20% off', 'Code SAVE10'], 'automatic offers come before codes, so a card flag is never a code');
 
 // Data loading on a real (in-memory) database.
 {
