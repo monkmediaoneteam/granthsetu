@@ -44,7 +44,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ id: str
       {photo && <img src={photo} alt={`Portrait of ${author.name}`} className="author-photo" />}
       <div><p className="eyebrow">Author</p><h1>{author.name}</h1>
         {author.profile?.bio && <p className="preserve-lines">{author.profile.bio}</p>}
-        <p className="small muted">{author.books.length} {author.books.length === 1 ? "digital edition" : "digital editions"} in the reading room</p>
+        <p className="small muted">{author.books.length} {author.books.length === 1 ? "digital edition" : "digital editions"} in the store</p>
       </div>
     </header>
     {author.books.length > 0 && <section className="section" aria-labelledby="author-books"><h2 id="author-books" className="section-title">Books by {author.name}</h2>

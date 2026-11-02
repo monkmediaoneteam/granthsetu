@@ -1,4 +1,4 @@
-# Reading Room by INVENTAYU
+# Pustiq
 
 ## Product
 

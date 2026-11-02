@@ -18,7 +18,7 @@ Captured reference screenshots are in scratch/reference-*.png.
 
 ## Design Decisions
 
-- White storefront, deep green actions, and a restrained yellow announcement strip connect INVENTAYU to retail browsing. Coral and turquoise come from campaign artwork, not arbitrary UI panels.
+- White storefront, deep green actions, and a restrained yellow announcement strip connect the store to retail browsing. Coral and turquoise come from campaign artwork, not arbitrary UI panels.
 - Libre Caslon Display gives the bookstore its editorial voice; DM Sans keeps navigation, prices, descriptions, and controls legible.
 - Type: 52px campaign title, 34px section heading, 20px desktop product title, 15px body. Mobile uses explicit smaller sizes, not viewport-scaled text.
 - Spacing scale: 8, 12, 16, 24, 32, 48px. Shared 1440px container; 48px large-screen gutters and 16px mobile gutters.

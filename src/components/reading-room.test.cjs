@@ -392,7 +392,7 @@ async function checkHomepage() {
   assert.match(urls, /category\/science/);
   const Header = load("components/StoreHeader.tsx", { "next/navigation": { usePathname: () => "/", useRouter: () => ({ push() {} }) } }).default;
   const previews = { fiction: [{ slug: "real-book", title: "Actual title", cover: "/assets/book1.png" }] };
-  const header = renderToStaticMarkup(React.createElement(Header, { name: "Reading Room by INVENTAYU", nav, previews,
+  const header = renderToStaticMarkup(React.createElement(Header, { name: "Pustiq", nav, previews,
     announcement: { title: "Festive reads: up to 20% off", link_url: "/search?offer=1" } }));
   assert.match(header, /Festive reads: up to 20% off/);
   assert.match(header, /href="\/category\/fiction"/);

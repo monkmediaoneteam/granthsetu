@@ -1,9 +1,8 @@
-# Reading Room by INVENTAYU
+# Pustiq
 
 A specialist digital bookstore for Ayurveda, phytopharmaceuticals, and natural
 products, with books from multiple authors and publishers. Store identity is
-configurable through `NEXT_PUBLIC_STORE_NAME`. This is a standalone application;
-the main INVENTAYU website is separate.
+configurable through `NEXT_PUBLIC_STORE_NAME`. This is a standalone application.
 
 Features are implemented in this checkout. Production activation remains gated.
 See `IMPLEMENTATION.md` for verification and external release requirements, and

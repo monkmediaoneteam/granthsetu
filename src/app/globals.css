@@ -10,7 +10,7 @@
 @import "../styles/product.css";
 @import "../styles/account.css";
 
-/* Tailwind utilities used by admin and account pages, mapped onto the INVENTAYU palette. */
+/* Tailwind utilities used by admin and account pages, mapped onto the storefront palette. */
 @theme {
   --color-bg: #ffffff; --color-bg-2: #fafaf7; --color-bg-3: #efede5;
   --color-ink: #0a0e0c; --color-ink-2: #1b201e; --color-ink-soft: #4a524f; --color-ink-mute: #3f4743;

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { computeTotals } from "@/lib/money";
 
-export const CART_KEY = "inventayu-reading-room-cart";
+export const CART_KEY = "pustiq-cart";
 
 export function cartTotals(books: { price_inr: number }[]) {
   try { return computeTotals(books.map((book) => book.price_inr)); }

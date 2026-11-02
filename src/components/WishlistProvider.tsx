@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { parseWishlist } from "@/lib/wishlist-parse";
 
-export const WISHLIST_KEY = "reading-room-wishlist";
+export const WISHLIST_KEY = "pustiq-wishlist";
 
 type Wishlist = { slugs: string[]; ready: boolean; has: (slug: string) => boolean; toggle: (slug: string) => void };
 const WishlistContext = createContext<Wishlist | null>(null);

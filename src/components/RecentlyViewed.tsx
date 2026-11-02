@@ -6,7 +6,7 @@ import Carousel from "./Carousel";
 import Cover from "./Cover";
 import { rupees } from "@/lib/money";
 
-export const RECENT_KEY = "reading-room-recent";
+export const RECENT_KEY = "pustiq-recent";
 export function pushRecent(list: string[], slug: string) { return [slug, ...list.filter((s) => s !== slug)].slice(0, 12); }
 type Item = { slug: string; title: string; cover: string | null; price: number; saleable: boolean };
 

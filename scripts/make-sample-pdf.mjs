@@ -10,7 +10,7 @@ const objs = [
 ];
 
 const text = [
-  "BT /F1 22 Tf 60 760 Td (INVENTAYU - placeholder) Tj ET",
+  "BT /F1 22 Tf 60 760 Td (Pustiq - placeholder) Tj ET",
   "BT /F1 12 Tf 60 730 Td (This is not the real book.) Tj ET",
   "BT /F1 12 Tf 60 712 Td (Replace books.file_url with the actual PDF.) Tj ET",
 ].join("\n");

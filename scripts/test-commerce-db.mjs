@@ -29,7 +29,7 @@ const mocks = { '@/lib/offer-data': offerData, './db': db, '@/lib/db': db, '@/li
   blobReads++;
   return { statusCode: 200, stream: new Response(pdfBytes).body, blob: { size: pdfBytes.length } };
 } } };
-Object.assign(process.env, { NODE_ENV: 'production', COMMERCE_ENABLED: 'true', COMMERCE_POLICIES_APPROVED: 'true', LEGAL_ENTITY_NAME: 'Offline Test Publisher Pvt Ltd', LEGAL_ENTITY_ADDRESS: '42 Fixture Street, Mumbai 400001', SUPPORT_EMAIL: 'support@inventayu.com', AUTH_SECRET: 'offline-auth-secret-at-least-32-characters', DATABASE_URL: 'never-used-by-tests', DOWNLOAD_SECRET: 'offline-download-secret-at-least-32-characters', RAZORPAY_KEY_ID: 'rzp_test_offline', RAZORPAY_KEY_SECRET: 'offline', RAZORPAY_WEBHOOK_SECRET: 'offline', RESEND_API_KEY: 'offline', MAIL_FROM: 'Books <books@example.com>', NEXT_PUBLIC_SITE_URL: 'https://example.com', CRON_SECRET: 'offline-cron', BOOK_STORAGE_ALLOWED_HOSTS: 'files.example.com' });
+Object.assign(process.env, { NODE_ENV: 'production', COMMERCE_ENABLED: 'true', COMMERCE_POLICIES_APPROVED: 'true', LEGAL_ENTITY_NAME: 'Offline Test Publisher Pvt Ltd', LEGAL_ENTITY_ADDRESS: '42 Fixture Street, Mumbai 400001', SUPPORT_EMAIL: 'support@store-test.invalid', AUTH_SECRET: 'offline-auth-secret-at-least-32-characters', DATABASE_URL: 'never-used-by-tests', DOWNLOAD_SECRET: 'offline-download-secret-at-least-32-characters', RAZORPAY_KEY_ID: 'rzp_test_offline', RAZORPAY_KEY_SECRET: 'offline', RAZORPAY_WEBHOOK_SECRET: 'offline', RESEND_API_KEY: 'offline', MAIL_FROM: 'Books <books@example.com>', NEXT_PUBLIC_SITE_URL: 'https://example.com', CRON_SECRET: 'offline-cron', BOOK_STORAGE_ALLOWED_HOSTS: 'files.example.com' });
 const originalFetch = globalThis.fetch;
 const links = new Map();
 const payments = new Map();
@@ -357,7 +357,7 @@ try {
   });
   await check('alert HTML escapes hostile message and details', async () => {
     const email = load('src/lib/email.ts', mocks);
-    process.env.ADMIN_EMAIL = 'admin@inventayu.com';
+    process.env.ADMIN_EMAIL = 'admin@example.com';
     await email.alertAdmin('<img src=x onerror=alert(1)>', '<script>alert(1)</script>', { payload: '</pre><script>bad</script>' });
     assert.ok(!lastEmail.html.includes('<script>'));
     assert.ok(!lastEmail.html.includes('<img src=x'));

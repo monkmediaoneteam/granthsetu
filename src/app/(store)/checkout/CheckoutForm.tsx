@@ -11,7 +11,7 @@ import PricingSummary from "@/components/PricingSummary";
 import { useCoupon, usePricing } from "@/components/usePricing";
 
 type Field = "name" | "email" | "phone";
-const CHECKOUT_KEY = "inventayu-reading-room-checkout";
+const CHECKOUT_KEY = "pustiq-checkout";
 
 // Only known customer messages may cross from the API into the checkout page.
 const customerErrors: Record<string, { message: string; field?: Field }> = {

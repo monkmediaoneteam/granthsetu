@@ -11,7 +11,7 @@ if (!/^[a-f0-9]{64}$/.test(adminToken)) throw new Error('ADMIN_TOKEN for the pre
 const preview = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--port', String(port)], {
   stdio: 'inherit', env: { ...process.env,
     PGLITE_DATABASE_DIR: directory, DATABASE_URL: '', AUTH_SECRET: randomBytes(32).toString('hex'),
-    NEXT_PUBLIC_SITE_URL: `http://localhost:${port}`, NEXT_PUBLIC_STORE_NAME: 'Reading Room by INVENTAYU',
+    NEXT_PUBLIC_SITE_URL: `http://localhost:${port}`, NEXT_PUBLIC_STORE_NAME: 'Pustiq',
     COMMERCE_ENABLED: 'false', ALLOW_DEV_CHECKOUT: 'false', ADMIN_TOKEN: adminToken, ADMIN_EMAIL: '',
     RAZORPAY_KEY_ID: '', RAZORPAY_KEY_SECRET: '', RAZORPAY_WEBHOOK_SECRET: '',
     RESEND_API_KEY: '', MAIL_FROM: '', BLOB_READ_WRITE_TOKEN: '', CRON_SECRET: '', DOWNLOAD_SECRET: '',

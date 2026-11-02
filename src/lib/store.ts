@@ -9,8 +9,7 @@
 
 export const STORE = {
   /** Shown in the navbar, page titles and emails. */
-  name: process.env.NEXT_PUBLIC_STORE_NAME && process.env.NEXT_PUBLIC_STORE_NAME !== 'The Reading Room'
-    ? process.env.NEXT_PUBLIC_STORE_NAME : 'Reading Room by INVENTAYU',
+  name: process.env.NEXT_PUBLIC_STORE_NAME || 'Pustiq',
 
   /** Small label above the headline. */
   kicker: "Digital editions",
@@ -18,7 +17,7 @@ export const STORE = {
   /** Platform-level, never title-level: this shop is a growing catalogue that
       carries many authors and publishers, and the copy has to read that way. */
   tagline:
-    "Reference volumes and practitioner texts from the researchers, editors and publishers working in Ayurveda, phytopharmaceuticals and natural products.",
+    "Buy Ayurveda, phytopharmaceutical and natural-product books as instant digital downloads. Titles from leading authors and publishers, delivered as watermarked PDFs after secure payment.",
 
   /**
    * The legal seller. This is NOT decorative: Razorpay requires the entity that
@@ -38,5 +37,5 @@ export function siteUrl() {
     const url = new URL(configured);
     if (process.env.NODE_ENV !== 'production' || !['localhost', '127.0.0.1'].includes(url.hostname)) return url.origin;
   }
-  return 'https://inventayu-books.vercel.app';
+  return 'http://localhost:3000';
 }

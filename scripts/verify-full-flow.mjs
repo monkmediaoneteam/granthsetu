@@ -55,7 +55,7 @@ assert.ok(books.length >= 2, "Expected at least 2 books in catalogue");
 
 // 2. Test Prototype Checkout Creation
 const testOrderId = "verify_" + Date.now();
-const testEmail = "buyer@inventayu-test.com";
+const testEmail = "buyer@example.test";
 const selectedBook = books[0];
 const rzpOrderId = `nopay_${testOrderId}`;
 
@@ -97,7 +97,7 @@ console.log(`[3] Download token minted and cryptographically verified.`);
 
 // 4. Test PDF Stamping on sample file
 const samplePdfBytes = readFileSync(new URL("../public/sample.pdf", import.meta.url));
-const stampText = `Licensed to ${testEmail} · Order #${testOrderId} · INVENTAYU® Books`;
+const stampText = `Licensed to ${testEmail} · Order #${testOrderId} · Pustiq`;
 const stampedBytes = await stampPdf(samplePdfBytes, stampText);
 const reloaded = await PDFDocument.load(stampedBytes);
 assert.ok(reloaded.getPageCount() >= 1, "Stamped PDF must load and have at least 1 page");

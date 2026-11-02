@@ -7,7 +7,7 @@ verified-email library, reviewed author submissions, editorial homepage modules,
 and administration. Store identity remains configurable. Payouts and print sales
 are excluded. Implementation is present locally; production activation is not approved.
 
-The main INVENTAYU website is separate. Parallel contributors own storefront,
+Parallel contributors own storefront,
 commerce, publishing, and authentication/data integration. No production database
 migrations, deployments, real emails, charges, or production checks were performed
 as part of the publishing changes recorded here.

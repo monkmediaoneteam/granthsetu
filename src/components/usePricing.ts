@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PricedCart } from "@/lib/offers";
 
-const COUPON_KEY = "inventayu-coupon";
+const COUPON_KEY = "pustiq-coupon";
 
 /** The coupon typed in the bag, remembered for checkout in this tab. */
 export function useCoupon(): [string, (code: string) => void] {
