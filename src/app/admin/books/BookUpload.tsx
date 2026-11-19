@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { put } from "@vercel/blob/client";
-import { CheckCircle2, FileUp, ImageUp, RefreshCw } from "lucide-react";
+import { CheckCircle2, FileUp, ImageUp, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FILE_ACCEPT, FILE_TYPE_LIST, FILE_TYPES, fileTypeFromName } from "@/lib/file-types";
 
@@ -64,6 +64,25 @@ export default function BookUpload({ slug, kind, attached, onSale = false }: { s
     picker.current?.click();
   }
 
+  async function removeCover() {
+    if (!window.confirm("Remove this cover image? The store will show the dynamic placeholder cover instead.")) return;
+    setBusy(true);
+    try {
+      const formData = new FormData();
+      formData.append("action", "remove-cover");
+      formData.append("slug", slug);
+      formData.append("cover", "");
+      const res = await fetch("/api/admin/book", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Could not remove cover.");
+      setStatus("Cover removed. Store will show dynamic placeholder cover.");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to remove cover.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const Icon = attached ? RefreshCw : isFile ? FileUp : ImageUp;
   const hint = isFile ? `${FILE_TYPE_LIST}, up to 5 MB` : "JPEG, PNG or WebP, up to 5 MB";
   return <div className="grid gap-2">
@@ -81,6 +100,11 @@ export default function BookUpload({ slug, kind, attached, onSale = false }: { s
     <button type="button" onClick={choose} disabled={busy} className="btn btn-ghost w-full">
       <Icon size={16} aria-hidden="true" />{busy ? "Uploading..." : attached ? `Replace ${noun}` : `Upload ${noun}`}
     </button>
+    {!isFile && attached && (
+      <button type="button" onClick={removeCover} disabled={busy} className="btn btn-ghost w-full text-danger hover:border-danger/40">
+        <Trash2 size={16} aria-hidden="true" />Delete cover
+      </button>
+    )}
     <input ref={picker} type="file" className="sr-only" tabIndex={-1} aria-hidden="true" disabled={busy}
       accept={isFile ? FILE_ACCEPT : "image/jpeg,image/png,image/webp"}
       onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) upload(file); else setReplacing(false); }} />

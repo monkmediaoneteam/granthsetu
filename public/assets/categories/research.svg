@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="cat-bg-research" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#292342"/>
+      <stop offset="100%" stop-color="#1a162b"/>
+    </linearGradient>
+    <radialGradient id="cat-glow-research" cx="75%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#cat-bg-research)"/>
+  <rect width="800" height="450" fill="url(#cat-glow-research)"/>
+
+  <!-- Frame border -->
+  <rect x="20" y="20" width="760" height="410" rx="14" fill="none" stroke="#1e4d33" stroke-width="1.5"/>
+
+  <!-- Centered Icon Illustration -->
+  <g transform="translate(400, 190)">
+    <circle cx="0" cy="0" r="78" fill="#ffffff" fill-opacity="0.04" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="0" cy="0" r="64" fill="none" stroke="#b9852e" stroke-opacity="0.4" stroke-dasharray="4 4" stroke-width="1"/>
+    <circle cx="0" cy="0" r="42" fill="none" stroke="#a78bfa" stroke-width="2.5"/>
+                <line x1="30" y1="30" x2="65" y2="65" stroke="#a78bfa" stroke-width="4" stroke-linecap="round"/>
+                <line x1="-20" y1="-10" x2="20" y2="-10" stroke="#b9852e" stroke-width="2"/>
+                <line x1="-20" y1="5" x2="10" y2="5" stroke="#b9852e" stroke-width="2"/>
+                <line x1="-20" y1="20" x2="15" y2="20" stroke="#e9d8ae" stroke-width="1.5"/>
+  </g>
+
+  <!-- Subject Name Badge -->
+  <g transform="translate(400, 340)">
+    <rect x="-140" y="-18" width="280" height="36" rx="18" fill="#ffffff" fill-opacity="0.08" stroke="#1e4d33" stroke-width="1"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Geist', 'Segoe UI', sans-serif" font-size="13" font-weight="600" letter-spacing="2" fill="#f4f1e6">RESEARCH METHODOLOGY</text>
+  </g>
+</svg>

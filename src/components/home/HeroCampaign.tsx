@@ -53,8 +53,10 @@ export default function HeroCampaign({ banners, covers }: { banners: Banner[]; c
       const [lead, accent] = splitAccent(s.title);
       return <div key={s.id} className={`hero-slide${s.image ? " has-art" : ""}`} hidden={i !== index} role={many ? "group" : undefined}
         aria-roledescription={many ? "slide" : undefined} aria-label={many ? `${i + 1} of ${slides.length}` : undefined}>
-        <picture className="hero-art" aria-hidden="true">{s.mobileImage && <source media="(max-width: 640px)" srcSet={s.mobileImage} />}
-          <img src={s.image ?? "/assets/reading-room-botanical-v2.webp"} alt="" fetchPriority={i === 0 ? "high" : undefined} /></picture>
+        <picture className="hero-art" aria-hidden="true">
+          <source media="(max-width: 640px)" srcSet={s.mobileImage || "/api/placeholder/hero?variant=mobile"} />
+          <img src={s.image || "/api/placeholder/hero?variant=desktop"} alt="" fetchPriority={i === 0 ? "high" : undefined} />
+        </picture>
         <div className="hero-grid">
           <div className="hero-copy enter">
             {s.subtitle && <span className="pill"><span className="dot" />{s.subtitle}</span>}
