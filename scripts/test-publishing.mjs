@@ -49,6 +49,8 @@ assert.equal(s.verifyScanSignature(body, time, signature, 'secret', (Number(time
 await assert.rejects(s.readLimitedBody(new Request('https://test.local', { method: 'POST', body: '12345' }), 4), error => error.status === 413);
 assert.equal(new TextDecoder().decode(await s.readLimitedBody(new Request('https://test.local', { method: 'POST', body: '1234' }), 4)), '1234');
 const c = await load('../src/lib/content.ts');
+// The server's banner slots match the slots the homepage and admin use.
+assert.deepEqual(c.BANNER_PLACEMENTS, (await load('../src/lib/banner-slots.ts')).SLOT_KEYS);
 assert.equal(c.safeUrl('/books'), '/books');
 assert.equal(c.safeUrl('https://example.com/image.png'), 'https://example.com/image.png');
 for (const url of ['javascript:alert(1)', '//evil.test', 'http://example.com', '/\\evil.test', 'data:text/html,bad']) assert.throws(() => c.safeUrl(url));

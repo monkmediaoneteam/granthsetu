@@ -1,30 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, CircleCheck, Pause, Play } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import type { Banner } from "@/lib/home";
-import Book3D from "../motion/Book3D";
 
-type HeroCover = { slug: string; title: string; cover: string | null };
+// Shown only until the admin adds a hero banner (Admin > Banners > Hero carousel).
+const PLACEHOLDER = { desktop: "/api/placeholder/hero?variant=desktop", mobile: "/api/placeholder/hero?variant=mobile" };
 
-export const DEFAULT_SLIDE: Banner = { id: "default", title: "Books worth keeping, delivered instantly", subtitle: "Digital editions",
-  body: "Independent authors and publishers. Pay once, read anywhere.", image: null, mobileImage: null, href: "/search", label: "Browse books", theme: "forest", placement: "hero" };
-
-// The last two words of a headline carry the brand gradient, so admin banners get it without markup.
-export function splitAccent(title: string): [string, string] {
-  const words = title.trim().split(/\s+/);
-  if (words.length < 3) return ["", title.trim()];
-  return [`${words.slice(0, -2).join(" ")} `, words.slice(-2).join(" ")];
+function Art({ banner, first }: { banner: Banner; first: boolean }) {
+  return <picture className="hero-image">
+    {banner.mobileImage && <source media="(max-width: 640px)" srcSet={banner.mobileImage} />}
+    <img src={banner.image!} alt={banner.title} fetchPriority={first ? "high" : undefined} loading={first ? "eager" : "lazy"} />
+  </picture>;
 }
 
-const TICKS: [string, string][] = [["Instant", "download"], ["Secure", "payment"], ["Licensed", "to you"]];
-
-export default function HeroCampaign({ banners, covers }: { banners: Banner[]; covers: HeroCover[] }) {
-  const slides = banners.length ? banners : [DEFAULT_SLIDE];
+// The homepage hero: the admin's banner images, rotating in the order set in Admin > Banners. No text is drawn on top;
+// each image carries its own message and, if set, links where the admin chose.
+export default function HeroCampaign({ banners }: { banners: Banner[] }) {
+  const slides = banners.filter((b) => b.image);
   const reduced = useReducedMotion();
-  const root = useRef<HTMLElement>(null);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hover, setHover] = useState(false);
@@ -36,42 +32,21 @@ export default function HeroCampaign({ banners, covers }: { banners: Banner[]; c
     const timer = setInterval(() => setIndex((i) => (i + 1) % slides.length), 7000);
     return () => clearInterval(timer);
   }, [many, paused, hover, reduced, slides.length]);
-  useEffect(() => {
-    const el = root.current;
-    if (reduced || !el) return;
-    const pointer = (e: PointerEvent) => { el.style.setProperty("--px", (e.clientX / innerWidth - 0.5).toFixed(3)); el.style.setProperty("--py", (e.clientY / innerHeight - 0.5).toFixed(3)); };
-    const scroll = () => el.style.setProperty("--sy", Math.min(1, scrollY / 600).toFixed(3));
-    addEventListener("pointermove", pointer, { passive: true });
-    addEventListener("scroll", scroll, { passive: true });
-    return () => { removeEventListener("pointermove", pointer); removeEventListener("scroll", scroll); };
-  }, [reduced]);
   const go = (step: number) => setIndex((i) => (i + step + slides.length) % slides.length);
-  const shown = covers.filter((c) => c.cover).slice(0, 3);
-  return <section ref={root} className="hero-campaign" aria-roledescription={many ? "carousel" : undefined} aria-label="Featured"
+
+  if (!slides.length) return <section className="hero-campaign image-hero" aria-label="Featured">
+    <div className="hero-slide has-mobile"><picture className="hero-image">
+      <source media="(max-width: 640px)" srcSet={PLACEHOLDER.mobile} />
+      <img src={PLACEHOLDER.desktop} alt="" fetchPriority="high" />
+    </picture></div>
+  </section>;
+
+  return <section className="hero-campaign image-hero" aria-roledescription={many ? "carousel" : undefined} aria-label="Featured"
     onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)}>
-    {slides.map((s, i) => {
-      const [lead, accent] = splitAccent(s.title);
-      return <div key={s.id} className={`hero-slide${s.image ? " has-art" : ""}`} hidden={i !== index} role={many ? "group" : undefined}
-        aria-roledescription={many ? "slide" : undefined} aria-label={many ? `${i + 1} of ${slides.length}` : undefined}>
-        <picture className="hero-art" aria-hidden="true">
-          <source media="(max-width: 640px)" srcSet={s.mobileImage || "/api/placeholder/hero?variant=mobile"} />
-          <img src={s.image || "/api/placeholder/hero?variant=desktop"} alt="" fetchPriority={i === 0 ? "high" : undefined} />
-        </picture>
-        <div className="hero-grid">
-          <div className="hero-copy enter">
-            {s.subtitle && <span className="pill"><span className="dot" />{s.subtitle}</span>}
-            <h1>{lead}<span className="grad">{accent}</span></h1>
-            {s.body && <p>{s.body}</p>}
-            <div className="hero-actions">{s.href && <Link className="btn btn-primary" href={s.href}>{s.label || "Browse books"} <span aria-hidden="true">→</span></Link>}
-              <Link className="btn btn-ghost" href="/publish">Publish with us</Link></div>
-            <ul className="ticks">{TICKS.map(([strong, rest]) => <li key={strong}><CircleCheck size={16} aria-hidden="true" /><span><strong>{strong}</strong> {rest}</span></li>)}</ul>
-          </div>
-          {i === index && !s.image && shown.length > 0 && <div className="hero-stage" aria-hidden="true">{shown.map((c, k) =>
-            <Link key={c.slug} href={`/books/${encodeURIComponent(c.slug)}`} tabIndex={-1} className={`hero-cover c${k}`}>
-              <Book3D src={c.cover} title={c.title} sizes="(max-width: 900px) 34vw, 200px" priority={k === 0} /></Link>)}</div>}
-        </div>
-      </div>;
-    })}
+    {slides.map((s, i) => <div key={s.id} className={`hero-slide${s.mobileImage ? " has-mobile" : ""}`} hidden={i !== index} role={many ? "group" : undefined}
+      aria-roledescription={many ? "slide" : undefined} aria-label={many ? `${i + 1} of ${slides.length}` : undefined}>
+      {s.href ? <Link href={s.href} className="hero-link" aria-label={s.title} tabIndex={i === index ? 0 : -1}><Art banner={s} first={i === 0} /></Link> : <Art banner={s} first={i === 0} />}
+    </div>)}
     {many && <div className="hero-controls">
       <button type="button" className="round-btn" onClick={() => go(-1)} aria-label="Previous slide"><ChevronLeft size={17} aria-hidden="true" /></button>
       <div className="hero-dots">{slides.map((s, i) => <button key={s.id} type="button" aria-label={`Show slide ${i + 1}`} aria-current={i === index ? "true" : undefined} onClick={() => setIndex(i)} />)}</div>

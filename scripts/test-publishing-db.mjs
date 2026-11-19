@@ -184,8 +184,11 @@ try {
   assert.deepEqual(publicContent.collections[0].book_slugs, ['released-title', 'existing-title']);
   assert.equal(publicContent.authors.length, 0);
   // Banner placement: hero or one of the two side cards; anything else is refused.
-  await c.saveContent('modules', '', null, { title: 'Side art', type: 'banner', status: 'draft', payload: { placement: 'side-2' } });
-  await assert.rejects(c.saveContent('modules', '', null, { title: 'Bad place', type: 'banner', payload: { placement: 'footer' } }), /where the banner shows/);
+  await c.saveContent('modules', '', null, { title: 'Side art', type: 'banner', status: 'draft', image_url: '/api/media/x', payload: { placement: 'side-2' } });
+  await c.saveContent('modules', '', null, { title: 'Band art', type: 'banner', status: 'draft', image_url: '/api/media/y', payload: { placement: 'band' } });
+  await assert.rejects(c.saveContent('modules', '', null, { title: 'Bad place', type: 'banner', image_url: '/api/media/z', payload: { placement: 'footer' } }), /where the banner shows/);
+  await assert.rejects(c.saveContent('modules', '', null, { title: 'No art', type: 'banner', payload: { placement: 'hero' } }), /Add an image for this banner/, 'a banner is its image');
+  await q("delete from content_modules where title='Band art'");
   await q("delete from content_modules where title='Side art'");
   let record = (await c.getAdminContent('modules')).find(r => r.id === 'm1');
   // Admin screens get timestamps a browser can parse (the banner editor shows them in India time).
@@ -200,7 +203,7 @@ try {
   await c.saveContent('authors', author.id, author.updated_at, { title: 'Test author', body: 'Reviewed biography', status: 'published' });
   assert.equal((await c.getPublicContent()).authors[0].name, 'Test author');
   // Banner ordering: move swaps neighbours of the same type, is audited, and stops at the ends.
-  for (const [id, sort] of [['b1', 0], ['b2', 0], ['b3', 5]]) await c.saveContent('modules', id, null, { title: `Banner ${id}`, type: 'banner', status: 'published', sort });
+  for (const [id, sort] of [['b1', 0], ['b2', 0], ['b3', 5]]) await c.saveContent('modules', id, null, { title: `Banner ${id}`, type: 'banner', status: 'published', sort, image_url: `/api/media/${id}` });
   const bannerOrder = async () => (await q("select id from content_modules where type='banner' order by sort, id")).map(r => r.id);
   assert.deepEqual(await bannerOrder(), ['b1', 'b2', 'b3']);
   await c.moveModule('b3', 'up');
@@ -210,6 +213,14 @@ try {
   await c.moveModule('b1', 'down');
   assert.deepEqual(await bannerOrder(), ['b3', 'b1', 'b2']);
   assert.ok((await q("select count(*)::int n from publishing_audit where action='content.module.moved'"))[0].n >= 2);
+  // Reordering stays inside a slot: a side card between two hero banners is skipped over, not swapped.
+  await c.saveContent('modules', 'sx', null, { title: 'Side x', type: 'banner', status: 'published', sort: 15, image_url: '/api/media/sx', payload: { placement: 'side-1' } });
+  const heroOrder = async () => (await q("select id from content_modules where type='banner' and coalesce(payload->>'placement','hero')='hero' order by sort, id")).map(r => r.id);
+  const before = await heroOrder();
+  await c.moveModule(before[before.length - 1], 'up');
+  const after = await heroOrder();
+  assert.deepEqual(after, [...before.slice(0, -2), before[before.length - 1], before[before.length - 2]], 'up moves past the side card to the previous hero banner');
+  await q("delete from content_modules where id='sx'");
   await assert.rejects(c.moveModule('m1', 'sideways'), /direction/);
   await assert.rejects(c.moveModule('missing', 'up'), /not found/i);
   console.log('Isolated publishing database: ownership, review, audited atomic release, bypass protection, scheduling, and CMS CRUD passed.');

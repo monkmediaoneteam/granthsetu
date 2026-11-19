@@ -9,7 +9,7 @@ import Featured from "@/components/home/Featured";
 import LookInside from "@/components/home/LookInside";
 import LanguageStrip from "@/components/home/LanguageStrip";
 import AuthorChips from "@/components/home/AuthorChips";
-import PublishBand from "@/components/home/PublishBand";
+import BandBanner from "@/components/home/BandBanner";
 import FaqGrid from "@/components/home/FaqGrid";
 import HomeSide from "@/components/home/HomeSide";
 import ShopStrip from "@/components/home/ShopStrip";
@@ -22,13 +22,10 @@ export default async function Home() {
   const [books, categories, content, bestsellers, authors] = await Promise.all([getStoreBooks(now), getCategories(), getPublicContent(), bestsellerSlugs(), getPublishedAuthors()]);
   const home = buildHome({ books, categories, modules: content.modules, bestsellers, authors, now });
   const enabled = flag("COMMERCE_ENABLED");
-  const covers = [...(home.rails.find((r) => r.key === "bestsellers")?.books ?? []), ...books]
-    .filter((b, i, all) => b.cover && all.findIndex((x) => x.slug === b.slug) === i).slice(0, 3)
-    .map(({ slug, title, cover }) => ({ slug, title, cover }));
   return <>
     <div className="wrap home-top">
-      <HeroCampaign banners={home.banners} covers={covers} />
-      <HomeSide books={books} banners={home.sideBanners} />
+      <HeroCampaign banners={home.banners} />
+      <HomeSide banners={home.sideBanners} />
     </div>
     <ShopStrip />
     <CategoryTiles tiles={home.categoryTiles.map(({ slug, name, count, image, covers: c }) => ({ slug, name, count, image, covers: c }))} />
@@ -36,7 +33,7 @@ export default async function Home() {
     <LookInside books={books} />
     <LanguageStrip languages={home.languages} />
     <AuthorChips authors={home.authors} />
-    <PublishBand covers={covers} />
+    <BandBanner banner={home.band} />
     <FaqGrid />
   </>;
 }
