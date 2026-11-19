@@ -83,7 +83,8 @@ export async function POST(req: Request) {
     if (action === 'create' && !slug) slug = slugify(textField(form.get('title'), 200, true));
     if (!SLUG.test(slug)) throw new PublishingError(action === 'create' ? 'Use letters or numbers in the name, or type a web address like gst-party-finder.' : 'Invalid book slug.');
     if (action !== 'create' && action !== 'delete') back = `/admin/books/${encodeURIComponent(slug)}`;
-    const allowed = action === 'release' ? ['action', 'slug', 'submission_id', 'reason', 'confirmed']
+    const allowed = action === 'remove-cover' ? ['action', 'slug']
+      : action === 'release' ? ['action', 'slug', 'submission_id', 'reason', 'confirmed']
       : action === 'archive' || action === 'restore' ? ['action', 'slug', 'reason', 'confirmed']
       : action === 'create' ? ['action', 'slug', 'title']
       : action === 'pricing' ? ['action', 'slug', 'sale_price', 'sale_starts_at', 'sale_ends_at']
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
       : action === 'price' ? ['action', 'slug', 'price']
       : ['action', 'slug', 'title', 'subtitle', 'price_inr', 'publisher', 'isbn', 'pages', 'year', 'cover', 'description', 'long_description', 'authorship', 'facts', 'highlights', 'active',
          'category_slug', 'release_date', 'language', 'edition', 'file_format', 'author_slug'];
-    if (!['save', 'release', 'archive', 'restore', 'create', 'pricing', 'put-on-sale', 'price', 'hide', 'show', 'delete'].includes(String(action)) || [...form.keys()].some(key => !allowed.includes(key) || form.getAll(key).length !== 1)) throw new PublishingError('Invalid book fields.');
+    if (!['save', 'release', 'archive', 'restore', 'create', 'pricing', 'put-on-sale', 'price', 'hide', 'show', 'delete', 'remove-cover'].includes(String(action)) || [...form.keys()].some(key => !allowed.includes(key) || form.getAll(key).length !== 1)) throw new PublishingError('Invalid book fields.');
     if (action === 'delete') {
       if (form.get('confirmed') !== 'on') throw new PublishingError('Confirm permanent deletion.');
       const rows = await sql`with removed as (
@@ -111,6 +112,13 @@ export async function POST(req: Request) {
         update books set active=${action === 'show'} where slug=${slug} and not third_party returning slug
       ), audit as (insert into events(order_id,type,payload)
         select null,${action === 'hide' ? 'admin.book.hidden' : 'admin.book.shown'},jsonb_build_object('slug',slug) from changed)
+      select slug from changed`;
+      if (!rows.length) throw new PublishingError('Book not found.', 404);
+    } else if (action === 'remove-cover') {
+      const rows = await sql`with changed as (
+        update books set cover=null, facts=coalesce(facts,'{}'::jsonb) - '_cover_blob'
+        where slug=${slug} and not coalesce(third_party,false) returning slug
+      ), audit as (insert into events(order_id,type,payload) select null,'admin.book.cover_removed',jsonb_build_object('slug',slug) from changed)
       select slug from changed`;
       if (!rows.length) throw new PublishingError('Book not found.', 404);
     } else if (action === 'put-on-sale') {

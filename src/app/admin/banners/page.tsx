@@ -79,8 +79,8 @@ function BannerForm({ banner }: { banner?: Banner }) {
     <label className="text-sm sm:col-span-2">One line of text<input name="body" maxLength={160} className={input} defaultValue={banner?.body ?? ""} placeholder="Up to 20% off selected titles" /></label>
     <label className="text-sm sm:col-span-2">Where it shows<select name="placement" className={input} defaultValue={placementOf(banner)}>
       {Object.entries(PLACEMENTS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
-    <ImageField name="image_url" label="Image" value={banner?.image_url ?? ""} hint="Hero: wide, about 1600 × 700. Side cards: about 800 × 600. JPEG, PNG or WebP, up to 5 MB." />
-    <ImageField name="mobile_image_url" label="Phone image (optional)" value={banner?.mobile_image_url ?? ""} ratio="4 / 5" hint="Shown on phones instead, about 800 × 1000. Leave empty to use the main image." />
+    <ImageField name="image_url" label="Image" presetCategory="hero" value={banner?.image_url ?? ""} hint="Hero: wide, about 1600 × 700. Side cards: about 800 × 600. JPEG, PNG or WebP, up to 5 MB." />
+    <ImageField name="mobile_image_url" label="Phone image (optional)" presetCategory="hero" value={banner?.mobile_image_url ?? ""} ratio="4 / 5" hint="Shown on phones instead, about 800 × 1000. Leave empty to use the main image." />
     <label className="text-sm">Button link<input name="link_url" maxLength={2000} className={input} defaultValue={banner?.link_url ?? ""} placeholder="/search?offer=1" /></label>
     <label className="text-sm">Button text<input name="link_label" maxLength={100} className={input} defaultValue={banner?.link_label ?? ""} placeholder="Shop offers" /></label>
     <label className="text-sm">Starts (India time, optional)<input name="publish_at" type="datetime-local" className={input} defaultValue={toIndiaInput(banner?.publish_at ?? null)} /></label>

@@ -16,9 +16,14 @@ export function sideBooks(books: PublicBook[]) {
 }
 
 function BannerCard({ banner }: { banner: Banner }) {
+  const slot = banner.placement === "side-2" ? "2" : "1";
+  const imageSrc = banner.image || `/api/placeholder/side?slot=${slot}`;
+  const mobileSrc = banner.mobileImage || `/api/placeholder/side?slot=${slot}&variant=mobile`;
   const body = <>
-    {banner.image && <picture className="side-art" aria-hidden="true">{banner.mobileImage && <source media="(max-width: 640px)" srcSet={banner.mobileImage} />}
-      <img src={banner.image} alt="" loading="lazy" /></picture>}
+    <picture className="side-art" aria-hidden="true">
+      <source media="(max-width: 640px)" srcSet={mobileSrc} />
+      <img src={imageSrc} alt="" loading="lazy" />
+    </picture>
     <span className="side-text">
       {banner.subtitle && <span className="eyebrow">{banner.subtitle}</span>}
       <span className="side-title">{banner.title}</span>
@@ -26,7 +31,7 @@ function BannerCard({ banner }: { banner: Banner }) {
       {banner.href && <span className="link-line">{banner.label || "Shop now"} <span aria-hidden="true">→</span></span>}
     </span>
   </>;
-  const className = `side-card side-banner${banner.image ? " has-art" : ""}`;
+  const className = "side-card side-banner has-art";
   return banner.href ? <Link href={banner.href} className={className}>{body}</Link> : <div className={className}>{body}</div>;
 }
 

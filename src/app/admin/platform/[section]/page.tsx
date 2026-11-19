@@ -7,6 +7,7 @@ import { contentSections, getAdminContent, type ContentSection } from "@/lib/con
 import ActionForm from "@/components/ActionForm";
 import ModuleFields from "../ModuleFields";
 import BookPicker from "../BookPicker";
+import ImageField from "@/components/ImageField";
 
 export default async function ContentPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<{ type?: string; saved?: string }> }) {
   if (!(await isAdmin())) redirect("/admin/login");
@@ -37,8 +38,20 @@ function Editor({ section, record = {}, books, collections, authors, categories 
       {field("title", section === "authors" ? "Name" : "Title", { required: true, maxLength: 200 })}
       {section === "collections" && field("slug", "Slug", { required: true, maxLength: 120, pattern: "[a-z0-9]+(-[a-z0-9]+)*", readOnly: Boolean(id) })}
       {isModule && <ModuleFields key={String(record.updated_at ?? "new")} section={section} type={String(record.type ?? (section === "testimonials" ? "testimonial" : section === "media" ? "media" : "text"))} payload={(record.payload ?? {}) as Record<string, unknown>} collections={collections} authors={authors} categories={categories} />}
-      {field("image_url", section === "authors" ? "Photo URL" : "Image URL", { maxLength: 2000 })}
-      {isModule && field("mobile_image_url", "Mobile image URL", { maxLength: 2000 })}
+      {section === "authors" ? (
+        <div className="sm:col-span-2">
+          <ImageField name="image_url" label="Author photo" value={String(record.image_url ?? "")} ratio="1 / 1" hint="Square portrait, about 400 × 400. JPEG, PNG, WebP or SVG up to 5 MB." />
+        </div>
+      ) : section === "collections" ? (
+        <div className="sm:col-span-2">
+          <ImageField name="image_url" label="Collection banner" value={String(record.image_url ?? "")} ratio="16 / 9" hint="Wide banner, about 1200 × 675. JPEG, PNG, WebP or SVG up to 5 MB." />
+        </div>
+      ) : (
+        <>
+          <ImageField name="image_url" label="Image" value={String(record.image_url ?? "")} ratio="16 / 7" hint="Desktop image: about 1600 × 700. JPEG, PNG, WebP or SVG up to 5 MB." />
+          {isModule && <ImageField name="mobile_image_url" label="Mobile image (optional)" value={String(record.mobile_image_url ?? "")} ratio="4 / 5" hint="Shown on phones instead, about 800 × 1000. Leave empty to use desktop image." />}
+        </>
+      )}
       {isModule && field("link_url", "Link URL", { maxLength: 2000 })}
       {isModule && field("link_label", "Link label", { maxLength: 100 })}
     </div>

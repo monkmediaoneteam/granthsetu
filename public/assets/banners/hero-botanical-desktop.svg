@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" width="1600" height="700">
+  <defs>
+    <!-- Seamless background gradient -->
+    <linearGradient id="hero-bg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#ffffff"/>
+      <stop offset="75%" stop-color="#fafaf7"/>
+      <stop offset="100%" stop-color="#f4f1e6"/>
+    </linearGradient>
+
+    <!-- Emerald botanical wash -->
+    <radialGradient id="emerald-glow" cx="80%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#5bc58a" stop-opacity="0.22"/>
+      <stop offset="50%" stop-color="#2f7a4d" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Warm golden accent wash -->
+    <radialGradient id="amber-glow" cx="92%" cy="75%" r="40%">
+      <stop offset="0%" stop-color="#b9852e" stop-opacity="0.18"/>
+      <stop offset="60%" stop-color="#b9852e" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Base canvas -->
+  <rect width="1600" height="700" fill="url(#hero-bg)"/>
+
+  <!-- Atmospheric glows positioned on the right half -->
+  <rect width="1600" height="700" fill="url(#emerald-glow)"/>
+  <rect width="1600" height="700" fill="url(#amber-glow)"/>
+
+  <!-- Left side subtle architectural grid (remains behind text without distraction) -->
+  <g stroke="#e8e6dd" stroke-width="1" stroke-dasharray="3 6" opacity="0.6">
+    <line x1="120" y1="0" x2="120" y2="700"/>
+    <line x1="480" y1="0" x2="480" y2="700"/>
+    <line x1="0" y1="580" x2="600" y2="580"/>
+  </g>
+
+  <!-- Right side creative reading & botanical sanctuary illustration -->
+  <g id="sanctuary-artwork" transform="translate(1050, 320)">
+    <!-- Architectural window arch / reading alcove silhouette -->
+    <path d="M 0,-240 C 200,-240 380,-100 380,120 L 380,340 L -60,340 L -60,120 C -60,-100 0,-240 0,-240 Z"
+          fill="#ffffff" fill-opacity="0.55" stroke="#e8e6dd" stroke-width="1.5"/>
+
+    <!-- Gilded geometry circles (scientific astrolabe / botanical taxonomy motif) -->
+    <circle cx="200" cy="60" r="190" fill="none" stroke="#1e4d33" stroke-width="1" stroke-opacity="0.3"/>
+    <circle cx="200" cy="60" r="160" fill="none" stroke="#b9852e" stroke-width="1.5" stroke-opacity="0.45" stroke-dasharray="8 6"/>
+    <circle cx="200" cy="60" r="110" fill="none" stroke="#2f7a4d" stroke-width="1" stroke-opacity="0.35"/>
+
+    <!-- Stack of Scholarly Folios & Books (Perspective 3D outlines) -->
+    <g transform="translate(40, 100)">
+      <!-- Bottom heavy volume -->
+      <path d="M 0,110 L 220,70 L 340,95 L 120,135 Z" fill="#ffffff" stroke="#0b2416" stroke-width="2"/>
+      <path d="M 0,110 L 0,135 L 120,160 L 120,135 Z" fill="#123a24" stroke="#0b2416" stroke-width="2"/>
+      <path d="M 120,135 L 340,95 L 340,120 L 120,160 Z" fill="#f4f1e6" stroke="#0b2416" stroke-width="1.5"/>
+
+      <!-- Middle volume (Forest Green spine) -->
+      <path d="M 20,70 L 230,30 L 330,55 L 120,95 Z" fill="#ffffff" stroke="#1f5a3a" stroke-width="2"/>
+      <path d="M 20,70 L 20,92 L 120,117 L 120,95 Z" fill="#2f7a4d" stroke="#1f5a3a" stroke-width="2"/>
+      <path d="M 120,95 L 330,55 L 330,77 L 120,117 Z" fill="#f4f1e6" stroke="#1f5a3a" stroke-width="1.5"/>
+      <!-- Gold ribbing on spine -->
+      <line x1="30" y1="74" x2="30" y2="94" stroke="#b9852e" stroke-width="1.5"/>
+      <line x1="110" y1="92" x2="110" y2="112" stroke="#b9852e" stroke-width="1.5"/>
+
+      <!-- Top Volume (Open Folio / Manuscript) -->
+      <path d="M 50,25 L 210,-10 L 300,12 L 140,47 Z" fill="#ffffff" stroke="#b9852e" stroke-width="2"/>
+      <line x1="70" y1="23" x2="190" y2="-3" stroke="#b9852e" stroke-width="1.5"/>
+      <line x1="70" y1="31" x2="160" y2="12" stroke="#b9852e" stroke-width="1" stroke-opacity="0.6"/>
+    </g>
+
+    <!-- Elegant Ayurvedic Botanical Herbs Lineage (Tulsi, Ashwagandha, Neem Leaves) -->
+    <g transform="translate(60, -30)">
+      <!-- Main stem curving gracefully upward -->
+      <path d="M 80,180 C 110,60 90,-40 180,-140" fill="none" stroke="#2f7a4d" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 180,-140 C 210,-170 230,-150 210,-110 C 190,-70 170,-100 180,-140 Z" fill="#2f7a4d" fill-opacity="0.15" stroke="#2f7a4d" stroke-width="2"/>
+      
+      <!-- Branch 1 (left leaf) -->
+      <path d="M 98,100 C 60,60 30,75 40,110 C 50,140 85,120 98,100 Z" fill="#5bc58a" fill-opacity="0.2" stroke="#2f7a4d" stroke-width="2"/>
+      <line x1="98" y1="100" x2="45" y2="92" stroke="#2f7a4d" stroke-width="1"/>
+
+      <!-- Branch 2 (right leaf) -->
+      <path d="M 108,40 C 150,0 180,15 170,50 C 160,80 120,60 108,40 Z" fill="#b9852e" fill-opacity="0.18" stroke="#b9852e" stroke-width="2"/>
+      <line x1="108" y1="40" x2="160" y2="30" stroke="#b9852e" stroke-width="1"/>
+
+      <!-- Delicate medicinal berries / seeds -->
+      <circle cx="215" cy="-80" r="5" fill="#b9852e"/>
+      <circle cx="230" cy="-65" r="4" fill="#5bc58a"/>
+      <circle cx="205" cy="-55" r="4.5" fill="#2f7a4d"/>
+    </g>
+
+    <!-- Apothecary Glassware Outline (Clean Phytopharmaceutical Research) -->
+    <g transform="translate(340, 160)">
+      <!-- Conical flask / beaker -->
+      <path d="M 20,-70 L 35,-70 L 35,-40 L 70,30 C 75,40 70,50 55,50 L 0,50 C -15,50 -20,40 -15,30 L 20,-40 Z"
+            fill="#ffffff" fill-opacity="0.75" stroke="#1e4d33" stroke-width="2"/>
+      <!-- Liquid level line (Emerald tincture) -->
+      <path d="M -8,18 Q 28,12 62,18" fill="none" stroke="#5bc58a" stroke-width="2"/>
+      <path d="M -8,18 L -14,32 C -18,40 -12,48 2,48 L 52,48 C 66,48 72,40 68,32 L 62,18 Z"
+            fill="#5bc58a" fill-opacity="0.12"/>
+    </g>
+  </g>
+
+  <!-- Top Right Brand Editorial Stamp -->
+  <g transform="translate(1480, 80)">
+    <circle cx="0" cy="0" r="36" fill="#ffffff" stroke="#b9852e" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(185,133,46,0.15))"/>
+    <circle cx="0" cy="0" r="31" fill="none" stroke="#1e4d33" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="0" y="-3" text-anchor="middle" font-family="'Geist', 'Segoe UI', sans-serif" font-size="8" font-weight="700" letter-spacing="2" fill="#0b2416">INVENTAYU</text>
+    <text x="0" y="10" text-anchor="middle" font-family="'Geist', 'Segoe UI', sans-serif" font-size="7" font-weight="500" letter-spacing="1.5" fill="#b9852e">DIGITAL</text>
+  </g>
+</svg>
