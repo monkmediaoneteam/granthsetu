@@ -18,13 +18,21 @@ const mod = (id, type, extra = {}) => ({ id, type, title: id, body: null, image_
 const home = buildHome({ books, categories, now, bestsellers: ['ghost', 'd', 'a'],
   authors: [{ id: 'au1', name: 'Author One', photo_url: null }, { id: 'au2', name: 'No Books', photo_url: null }],
   modules: [mod('b1', 'banner', { sort: 2 }), mod('b0', 'banner', { sort: 1 }), mod('old', 'banner', { ends_at: '2026-10-01T00:00:00Z' }),
-    mod('s1', 'banner', { sort: 3, image_url: '/api/media/x', payload: { placement: 'side-1' } }), mod('s2', 'banner', { sort: 4, payload: { placement: 'side-2' } }), mod('s1b', 'banner', { sort: 5, payload: { placement: 'side-1' } }),
+    mod('s1', 'banner', { sort: 3, image_url: '/api/media/x', payload: { placement: 'side-1' } }), mod('s2', 'banner', { sort: 4, image_url: '/api/media/s2', payload: { placement: 'side-2' } }), mod('bd', 'banner', { sort: 6, image_url: '/api/media/bd', payload: { placement: 'band' } }), mod('bx', 'banner', { sort: 7, payload: { placement: 'band' } }), mod('s1b', 'banner', { sort: 5, payload: { placement: 'side-1' } }),
     mod('p1', 'promo', { payload: { size: 'large', category_slug: 'fiction', theme: 'coral' } }), mod('g', 'genre-switcher', { payload: { category_slugs: ['science', 'empty', 'fiction'] } })] });
 
 assert.deepEqual(home.banners.map(b => b.id), ['b0', 'b1'], 'ordered, expired banner dropped, side banners not in the hero');
 assert.equal(home.sideBanners.first.id, 's1', 'the first live side-1 banner fills side card 1');
 assert.equal(home.sideBanners.first.image, '/api/media/x');
 assert.equal(home.sideBanners.second.id, 's2');
+assert.equal(home.band.id, 'bd', 'the wide band shows its first live banner with an image');
+// Book pages and search/category pages each get the first live banner placed there.
+const { slotBanner } = load('src/lib/home.ts', { './db': { sql() { throw new Error('No database in home tests'); } } });
+const pageMods = [mod('p0', 'banner', { sort: 1, payload: { placement: 'product' } }), mod('p1', 'banner', { sort: 2, image_url: '/api/media/p1', payload: { placement: 'product' } }),
+  mod('l1', 'banner', { sort: 3, image_url: '/api/media/l1', payload: { placement: 'listing' } }), mod('lx', 'banner', { sort: 4, image_url: '/api/media/lx', ends_at: '2026-10-01T00:00:00Z', payload: { placement: 'listing' } })];
+assert.equal(slotBanner(pageMods, 'product', now).id, 'p1', 'a banner without an image is skipped');
+assert.equal(slotBanner(pageMods, 'listing', now).id, 'l1');
+assert.equal(slotBanner(pageMods, 'band', now), null);
 assert.equal(home.promos[0].books.length, 2);
 assert.ok(home.promos[0].books.every(b => b.category_slug === 'fiction' && b.saleable));
 const rail = key => home.rails.find(r => r.key === key);

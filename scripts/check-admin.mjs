@@ -91,25 +91,57 @@ try {
   await page.getByRole('dialog').getByRole('button', { name: 'Show in store' }).click();
   await expect(page.getByText(/Restored \d+ books? to the store/)).toBeVisible();
   expect((await page.request.get(store)).status()).toBe(200);
-  // Schedule a banner that ended yesterday; it must not appear.
-  await page.goto(`${base}/admin/platform/modules?type=banner`);
-  await page.getByText('New module').click();
-  await page.getByLabel('Title').first().fill('Expired banner check');
-  await page.getByLabel('Status').first().selectOption('published');
-  await page.getByLabel('Ends at (with timezone)').first().fill(new Date(Date.now() - 86400000).toISOString());
-  await page.getByRole('button', { name: 'Save' }).first().click();
-  await page.goto(base);
-  await expect(page.getByText('Expired banner check')).toHaveCount(0);
+  // Banners are images only, placed per slot from Admin > Banners.
+  const newBanner = async (slot) => {
+    await page.goto(`${base}/admin/banners?new=${slot}#new-banner`, { waitUntil: 'networkidle' });
+    return page.locator('form', { has: page.getByRole('button', { name: 'Add banner' }) });
+  };
+  // A banner without an image is refused with a clear message.
+  let form = await newBanner('hero');
+  await form.getByLabel('Name').fill('No image check');
+  await form.getByRole('button', { name: 'Add banner' }).click();
+  await expect(page.getByText(/Add an image for this banner/)).toBeVisible();
+  // Hero: a live banner from a preset image, linked.
+  form = await newBanner('hero');
+  await form.getByLabel('Name').fill('Hero check');
+  await form.getByRole('button', { name: 'Botanical (desktop)' }).first().click();
+  await form.getByLabel('Link when clicked (optional)').fill('/search');
+  await form.getByRole('button', { name: 'Add banner' }).click();
+  await expect(page.getByText('Saved. The homepage is updated.')).toBeVisible();
+  // Side card 1 from its own slot.
+  form = await newBanner('side-1');
+  await expect(form.getByLabel('Where it shows')).toHaveValue('side-1');
+  await form.getByLabel('Name').fill('Side check');
+  await form.getByRole('button', { name: 'Special offer (desktop)' }).first().click();
+  await form.getByRole('button', { name: 'Add banner' }).click();
+  await expect(page.getByText('Saved. The homepage is updated.')).toBeVisible();
+  // Wide band that already ended: the homepage leaves it out.
+  form = await newBanner('band');
+  await form.getByLabel('Name').fill('Ended band check');
+  await form.locator('summary', { hasText: 'or paste an address' }).first().click();
+  await form.getByLabel('Banner image (required) address').fill('/assets/banners/side-deal-desktop.svg');
+  await form.getByLabel('Starts (India time, optional)').fill('2020-01-01T09:00');
+  await form.getByLabel('Ends (India time, optional)').fill('2020-01-02T09:00');
+  await form.getByRole('button', { name: 'Add banner' }).click();
+  await expect(page.getByText('Saved. The homepage is updated.')).toBeVisible();
+  await page.goto(base, { waitUntil: 'networkidle' });
+  const hero = page.locator('.hero-campaign');
+  await expect(hero.locator('img[alt="Hero check"]')).toHaveCount(1);
+  await expect(hero.locator('h1')).toHaveCount(0);
+  await expect(hero.locator('a[href="/search"]')).toHaveCount(1);
+  await expect(page.locator('.home-side img[alt="Side check"]')).toHaveAttribute('src', '/assets/banners/side-deal-desktop.svg');
+  await expect(page.locator('.home-side img[src^="/api/placeholder/side?slot=2"]')).toHaveCount(1);
+  await expect(page.locator('.band-banner')).toHaveCount(0);
   // A scheduled banner keeps its start and end when reopened and saved again.
-  await page.goto(`${base}/admin/banners`, { waitUntil: 'networkidle' });
-  await page.locator('summary', { hasText: 'New banner' }).click();
-  const fresh = page.locator('form', { has: page.getByRole('button', { name: 'Add banner' }) });
-  await fresh.getByLabel('Headline').fill('Schedule check');
-  await fresh.getByLabel('Starts (India time, optional)').fill('2030-01-05T09:30');
-  await fresh.getByLabel('Ends (India time, optional)').fill('2030-01-20T18:00');
-  await fresh.getByRole('button', { name: 'Add banner' }).click();
+  form = await newBanner('hero');
+  await form.getByLabel('Name').fill('Schedule check');
+  await form.getByRole('button', { name: 'Botanical (mobile)' }).first().click();
+  await form.getByLabel('Starts (India time, optional)').fill('2030-01-05T09:30');
+  await form.getByLabel('Ends (India time, optional)').fill('2030-01-20T18:00');
+  await form.getByRole('button', { name: 'Add banner' }).click();
   await expect(page.getByText('Saved. The homepage is updated.')).toBeVisible();
   const row = page.locator('li', { hasText: 'Schedule check' });
+  await expect(row.getByText('Scheduled')).toBeVisible();
   await row.getByText('Edit').click();
   await expect(row.getByLabel('Starts (India time, optional)')).toHaveValue('2030-01-05T09:30');
   await expect(row.getByLabel('Ends (India time, optional)')).toHaveValue('2030-01-20T18:00');
@@ -131,4 +163,4 @@ try {
 
   assert.deepEqual(errors, []);
 } finally { await browser.close(); }
-console.log('Admin browser check passed: sign-in, every section, draft product, details reflected in store, save errors shown, visibility and bulk actions reflected in store, expired banner hidden, banner schedule kept, category address made from the name.');
+console.log('Admin browser check passed: sign-in, every section, draft product, details reflected in store, save errors shown, visibility and bulk actions reflected in store, image-only banners per slot, image required, ended band hidden, banner schedule kept, category address made from the name.');

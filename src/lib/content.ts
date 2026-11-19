@@ -37,6 +37,8 @@ export function textField(value: unknown, max: number, required = false): string
   if (typeof value !== "string" || value.trim().length > max || (required && !value.trim())) throw new ContentError("Invalid or missing text field.");
   return value.trim();
 }
+// Homepage banner slots; must match SLOT_KEYS in banner-slots.ts (a test checks). Kept here so this module has no imports.
+export const BANNER_PLACEMENTS = ["hero", "side-1", "side-2", "band", "product", "listing"];
 export function validateContent(section: ContentSection, input: Record<string, unknown>) {
   const title = textField(input.title ?? input.name, 200, true);
   const status = input.status ?? "draft";
@@ -57,7 +59,9 @@ export function validateContent(section: ContentSection, input: Record<string, u
   const payload = input.payload ?? {};
   const allowedKeys = ["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url", "theme", "size", "category_slug", "category_slugs", "placement"];
   if (!payload || typeof payload !== "object" || Array.isArray(payload) || JSON.stringify(payload).length > 10000 || Object.keys(payload).some(k => !allowedKeys.includes(k))) throw new ContentError("Invalid module data.");
-  if ("placement" in payload && !["hero", "side-1", "side-2"].includes(String((payload as Record<string, unknown>).placement))) throw new ContentError("Choose where the banner shows.");
+  if ("placement" in payload && !BANNER_PLACEMENTS.includes(String((payload as Record<string, unknown>).placement))) throw new ContentError("Choose where the banner shows.");
+  // A banner is only its image, so it cannot be saved without one.
+  if (section === "modules" && type === "banner" && !safeUrl(input.image_url)) throw new ContentError("Add an image for this banner (upload one, pick a preset or paste an address).");
   for (const [key, value] of Object.entries(payload)) {
     if (key === "video_url") safeUrl(value);
     else if (key === "theme") { if (!themes.includes(String(value))) throw new ContentError("Invalid theme."); }
@@ -159,11 +163,15 @@ export async function deleteContent(section: ContentSection, id: string, expecte
 // Moves a module one place among modules of its type and renumbers them 0, 10, 20... in one audited statement.
 export async function moveModule(id: string, direction: string) {
   if (direction !== "up" && direction !== "down") throw new ContentError("Invalid direction.");
-  const target = await sql`select type from content_modules where id=${id}` as { type: string }[];
+  const target = await sql`select type, coalesce(payload->>'placement','hero') as placement from content_modules where id=${id}` as { type: string; placement: string }[];
   if (!target.length) throw new ContentError("Module not found.");
-  const list = (await sql`select id from content_modules where type=${target[0].type} order by sort, id` as { id: string }[]).map((r) => r.id);
+  const rows = await sql`select id, coalesce(payload->>'placement','hero') as placement from content_modules where type=${target[0].type} order by sort, id` as { id: string; placement: string }[];
+  const list = rows.map((r) => r.id);
   const i = list.indexOf(id);
-  const j = direction === "up" ? i - 1 : i + 1;
+  // Swap with the nearest neighbour in the same banner slot, so "up" always moves it within what the admin sees.
+  const step = direction === "up" ? -1 : 1;
+  let j = i + step;
+  while (j >= 0 && j < rows.length && rows[j].placement !== target[0].placement) j += step;
   if (j < 0 || j >= list.length) return;
   [list[i], list[j]] = [list[j], list[i]];
   await sql`with ordered as (

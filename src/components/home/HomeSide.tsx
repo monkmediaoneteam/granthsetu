@@ -1,60 +1,20 @@
 import Link from "next/link";
-import { Library } from "lucide-react";
-import Cover from "../Cover";
-import Price from "../Price";
-import type { PublicBook } from "../book-data";
 import type { Banner } from "@/lib/home";
 
-// Two promo cards beside the hero. Each is an admin banner placed there (Banners > Where it shows), or, without one,
-// a real product: the deepest saving and the newest add-on.
-export function sideBooks(books: PublicBook[]) {
-  const live = books.filter((b) => !b.comingSoon);
-  const deal = [...live].sort((a, b) => b.saving - a.saving || b.price - a.price)[0];
-  const fresh = [...live].sort((a, b) => String(b.release_date ?? "").localeCompare(String(a.release_date ?? "")) || (b.year ?? 0) - (a.year ?? 0))
-    .find((b) => b.slug !== deal?.slug);
-  return { deal, fresh };
+// The two cards beside the hero: each shows the admin's banner image for that slot (Admin > Banners > Side card 1 / 2),
+// linked if a link is set. Until one is added, a plain placeholder image keeps the layout.
+function Slot({ banner, slot }: { banner: Banner | null; slot: "1" | "2" }) {
+  const art = <picture className="side-image">
+    {banner?.mobileImage && <source media="(max-width: 640px)" srcSet={banner.mobileImage} />}
+    <img src={banner?.image ?? `/api/placeholder/side?slot=${slot}`} alt={banner?.title ?? ""} loading="lazy" />
+  </picture>;
+  return banner?.href ? <Link href={banner.href} className="side-card side-slot" aria-label={banner.title}>{art}</Link>
+    : <div className="side-card side-slot">{art}</div>;
 }
 
-function BannerCard({ banner }: { banner: Banner }) {
-  const slot = banner.placement === "side-2" ? "2" : "1";
-  const imageSrc = banner.image || `/api/placeholder/side?slot=${slot}`;
-  const mobileSrc = banner.mobileImage || `/api/placeholder/side?slot=${slot}&variant=mobile`;
-  const body = <>
-    <picture className="side-art" aria-hidden="true">
-      <source media="(max-width: 640px)" srcSet={mobileSrc} />
-      <img src={imageSrc} alt="" loading="lazy" />
-    </picture>
-    <span className="side-text">
-      {banner.subtitle && <span className="eyebrow">{banner.subtitle}</span>}
-      <span className="side-title">{banner.title}</span>
-      {banner.body && <span className="side-body">{banner.body}</span>}
-      {banner.href && <span className="link-line">{banner.label || "Shop now"} <span aria-hidden="true">→</span></span>}
-    </span>
-  </>;
-  const className = "side-card side-banner has-art";
-  return banner.href ? <Link href={banner.href} className={className}>{body}</Link> : <div className={className}>{body}</div>;
-}
-
-function ProductCard({ book, kicker }: { book: PublicBook; kicker: string }) {
-  return <Link href={`/books/${encodeURIComponent(book.slug)}`} className="side-card side-product">
-    <span className="side-text">
-      <span className="eyebrow">{kicker}</span>
-      <span className="side-title">{book.title}</span>
-      <Price book={book} />
-      <span className="link-line">Shop now <span aria-hidden="true">→</span></span>
-    </span>
-    <span className="side-cover"><Cover src={book.cover} title={book.title} sizes="140px" /></span>
-  </Link>;
-}
-
-export default function HomeSide({ books, banners = { first: null, second: null } }: { books: PublicBook[]; banners?: { first: Banner | null; second: Banner | null } }) {
-  const { deal, fresh } = sideBooks(books);
-  const first = banners.first ? <BannerCard banner={banners.first} /> : deal ? <ProductCard book={deal} kicker="Deal of the day" /> : null;
-  const second = banners.second ? <BannerCard banner={banners.second} />
-    : fresh ? <ProductCard book={fresh} kicker="New arrival" />
-    : <Link href="/library" className="side-card side-product"><span className="side-text"><span className="eyebrow">Your library</span>
-        <span className="side-title">Every book you buy, ready to re-download</span><span className="link-line">Open library <span aria-hidden="true">→</span></span></span>
-        <span className="side-icon" aria-hidden="true"><Library size={40} strokeWidth={1.4} /></span></Link>;
-  if (!first) return null;
-  return <aside className="home-side" aria-label="Deals">{first}{second}</aside>;
+export default function HomeSide({ banners }: { banners: { first: Banner | null; second: Banner | null } }) {
+  return <aside className="home-side" aria-label="Promotions">
+    <Slot banner={banners.first} slot="1" />
+    <Slot banner={banners.second} slot="2" />
+  </aside>;
 }

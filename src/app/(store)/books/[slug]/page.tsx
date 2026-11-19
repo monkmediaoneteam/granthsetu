@@ -23,6 +23,8 @@ import RecentlyViewed from "@/components/RecentlyViewed";
 import { cartLines, loadOffers } from "@/lib/offer-data";
 import { offerBadges } from "@/lib/offers";
 import { TicketPercent } from "lucide-react";
+import BandBanner from "@/components/home/BandBanner";
+import { slotBanner } from "@/lib/home";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -89,6 +91,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
           <dl className="detail-strip">{details.filter(([, , v]) => v).map(([Icon, label, value]) => <div key={label}><dt><Icon size={14} aria-hidden="true" />{label}</dt><dd>{value}</dd></div>)}</dl>
         </div>
       </article>
+      <BandBanner banner={slotBanner(content.modules, "product", now)} wrapClass="section" />
       <BookTabs tabs={tabs} />
       {byAuthor.length > 0 && <div className="section"><Carousel title={`More by ${book.authorship}`}>{byAuthor.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
       {similar.length > 0 && <div className="section"><Carousel title="Similar books" href={category ? `/category/${category.slug}` : "/search"}>{similar.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
