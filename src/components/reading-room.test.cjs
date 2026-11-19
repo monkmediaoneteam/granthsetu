@@ -330,8 +330,12 @@ async function checkCatalogue() {
       getCategories: async () => [], bestsellerSlugs: async () => [] },
     "@/lib/listing": listing,
     "@/components/Listing": load("components/Listing.tsx", { "./BookCard": { default: ({ book }) => React.createElement("article", { "data-book": book.slug }, book.title) }, "@/lib/listing": listing }),
+    // A live banner placed above search results (Admin > Banners > Search and category pages).
+    "@/lib/content": { ...load("lib/content.ts", { "./db": { sql() { throw new Error("no db in UI tests"); } } }), getPublicContent: async () => ({ modules: [{ id: "lb", type: "banner", title: "Listing promo", body: null, image_url: "/api/media/lb", mobile_image_url: null,
+      link_url: "/search?offer=1", link_label: null, payload: { placement: "listing" }, sort: 0, status: "published", publish_at: null, ends_at: null }] }) },
   }).default;
   const render = async (query) => renderToStaticMarkup(await Search({ searchParams: Promise.resolve(query) }));
+  assert.match(await render({}), /class="band-banner"[\s\S]*src="\/api\/media\/lb"/, "the listing banner shows above the results");
   const isbn = await render({ q: record.isbn });
   assert.match(isbn, /data-book="real-book"/);
   assert.doesNotMatch(isbn, /data-book="second-book"/);

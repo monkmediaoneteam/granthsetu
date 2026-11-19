@@ -17,6 +17,14 @@ export const BANNER_SLOTS = {
     label: "Wide band", where: "Lower on the homepage, above the questions. Only the first live banner shows; hidden when empty.",
     size: "1600 × 400 px", ratio: "4 / 1", mobileSize: "800 × 600 px", mobileRatio: "4 / 3", many: false, preset: undefined,
   },
+  product: {
+    label: "Book pages", where: "On every book page, below the book details. Only the first live banner shows; hidden when empty.",
+    size: "1600 × 400 px", ratio: "4 / 1", mobileSize: "800 × 600 px", mobileRatio: "4 / 3", many: false, preset: undefined,
+  },
+  listing: {
+    label: "Search and category pages", where: "Above the results on search and category pages. Only the first live banner shows; hidden when empty.",
+    size: "1600 × 400 px", ratio: "4 / 1", mobileSize: "800 × 600 px", mobileRatio: "4 / 3", many: false, preset: undefined,
+  },
 } as const;
 
 export type BannerSlot = keyof typeof BANNER_SLOTS;

@@ -38,7 +38,7 @@ export function textField(value: unknown, max: number, required = false): string
   return value.trim();
 }
 // Homepage banner slots; must match SLOT_KEYS in banner-slots.ts (a test checks). Kept here so this module has no imports.
-export const BANNER_PLACEMENTS = ["hero", "side-1", "side-2", "band"];
+export const BANNER_PLACEMENTS = ["hero", "side-1", "side-2", "band", "product", "listing"];
 export function validateContent(section: ContentSection, input: Record<string, unknown>) {
   const title = textField(input.title ?? input.name, 200, true);
   const status = input.status ?? "draft";

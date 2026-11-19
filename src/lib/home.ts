@@ -12,12 +12,22 @@ type RailKey = "bestsellers" | "new" | "offers" | "soon";
 export type Home = ReturnType<typeof buildHome>;
 const str = (v: unknown) => (typeof v === "string" && v ? v : null);
 
+function toBanner(m: ContentModule): Banner {
+  return { id: m.id, title: m.title, body: m.body, subtitle: str(m.payload.subtitle), image: contentUrl(m.image_url), mobileImage: contentUrl(m.mobile_image_url),
+    href: contentUrl(m.link_url), label: m.link_label, theme: str(m.payload.theme) ?? "yellow", placement: toSlot(m.payload.placement) };
+}
+// Live banners (published, in their dates) in admin order.
+function liveBanners(modules: ContentModule[], now: Date): Banner[] {
+  return publicModules(modules, now).filter((m) => m.type === "banner" || m.type === "hero").map(toBanner);
+}
+// The banner for a single slot on any page (book pages, search and category pages): the first live one with an image.
+export function slotBanner(modules: ContentModule[], slot: BannerSlot, now: Date = new Date()): Banner | null {
+  return liveBanners(modules, now).find((b) => b.placement === slot && b.image) ?? null;
+}
+
 export function buildHome({ books, categories, modules, bestsellers, authors, now }: HomeInput) {
   const live = publicModules(modules, now);
-  const placed: Banner[] = live.filter((m) => m.type === "banner" || m.type === "hero").map((m) => ({
-    id: m.id, title: m.title, body: m.body, subtitle: str(m.payload.subtitle), image: contentUrl(m.image_url), mobileImage: contentUrl(m.mobile_image_url),
-    href: contentUrl(m.link_url), label: m.link_label, theme: str(m.payload.theme) ?? "yellow",
-    placement: toSlot(m.payload.placement) }));
+  const placed = liveBanners(modules, now);
   // Hero slides rotate; each side card shows its first live banner (or a product when there is none).
   const banners = placed.filter((b) => b.placement === "hero");
   const firstIn = (slot: BannerSlot) => placed.find((b) => b.placement === slot && b.image) ?? null;

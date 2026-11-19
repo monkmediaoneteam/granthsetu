@@ -47,3 +47,9 @@
 .side-card.side-slot .side-image { position: absolute; inset: 0; }
 @media (max-width: 1100px) { .side-card.side-slot { aspect-ratio: 3 / 2; } }
 @media (max-width: 760px) { .home-side { grid-template-columns: 1fr 1fr; gap: 12px; } }
+
+/* Banner above search and category results. */
+.listing-promo { padding-top: 20px; }
+
+/* FAQ: each question opens on its own. The two-column grid used to stretch both cards in a row when one opened. */
+.faq-grid { align-items: start; }
