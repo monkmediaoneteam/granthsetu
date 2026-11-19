@@ -65,7 +65,8 @@ export default function OfferForm({ offer, books, collections, categories }: {
       </div>
     </details>
     <div className="flex flex-wrap gap-3">
-      <button className="btn btn-primary" type="submit" name="status" value="active">{offer?.status === "active" ? "Save" : "Save and go live"}</button>
+      {offer?.status === "paused" && <button className="btn btn-primary" type="submit" name="status" value="paused">Save (stays paused)</button>}
+      <button className={`btn ${offer?.status === "paused" ? "btn-ghost" : "btn-primary"}`} type="submit" name="status" value="active">{offer?.status === "active" ? "Save" : offer?.status === "paused" ? "Save and resume" : "Save and go live"}</button>
       <button className="btn btn-ghost" type="submit" name="status" value="draft">Save as draft</button>
     </div>
   </form>;

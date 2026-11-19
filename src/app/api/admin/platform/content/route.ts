@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       }
       input.book_slugs = form.getAll("book_slugs");
       input.payload = form.has("payload") ? JSON.parse(String(form.get("payload") || "{}")) : Object.fromEntries(
-        ["subtitle", "attribution", "collection_slug", "author_id", "video_url", "theme", "size", "category_slug"].filter(key => form.get(key)).map(key => [key, form.get(key)])
+        ["subtitle", "attribution", "collection_slug", "author_id", "video_url", "theme", "size", "category_slug", "placement"].filter(key => form.get(key)).map(key => [key, form.get(key)])
       );
       if (form.getAll("category_slugs").length) (input.payload as Record<string, unknown>).category_slugs = form.getAll("category_slugs").map(String);
       await saveContent(section, id, expected || null, input);
@@ -47,6 +47,7 @@ export async function POST(req: Request) {
     // Validation errors carry no database or provider details.
     if (error instanceof ContentError) return NextResponse.json({ error: error.message }, { status: 400 });
     console.error("CMS update failed", error);
+    if (back) return NextResponse.redirect(new URL(`${back}?error=${encodeURIComponent("Could not save. Reload and try again.")}`, req.url), 303);
     return NextResponse.json({ error: "Could not save content. Reload and try again." }, { status: 503 });
   }
 }

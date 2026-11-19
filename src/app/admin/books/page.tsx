@@ -2,156 +2,102 @@ import { sql, type Book } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import AdminShell from "@/components/AdminShell";
-import { Archive, BookCheck, Check, Eye, Rocket, X } from "lucide-react";
-import { releaseChecklist } from "@/lib/admin-catalogue";
-import { fileCheck } from "@/lib/admin-sale";
-import BookForm from "./BookForm";
-import BookUpload from "./BookUpload";
+import { Search } from "lucide-react";
+import { PRODUCT_STATUSES, productStatus, type ProductStatus } from "@/lib/admin-catalogue";
+import { currentPrice } from "@/lib/money";
+import BookTable, { type ProductRow } from "./BookTable";
+import CreateBook from "./CreateBook";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Books", robots: { index: false, follow: false } };
 
-type AdminBook = Book & { submission_id: string | null };
+const PAGE = 20;
 
-export default async function AdminBooks({
+export default async function AdminProducts({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string; q?: string }>;
+  searchParams: Promise<{ notice?: string; error?: string; q?: string; status?: string; page?: string }>;
 }) {
-  const { saved, error, q = "" } = await searchParams;
+  const { notice, error, q = "", status = "", page = "1" } = await searchParams;
   if (!(await isAdmin())) redirect("/admin/login");
 
   const needle = q.trim().toLowerCase().slice(0, 100);
-  // All four reads in one round trip.
-  const [rows, categories, authors, sold] = await Promise.all([
+  const filter = (status in PRODUCT_STATUSES ? status : "") as ProductStatus | "";
+  const [rows, categories, sold] = await Promise.all([
     sql`select * from books order by sort, title`,
-    sql`select slug,name from categories where status<>'archived' order by sort,name`,
-    sql`select id,name from author_profiles order by name`,
-    sql`select book_slug, count(*)::int as orders, sum(count)::int as downloads from downloads group by book_slug`,
+    sql`select slug,name from categories order by sort,name`,
+    sql`select book_slug, count(*)::int as orders from downloads group by book_slug`,
   ]);
-  const books = (rows as AdminBook[]).filter((b) => !needle || [b.title, b.slug, b.authorship ?? ""].some((v) => v.toLowerCase().includes(needle)));
-  const categoryList = categories as { slug: string; name: string }[];
-  const authorList = authors as { id: string; name: string }[];
-  const categoryName = new Map(categoryList.map((c) => [c.slug, c.name]));
-  const stats = new Map((sold as { book_slug: string; orders: number; downloads: number }[]).map((s) => [s.book_slug, s]));
-  const files = new Map(await Promise.all(books.filter((b) => !b.third_party).map(async (b) => [b.slug, await fileCheck(process.cwd(), b.file_url, b.file_sha256 ?? null)] as const)));
+  const categoryName = new Map((categories as { slug: string; name: string }[]).map((c) => [c.slug, c.name]));
+  const orders = new Map((sold as { book_slug: string; orders: number }[]).map((s) => [s.book_slug, s.orders]));
+
+  const all = (rows as Book[]).map((b): ProductRow => {
+    const price = currentPrice(b);
+    return {
+      slug: b.slug, title: b.title, cover: b.cover, category: categoryName.get(b.category_slug ?? "") ?? null,
+      format: b.file_format ?? "PDF", price: b.price_inr, salePrice: price.onSale ? price.price : null,
+      orders: orders.get(b.slug) ?? 0, status: productStatus(b), editable: !b.third_party,
+    };
+  });
+  const counts = Object.fromEntries(Object.keys(PRODUCT_STATUSES).map((key) => [key, all.filter((r) => r.status === key).length])) as Record<ProductStatus, number>;
+  const matches = all.filter((r) => (!filter || r.status === filter)
+    && (!needle || [r.title, r.slug, r.category ?? ""].some((v) => v.toLowerCase().includes(needle))));
+
+  const pages = Math.max(1, Math.ceil(matches.length / PAGE));
+  const current = Math.min(pages, Math.max(1, Number.parseInt(page, 10) || 1));
+  const shown = matches.slice((current - 1) * PAGE, current * PAGE);
+  const href = (next: { status?: string; page?: number }) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    const s = next.status ?? filter;
+    if (s) params.set("status", s);
+    if (next.page && next.page > 1) params.set("page", String(next.page));
+    const query = params.toString();
+    return `/admin/books${query ? `?${query}` : ""}`;
+  };
+
+  const create = <CreateBook />;
 
   return (
-    <AdminShell active="books" title="Books" subtitle="Price, offers and what is on sale.">
-      {saved && <p className="mb-4 rounded-2 border border-brand/30 bg-brand/5 px-4 py-3 text-[15px] text-brand" role="status">Saved. The storefront is updated.</p>}
+    <AdminShell active="books" title="Books" subtitle={`${all.length} books · ${counts["on-sale"]} on sale`} actions={create}>
+      {notice && <p className="mb-4 rounded-2 border border-brand/30 bg-brand/5 px-4 py-3 text-[15px] text-brand" role="status">{notice}</p>}
       {error && <p className="mb-4 rounded-2 border border-danger/30 bg-danger/10 px-4 py-3 text-[15px] text-danger" role="alert">{error}</p>}
 
-      <div className="mb-6 flex flex-wrap items-end gap-3">
-        <form method="get" className="flex gap-2" role="search">
-          <label className="sr-only" htmlFor="admin-book-search">Search books</label>
-          <input id="admin-book-search" name="q" defaultValue={q} placeholder="Search title, slug or author" className="field-input w-64" />
-          <button className="btn btn-ghost" type="submit">Search</button>
-        </form>
-        <details className="ml-auto">
-          <summary className="btn btn-ghost cursor-pointer list-none">New book</summary>
-          <form action="/api/admin/book" method="post" className="mt-3 flex flex-wrap items-end gap-3 rounded-lg border border-line bg-white p-4">
-            <input type="hidden" name="action" value="create" />
-            <label className="text-sm">Title<input name="title" required maxLength={200} className="field-input mt-1" /></label>
-            <label className="text-sm">Slug<input name="slug" required maxLength={101} pattern="[a-z0-9]+(-[a-z0-9]+)*" className="field-input mt-1" /></label>
-            <button className="btn btn-primary" type="submit">Create draft</button>
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-line p-4">
+          <form method="get" className="flex min-w-0 flex-1 items-center gap-2" role="search">
+            {filter && <input type="hidden" name="status" value={filter} />}
+            <label className="sr-only" htmlFor="admin-product-search">Search books</label>
+            <div className="relative min-w-0 max-w-sm flex-1">
+              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft" aria-hidden="true" />
+              <input id="admin-product-search" name="q" defaultValue={q} placeholder="Search title, slug or subject" className="field-input w-full pl-9" />
+            </div>
+            <button className="btn btn-ghost" type="submit">Search</button>
+            {(q || filter) && <a className="text-sm text-ink-soft underline" href="/admin/books">Reset</a>}
           </form>
-        </details>
-      </div>
+          <nav aria-label="Filter by status" className="flex flex-wrap gap-1">
+            {([["", "All", all.length], ...Object.entries(PRODUCT_STATUSES).map(([key, label]) => [key, label, counts[key as ProductStatus]])] as [string, string, number][])
+              .filter(([key, , n]) => !key || n > 0 || key === filter).map(([key, label, n]) =>
+                <a key={key || "all"} href={href({ status: key, page: 1 })} aria-current={filter === key ? "page" : undefined}
+                  className={`rounded-full border px-3 py-1 text-sm ${filter === key ? "border-brand bg-brand text-white" : "border-line text-ink-soft hover:bg-bg-3 hover:text-ink"}`}>
+                  {label} <span className="tabular-nums opacity-70">{n}</span></a>)}
+          </nav>
+        </div>
 
-      <div className="grid gap-3">
-        {books.map((b) => {
-          const s = stats.get(b.slug);
-          if (b.third_party) {
-            const VisibilityIcon = b.active ? Archive : Eye;
-            return (
-              <section key={b.slug} className="rounded-xl border border-line bg-bg-2 p-5">
-                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-                  <h2 className="text-lg font-semibold">{b.title}</h2>
-                  <span className="text-sm text-ink-soft">{b.active ? "Visible" : "Archived"} · {b.release_approved ? "Released" : "Awaiting release"} · author submission</span>
-                </div>
-                <p className="text-sm text-ink-soft">{b.publisher || "Author publication"} · ₹{(b.price_inr / 100).toFixed(2)} · {s ? `${s.orders} orders` : "No sales yet"}</p>
-                <form action="/api/admin/book" method="post" className="mt-4 grid gap-3 border-t border-line pt-4">
-                  <input type="hidden" name="action" value={b.active ? "archive" : "restore"} />
-                  <input type="hidden" name="slug" value={b.slug} />
-                  <Field id={`${b.slug}-visibility-reason`} name="reason" label="Visibility change reason" minLength={10} maxLength={2000} required />
-                  <label className="flex items-start gap-2 text-[15px]">
-                    <input type="checkbox" name="confirmed" required className="mt-1 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]" />
-                    {b.active ? "I confirm archiving this publication." : "I confirm restoring this publication's visibility."}
-                  </label>
-                  <button className="btn btn-primary justify-self-start" type="submit"><VisibilityIcon size={16} aria-hidden="true" />{b.active ? "Archive" : "Restore"}</button>
-                </form>
-              </section>
-            );
-          }
-          const checklist = releaseChecklist(b);
-          const onSale = checklist.every((i) => i.ok);
-          const file = files.get(b.slug) ?? { ok: false, reason: "No file attached yet." };
-          const canRelease = !b.release_approved && file.ok && b.price_inr > 0;
-          return (
-            <article key={b.slug} className="rounded-xl border border-line bg-white p-4">
-              <div className="grid items-start gap-4 sm:grid-cols-[64px_minmax(0,1fr)] lg:grid-cols-[64px_minmax(0,1fr)_minmax(260px,auto)]">
-                {b.cover ? <img src={b.cover} alt="" className="w-16 rounded-sm shadow" /> : <span className="grid h-24 w-16 place-items-center rounded-sm bg-bg-3 text-[10px] text-ink-soft">No cover</span>}
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold">{b.title}</h2>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${onSale ? "bg-brand/10 text-brand" : "bg-gold/10 text-gold"}`}>{onSale ? `On sale · ₹${(b.price_inr / 100).toFixed(2)}` : "Not on sale"}</span>
-                  </div>
-                  <p className="text-sm text-ink-soft">{categoryName.get(b.category_slug ?? "") ?? "No category"} · {s ? `${s.orders} orders` : "No sales yet"}</p>
-                  <ul className="mt-2 flex flex-wrap gap-1.5">{checklist.map((i) => <li key={i.label} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${i.ok ? "border-brand/30 text-brand" : "border-line text-ink-soft"}`}>
-                    {i.ok ? <Check size={12} aria-hidden="true" /> : <X size={12} aria-hidden="true" />}{i.label}</li>)}</ul>
-                  {!b.release_approved && file.reason && <p className="mt-2 text-sm text-gold">{file.reason}</p>}
-                </div>
-                <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
-                  <form action="/api/admin/book" method="post" className="flex items-end gap-2">
-                    <input type="hidden" name="action" value="price" /><input type="hidden" name="slug" value={b.slug} />
-                    <label className="text-sm">Price (₹)<input name="price" required inputMode="decimal" pattern="\d+(\.\d{1,2})?" defaultValue={(b.price_inr / 100).toFixed(2)} className="field-input mt-1 w-32" /></label>
-                    <button className="btn btn-ghost" type="submit">Save price</button>
-                  </form>
-                  <div className="grid grid-cols-2 gap-2"><BookUpload slug={b.slug} kind="pdf" /><BookUpload slug={b.slug} kind="cover" /></div>
-                  {!b.release_approved && <form action="/api/admin/book" method="post">
-                    <input type="hidden" name="action" value="put-on-sale" /><input type="hidden" name="slug" value={b.slug} />
-                    <button className="btn btn-primary w-full" type="submit" disabled={!canRelease} title={canRelease ? undefined : file.reason ?? "Set a price first."}>
-                      <Rocket size={16} aria-hidden="true" /> Put on sale</button>
-                  </form>}
-                </div>
-              </div>
-              <details className="mt-4 border-t border-line pt-3">
-                <summary className="cursor-pointer text-sm font-medium">Offer and details</summary>
-                <div className="pt-4"><BookForm book={b} categories={categoryList} authors={authorList} /></div>
-                <details className="mt-4 border-t border-line pt-3">
-                  <summary className="cursor-pointer text-sm text-ink-soft">Release from a reviewed submission</summary>
-                  <form action="/api/admin/book" method="post" className="mt-3 grid gap-3">
-                    <input type="hidden" name="action" value="release" />
-                    <input type="hidden" name="slug" value={b.slug} />
-                    <Field id={`${b.slug}-release-submission`} name="submission_id" label="Reviewed submission ID" defaultValue={b.submission_id ?? ""} maxLength={120} required />
-                    <Field id={`${b.slug}-release-reason`} name="reason" label="Release reason" minLength={10} maxLength={2000} required />
-                    <label className="flex items-start gap-2 text-[15px]">
-                      <input type="checkbox" name="confirmed" required className="mt-1 h-4 w-4 shrink-0 accent-[color:var(--color-brand)]" />
-                      I confirm release using the reviewed submission.
-                    </label>
-                    <button className="btn btn-ghost justify-self-start" type="submit"><BookCheck size={16} aria-hidden="true" /> Release book</button>
-                  </form>
-                </details>
-              </details>
-            </article>
-          );
-        })}
+        {shown.length ? <BookTable rows={shown} query={href({ page: current }).split("?")[1] ?? ""} />
+          : <p className="p-8 text-center text-sm text-ink-soft">{all.length ? "No books match this search." : "No books yet. Use Add book to create the first one."}</p>}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 text-sm text-ink-soft">
+          <span>{matches.length ? `Showing ${(current - 1) * PAGE + 1}–${Math.min(current * PAGE, matches.length)} of ${matches.length}` : "Showing 0 of 0"}</span>
+          {pages > 1 && <nav className="flex items-center gap-1" aria-label="Pages">
+            {current > 1 && <a className="rounded-1 px-2.5 py-1 hover:bg-bg-3" href={href({ page: current - 1 })}>Previous</a>}
+            {Array.from({ length: pages }, (_, i) => i + 1).map((n) =>
+              <a key={n} href={href({ page: n })} aria-current={n === current ? "page" : undefined}
+                className={`rounded-1 px-2.5 py-1 tabular-nums ${n === current ? "bg-brand text-white" : "hover:bg-bg-3"}`}>{n}</a>)}
+            {current < pages && <a className="rounded-1 px-2.5 py-1 hover:bg-bg-3" href={href({ page: current + 1 })}>Next</a>}
+          </nav>}
+        </div>
       </div>
     </AdminShell>
-  );
-}
-
-function Field({
-  name, label, defaultValue, hint, id = name + defaultValue?.slice(0, 4), ...rest
-}: {
-  name: string; label: string; defaultValue?: string; hint?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <div>
-      <label className="field-label" htmlFor={id}>{label}</label>
-      <input id={id} name={name} className="field-input"
-        defaultValue={defaultValue} {...rest} />
-      {hint && <p className="mt-1.5 text-[13px] text-ink-soft">{hint}</p>}
-    </div>
   );
 }

@@ -55,8 +55,9 @@ export function validateContent(section: ContentSection, input: Record<string, u
   const bookSlugs = input.book_slugs ?? [];
   if (!Array.isArray(bookSlugs) || bookSlugs.length > 100 || bookSlugs.some(s => typeof s !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s)) || new Set(bookSlugs).size !== bookSlugs.length) throw new ContentError("Invalid book selection.");
   const payload = input.payload ?? {};
-  const allowedKeys = ["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url", "theme", "size", "category_slug", "category_slugs"];
+  const allowedKeys = ["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url", "theme", "size", "category_slug", "category_slugs", "placement"];
   if (!payload || typeof payload !== "object" || Array.isArray(payload) || JSON.stringify(payload).length > 10000 || Object.keys(payload).some(k => !allowedKeys.includes(k))) throw new ContentError("Invalid module data.");
+  if ("placement" in payload && !["hero", "side-1", "side-2"].includes(String((payload as Record<string, unknown>).placement))) throw new ContentError("Choose where the banner shows.");
   for (const [key, value] of Object.entries(payload)) {
     if (key === "video_url") safeUrl(value);
     else if (key === "theme") { if (!themes.includes(String(value))) throw new ContentError("Invalid theme."); }
@@ -98,10 +99,10 @@ export async function getPublicContent(): Promise<{ modules: ContentModule[]; co
 }
 
 export async function getAdminContent(section: ContentSection): Promise<Record<string, unknown>[]> {
-  if (section === "collections") return await sql`select *, description body, updated_at::text, publish_at::text from content_collections order by sort, slug`;
-  if (section === "authors") return await sql`select *, name title, bio body, photo_url image_url, updated_at::text, publish_at::text from author_profiles order by name`;
-  if (section === "media" || section === "testimonials") return await sql`select *, updated_at::text, publish_at::text from content_modules where type=${section === "media" ? "media" : "testimonial"} order by sort, id`;
-  return await sql`select *, updated_at::text, publish_at::text, ends_at::text from content_modules where type not in ('media','testimonial') order by sort, id`;
+  if (section === "collections") return await sql`select *, description body, updated_at::text, to_json(publish_at)#>>'{}' as publish_at from content_collections order by sort, slug`;
+  if (section === "authors") return await sql`select *, name title, bio body, photo_url image_url, updated_at::text, to_json(publish_at)#>>'{}' as publish_at from author_profiles order by name`;
+  if (section === "media" || section === "testimonials") return await sql`select *, updated_at::text, to_json(publish_at)#>>'{}' as publish_at from content_modules where type=${section === "media" ? "media" : "testimonial"} order by sort, id`;
+  return await sql`select *, updated_at::text, to_json(publish_at)#>>'{}' as publish_at, to_json(ends_at)#>>'{}' as ends_at from content_modules where type not in ('media','testimonial') order by sort, id`;
 }
 export async function saveContent(section: ContentSection, id: string, expected: string | null, input: Record<string, unknown>) {
   const c = validateContent(section, { ...input, ...(section === "media" ? { type: "media" } : section === "testimonials" ? { type: "testimonial" } : {}) });

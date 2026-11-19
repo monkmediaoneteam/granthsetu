@@ -1,0 +1,25 @@
+/* Admin-managed artwork on the homepage: side-card banners and category images.
+   Loaded last so it settles these shapes over the base home styles. */
+
+/* Side cards: an admin banner placed there (its image fills the card, text on a soft scrim), or the book card. */
+.side-banner { grid-template-columns: minmax(0, 1fr); min-height: 190px; color: var(--ink); background: var(--bg-2); border-color: var(--line); }
+.side-banner .eyebrow, .side-banner .link-line { color: var(--brand); }
+.side-body { color: var(--ink-soft); font-size: 14px; }
+.side-banner.has-art { align-items: end; color: #fff; border-color: transparent; background: var(--ink); }
+.side-art { position: absolute; inset: 0; z-index: 0; }
+.side-art img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease-out); }
+.side-banner.has-art:hover .side-art img { transform: scale(1.03); }
+.side-banner.has-art::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, transparent 30%, rgb(10 14 12 / .72) 100%); }
+.side-banner.has-art .side-text { position: relative; z-index: 1; }
+.side-banner.has-art .eyebrow, .side-banner.has-art .link-line, .side-banner.has-art .side-body { color: #fff; }
+.side-product.side-card { background: var(--bg); color: var(--ink); border-color: var(--line); }
+.side-product .eyebrow, .side-product .link-line { color: var(--brand); }
+
+/* Category tiles: an uploaded subject image, or compact text tiles when no subject has artwork. */
+.cat-art { display: block; height: 156px; margin-bottom: 10px; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-2); }
+.cat-art img { width: 100%; height: 100%; object-fit: cover; }
+.cat-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink-soft); }
+.tile-grid-compact .cat-tile-compact { gap: 10px; padding: 18px 18px 16px; }
+.cat-tile-compact:hover .cat-meta { color: var(--brand); }
+
+@media (prefers-reduced-motion: reduce) { .side-art img { transition: none; transform: none; } }

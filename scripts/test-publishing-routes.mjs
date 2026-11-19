@@ -14,10 +14,12 @@ let reader = null;
 let admin = false;
 let uploadedBytes = Buffer.from('%PDF-1.7\nTest PDF quarantine fixture');
 let uploadedPath = '';
+const deletedPaths = [];
 const origin = 'https://publishing.test';
 const dependencies = {
   'next/server': { NextResponse }, 'next/cache': { revalidatePath() {} },
-  'next/navigation': { redirect() { throw new Error('Admin sign-in required'); } },
+  'next/navigation': { redirect() { throw new Error('Admin sign-in required'); }, notFound() { throw new Error('Not found'); } },
+  react: await import('react'),
   'react/jsx-runtime': await import('react/jsx-runtime'),
   'lucide-react': await import('lucide-react'),
   '@/components/AdminShell': { default: ({ children }) => children },
@@ -26,6 +28,7 @@ const dependencies = {
   '@vercel/blob/client': { generateClientTokenFromReadWriteToken: async () => 'test-upload-token' },
   '@vercel/blob': {
     head: async path => ({ pathname: path, url: `https://private.blob.vercel-storage.com/${path}`, size: uploadedBytes.length }),
+    del: async path => { deletedPaths.push(path); },
     get: async path => {
       uploadedPath = path;
       return { statusCode: 200, stream: new ReadableStream({ start(controller) { controller.enqueue(uploadedBytes); controller.close(); } }) };
@@ -53,11 +56,19 @@ try {
   dependencies['@/lib/db'] = { sql: async (parts, ...values) => (await db.query(parts.reduce((sql, part, i) => sql + (i ? `$${i}` : '') + part, ''), values)).rows };
   dependencies['@/lib/submissions'] = await load('../src/lib/submissions.ts');
   dependencies['@/lib/content'] = await load('../src/lib/content.ts');
+  dependencies['@/lib/product-status'] = await load('../src/lib/product-status.ts');
+  dependencies['@/lib/slug'] = await load('../src/lib/slug.ts');
+  dependencies['@/lib/media'] = await load('../src/lib/media.ts');
   dependencies['@/lib/admin-catalogue'] = await load('../src/lib/admin-catalogue.ts');
+  dependencies['@/lib/file-types'] = await load('../src/lib/file-types.ts');
   dependencies['@/lib/admin-sale'] = await load('../src/lib/admin-sale.ts');
   dependencies['@/lib/money'] = await load('../src/lib/money.ts');
-  dependencies['./BookForm'] = await load('../src/app/admin/books/BookForm.tsx');
-  dependencies['./BookUpload'] = { default: () => null };
+  dependencies['@/lib/offers'] = await load('../src/lib/offers.ts');
+  dependencies['../BookForm'] = await load('../src/app/admin/books/BookForm.tsx');
+  dependencies['../BookUpload'] = { default: () => null };
+  dependencies['../StatusBadge'] = dependencies['./StatusBadge'] = await load('../src/app/admin/books/StatusBadge.tsx');
+  dependencies['./BookTable'] = await load('../src/app/admin/books/BookTable.tsx');
+  dependencies['./CreateBook'] = { default: () => null };
   const authorRoute = await load('../src/app/api/submissions/route.ts');
   const uploads = await load('../src/app/api/submissions/uploads/route.ts');
   const scanner = await load('../src/app/api/submissions/scan/route.ts');
@@ -66,10 +77,12 @@ try {
   const assets = await load('../src/app/api/submissions/assets/[id]/route.ts');
   const adminBooks = await load('../src/app/api/admin/book/route.ts');
   const adminBooksPage = await load('../src/app/admin/books/page.tsx');
+  const adminProductPage = await load('../src/app/admin/books/[slug]/page.tsx');
   const oversizedBookForm = () => new Request(`${origin}/api/admin/book`, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': '200001' }, body: 'not-a-form' });
   assert.equal((await adminBooks.POST(oversizedBookForm())).status, 401);
   assert.equal((await adminBooks.POST(new Request(`${origin}/api/admin/book`, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'multipart/form-data' }, body: 'invalid multipart' }))).status, 401);
   await assert.rejects(adminBooksPage.default({ searchParams: Promise.resolve({}) }), /Admin sign-in required/);
+  await assert.rejects(adminProductPage.default({ params: Promise.resolve({ slug: 'existing-firstparty' }), searchParams: Promise.resolve({}) }), /Admin sign-in required/);
   assert.equal((await authorRoute.POST(form('/api/submissions', { action: 'profile', name: 'Test author' }))).status, 401);
   reader = { id: 'reader-a', email: 'test@example.test', name: 'Test author' };
   assert.equal((await authorRoute.POST(form('/api/submissions', { action: 'profile', name: 'Test author' }, 'https://evil.test'))).status, 403);
@@ -118,6 +131,10 @@ try {
     assert.equal((await adminBooks.POST(form('/api/admin/book', { ...bookMetadata, ...invalid }))).status, 400, JSON.stringify(invalid));
   }
   assert.equal((await adminBooks.POST(form('/api/admin/book', bookMetadata))).status, 303);
+  await db.query("insert into books(slug,title,price_inr,active) values('deletion-check','Deletion check',100,false)");
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'delete', slug: 'deletion-check' }))).status, 400);
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'delete', slug: 'deletion-check', confirmed: 'on' }))).status, 303);
+  assert.equal((await db.query("select slug from books where slug='deletion-check'")).rows.length, 0);
   const edited = (await db.query("select title,price_inr,facts,release_approved from books where slug='existing-firstparty'")).rows[0];
   assert.deepEqual(edited, { title: 'Edited first-party book', price_inr: 125, facts: { _internal: 'preserved', Author: 'Reviewed author' }, release_approved: false });
   assert.equal((await review.POST(form('/api/admin/platform/review', { action: 'review', id, version: String((await current()).version) }, 'https://evil.test'))).status, 403);
@@ -148,6 +165,7 @@ try {
   const thirdpartySubmissionBefore = (await db.query('select * from publishing_submissions where id=$1', [id])).rows[0];
   const thirdpartySnapshot = [{ slug: 'test-released-title', title: 'Purchased publication', price: thirdpartyBefore.price_inr, file_url: thirdpartyBefore.file_url, file_sha256: thirdpartyBefore.file_sha256, file_format: 'PDF' }];
   await db.query("insert into orders(id,email,items,subtotal,total,status) values('thirdparty-purchase','reader@example.test',$1::jsonb,$2,$2,'fulfilled')", [JSON.stringify(thirdpartySnapshot), thirdpartyBefore.price_inr]);
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'delete', slug: 'test-released-title', confirmed: 'on' }))).status, 409);
   const metadataAuditCount = (await db.query("select count(*)::int count from events where type='admin.book.updated'")).rows[0].count;
   assert.equal((await adminBooks.POST(form('/api/admin/book', { ...bookMetadata, slug: 'test-released-title' }))).status, 409);
   assert.deepEqual((await db.query("select * from books where slug='test-released-title'")).rows[0], thirdpartyBefore);
@@ -184,11 +202,48 @@ try {
   assert.equal((await adminBooks.POST(form('/api/admin/book', releaseForm))).status, 409);
   await db.query("update publishing_assets set reviewed=true where id='existing-manuscript'");
   assert.equal((await adminBooks.POST(form('/api/admin/book', releaseForm))).status, 303);
-  const adminMarkup = renderToStaticMarkup(await adminBooksPage.default({ searchParams: Promise.resolve({}) }));
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'hide', slug: 'existing-firstparty' }))).status, 303);
+  assert.equal((await db.query("select active from books where slug='existing-firstparty'")).rows[0].active, false);
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'show', slug: 'existing-firstparty' }))).status, 303);
+  const bulk = (op, slugs, extra = {}) => { const body = new URLSearchParams({ action: 'bulk', op, ...extra }); for (const slug of slugs) body.append('slugs', slug); return new Request(`${origin}/api/admin/book`, { method: 'POST', headers: { Origin: origin }, body }); };
+  assert.equal((await adminBooks.POST(bulk('hide', []))).status, 400);
+  assert.equal((await adminBooks.POST(bulk('explode', ['existing-firstparty']))).status, 400);
+  assert.equal((await adminBooks.POST(bulk('hide', ['Bad Slug']))).status, 400);
+  const hidden = await adminBooks.POST(bulk('hide', ['existing-firstparty', 'test-released-title'], { back: 'q=exist&status=on-sale&evil=1' }));
+  assert.match(hidden.headers.get('location'), /\/admin\/books\?q=exist&status=on-sale&notice=/, 'bulk keeps the list search and filter');
+  assert.equal(hidden.status, 303);
+  assert.match(decodeURIComponent(hidden.headers.get('location')), /Removed 1 book from the store\. 1 skipped/);
+  assert.equal((await db.query("select active from books where slug='existing-firstparty'")).rows[0].active, false);
+  assert.equal((await db.query("select active from books where slug='test-released-title'")).rows[0].active, true, 'bulk never changes developer submissions');
+  assert.equal((await adminBooks.POST(bulk('show', ['existing-firstparty']))).status, 303);
+  assert.equal((await db.query("select active from books where slug='existing-firstparty'")).rows[0].active, true);
+  await db.query("insert into books(slug,title,price_inr) values('bulk-a','Bulk A',100),('bulk-b','Bulk B',100)");
+  assert.equal((await adminBooks.POST(bulk('delete', ['bulk-a', 'bulk-b']))).status, 400, 'bulk delete needs confirmation');
+  const deleted = await adminBooks.POST(bulk('delete', ['bulk-a', 'bulk-b', 'test-released-title'], { confirmed: 'on' }));
+  assert.match(decodeURIComponent(deleted.headers.get('location')), /Deleted 2 of 3 books\. 1 kept/);
+  assert.equal((await db.query("select count(*)::int n from books where slug in ('bulk-a','bulk-b')")).rows[0].n, 0);
+  assert.equal((await db.query("select count(*)::int n from books where slug='test-released-title'")).rows[0].n, 1);
+  assert.equal((await db.query("select active from books where slug='existing-firstparty'")).rows[0].active, true);
+  // The list is a table with only a search form (Add product sits in the shell header); edit and delete happen per row or in bulk.
+  const listMarkup = renderToStaticMarkup(await adminBooksPage.default({ searchParams: Promise.resolve({}) }));
+  assert.equal((listMarkup.match(/<form\b/g) ?? []).length, 1, 'only the search form');
+  assert.ok(listMarkup.includes('href="/admin/books/existing-firstparty"'));
+  assert.ok(listMarkup.includes('aria-label="Select all books on this page"'));
+  assert.match(listMarkup, /type="checkbox"[^>]*disabled=""[^>]*aria-label="[^"]*author submission/, 'developer submissions are not bulk-selectable');
+  const filtered = renderToStaticMarkup(await adminBooksPage.default({ searchParams: Promise.resolve({ status: 'submission' }) }));
+  assert.equal(filtered.includes('href="/admin/books/existing-firstparty"'), false);
+  assert.ok(filtered.includes('href="/admin/books/test-released-title"'));
+  await assert.rejects(adminProductPage.default({ params: Promise.resolve({ slug: 'no-such-product' }), searchParams: Promise.resolve({}) }), /Not found/);
+  const edit = async slug => renderToStaticMarkup(await adminProductPage.default({ params: Promise.resolve({ slug }), searchParams: Promise.resolve({}) }));
+  const adminMarkup = (await edit('existing-firstparty')) + (await edit('test-released-title'));
   assert.equal(adminMarkup.includes('name="file_url"'), false);
   assert.equal((adminMarkup.match(/name="action" value="release"/g) ?? []).length, 1);
-  assert.equal((adminMarkup.match(/<form\b/g) ?? []).length, 7); // create, search, price, offer, details, release, archive
-  assert.equal((adminMarkup.match(/name="action" value="price"/g) ?? []).length, 1, "inline price form");
+  // One home per setting: details, release, delete and visibility for a product; archive for the submission.
+  // Discounts live on the Offers screen, and the regular price only in the details form.
+  assert.equal((adminMarkup.match(/<form\b/g) ?? []).length, 5);
+  assert.equal((adminMarkup.match(/name="action" value="price"/g) ?? []).length, 0, 'no second price form');
+  assert.equal((adminMarkup.match(/name="sale_price"/g) ?? []).length, 0, 'offers are not edited on the product');
+  assert.equal((adminMarkup.match(/name="price_inr"/g) ?? []).length, 1);
   assert.ok(adminMarkup.includes('id="existing-firstparty-release-submission"'));
   assert.ok(adminMarkup.includes('name="reason"'));
   assert.ok(adminMarkup.includes('name="confirmed"'));
@@ -199,9 +254,62 @@ try {
   assert.deepEqual(firstparty, { third_party: false, release_approved: true, file_sha256: registered[0].hash, file_format: 'PDF' });
   assert.equal((await adminBooks.POST(form('/api/admin/book', bookMetadata))).status, 303);
   assert.equal((await db.query("select release_approved from books where slug='existing-firstparty'")).rows[0].release_approved, true, 'editing details keeps a released book on sale');
+  // A stored value the form sends back untouched never blocks a save, even if today's rules would reject it as new input.
+  const legacyCover = 'data:image/svg+xml,%3Csvg%3E%3C/svg%3E';
+  await db.query("update books set cover=$1 where slug='existing-firstparty'", [legacyCover]);
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { ...bookMetadata, cover: legacyCover }))).status, 303, 'unchanged cover is kept');
+  assert.equal((await db.query("select cover from books where slug='existing-firstparty'")).rows[0].cover, legacyCover);
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { ...bookMetadata, cover: 'javascript:alert(1)' }))).status, 400, 'a changed cover is still checked');
   assert.equal((await adminBooks.POST(form('/api/admin/book', { ...bookMetadata, file_format: 'EPUB' }))).status, 303);
   assert.equal((await db.query("select release_approved from books where slug='existing-firstparty'")).rows[0].release_approved, false, 'changing the file format needs a new release');
   assert.equal((await adminBooks.POST(form('/api/admin/book', releaseForm))).status, 303);
+  // New products get their web address from the name; a repeated name gets -2, -3.
+  const { slugify } = dependencies['@/lib/slug'];
+  assert.equal(slugify('HSN & SAC Code with GST Rate in Invoice'), 'hsn-and-sac-code-with-gst-rate-in-invoice');
+  assert.equal(slugify('Stop Cash Transaction above ₹10,000'), 'stop-cash-transaction-above-rs-10-000');
+  assert.equal(slugify('  Café — Résumé!! '), 'cafe-resume');
+  const created = await adminBooks.POST(form('/api/admin/book', { action: 'create', title: 'Auto Slug Check', slug: '' }));
+  assert.equal(created.status, 303);
+  assert.match(created.headers.get('location'), /\/admin\/books\/auto-slug-check\?saved=1$/);
+  const again = await adminBooks.POST(form('/api/admin/book', { action: 'create', title: 'Auto Slug Check' }));
+  assert.match(again.headers.get('location'), /\/admin\/books\/auto-slug-check-2\?saved=1$/, 'same name gets a numbered address');
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'create', title: '!!!' }))).status, 400, 'a name with no letters needs a typed address');
+  await db.query("delete from books where slug in ('auto-slug-check','auto-slug-check-2')");
+  // Admin images (banners, categories): only real JPEG/PNG/WebP files are kept and served.
+  const media = await load('../src/app/api/admin/media/route.ts');
+  const mediaTicket = await (await media.POST(json('/api/admin/media', { action: 'ticket' }))).json();
+  assert.match(mediaTicket.pathname, /^admin\/media\/[0-9a-f-]{36}$/);
+  const keepBytes = uploadedBytes;
+  uploadedBytes = await sharp({ create: { width: 8, height: 4, channels: 3, background: '#2e2e7e' } }).png().toBuffer();
+  const okImage = await media.POST(json('/api/admin/media', { action: 'finalize', pathname: mediaTicket.pathname }));
+  assert.equal(okImage.status, 200);
+  assert.equal((await okImage.json()).url, `/api/media/${mediaTicket.pathname.slice('admin/media/'.length)}`);
+  uploadedBytes = Buffer.from('<html>not an image</html>');
+  const notImage = await media.POST(json('/api/admin/media', { action: 'finalize', pathname: mediaTicket.pathname }));
+  assert.equal(notImage.status, 400);
+  assert.ok(deletedPaths.includes(mediaTicket.pathname), 'a file that is not an image is deleted');
+  assert.equal((await media.POST(json('/api/admin/media', { action: 'finalize', pathname: 'admin/books/x/../secret' }))).status, 400);
+  uploadedBytes = keepBytes;
+  // Admin product files: an attached file or cover is only replaced on purpose.
+  const productFiles = await load('../src/app/api/admin/book-files/route.ts');
+  await db.query("insert into books(slug,title,price_inr) values('no-file-yet','No file yet',100)");
+  const attachedUrl = (await db.query("select file_url from books where slug='existing-firstparty'")).rows[0].file_url;
+  assert.ok(attachedUrl, 'fixture product has a file');
+  const stray = await productFiles.POST(json('/api/admin/book-files', { action: 'ticket', slug: 'existing-firstparty', kind: 'pdf' }));
+  assert.equal(stray.status, 409);
+  assert.match((await stray.json()).error, /already has a file\. Use Replace file/);
+  assert.equal((await productFiles.POST(json('/api/admin/book-files', { action: 'ticket', slug: 'existing-firstparty', kind: 'pdf', replace: true }))).status, 200);
+  assert.equal((await productFiles.POST(json('/api/admin/book-files', { action: 'ticket', slug: 'no-file-yet', kind: 'pdf' }))).status, 200, 'first upload needs no confirmation');
+  assert.equal((await productFiles.POST(json('/api/admin/book-files', { action: 'ticket', slug: 'no-file-yet', kind: 'cover' }))).status, 200);
+  // Put on sale is refused without a file, and the edit page says why.
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'price', slug: 'no-file-yet', price: '5' }))).status, 303);
+  assert.equal((await adminBooks.POST(form('/api/admin/book', { action: 'put-on-sale', slug: 'no-file-yet' }))).status, 409);
+  assert.equal((await db.query("select release_approved from books where slug='no-file-yet'")).rows[0].release_approved, false);
+  const noFileMarkup = await edit('no-file-yet');
+  assert.match(noFileMarkup, /Before it can go on sale/);
+  assert.match(noFileMarkup, /Upload the book file\./);
+  assert.match(noFileMarkup, /<button[^>]*disabled=""[^>]*>.*Put on sale/s);
+  await db.query("delete from books where slug='no-file-yet'");
   admin = false;
   assert.equal((await assets.GET(new Request(origin), { params: Promise.resolve({ id: registered[0].id }) })).status, 404);
   assert.equal((await assets.GET(new Request(origin), { params: Promise.resolve({ id: registered[1].id }) })).status, 200);

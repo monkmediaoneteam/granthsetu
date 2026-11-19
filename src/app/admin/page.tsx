@@ -59,7 +59,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       </section>
       <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-white px-5 py-4" aria-labelledby="demo-status">
         <div><h2 id="demo-status" className="text-base font-semibold">Demo catalogue {demoBooks > 0 ? `· ${demoBooks} preview titles live` : "· off"}</h2>
-          <p className="text-sm text-ink-soft">{demo === "failed" ? "That did not work. Try again." : "Fictional titles, subjects, authors and banners to preview the full store. They show prices but can't be bought."}</p></div>
+          <p className="text-sm text-ink-soft">{demo === "failed" ? "That did not work. Try again." : "Sample books, subjects, authors and banners to preview the full store. They show prices but can't be bought."}</p></div>
         <form action="/api/admin/demo" method="post"><input type="hidden" name="action" value={demoBooks > 0 ? "remove" : "load"} />
           <button className={demoBooks > 0 ? "btn btn-ghost" : "btn btn-primary"} type="submit">{demoBooks > 0 ? "Remove demo catalogue" : "Load demo catalogue"}</button></form>
       </section>
@@ -78,7 +78,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         <StatCard
           label="Downloads"
           value={allDownloads}
-          hint={downloadStats.length + " titles"}
+          hint={downloadStats.length + (downloadStats.length === 1 ? " title" : " titles")}
         />
       </div>
 
@@ -124,7 +124,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <td className="border-b border-line px-4 py-3">
                     <a
                       className="font-mono underline hover:text-brand"
-                      href={"/order/" + o.id}
+                      href={"/admin/orders/" + encodeURIComponent(o.id)}
                     >
                       {o.id.slice(0, 10)}
                     </a>
@@ -196,11 +196,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                     {new Date(ev.created_at).toLocaleString("en-IN")}
                   </td>
                   <td className="border-b border-line px-4 py-2.5 font-semibold text-brand">
-                    {ev.type}
+                    {String(ev.type)}
                   </td>
                   <td className="border-b border-line px-4 py-2.5 text-ink-soft">
                     {ev.order_id ? (
-                      <a href={"/order/" + ev.order_id} className="underline">
+                      <a href={"/admin/orders/" + encodeURIComponent(ev.order_id)} className="underline">
                         {ev.order_id.slice(0, 10)}
                       </a>
                     ) : (

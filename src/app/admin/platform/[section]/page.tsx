@@ -8,12 +8,12 @@ import ActionForm from "@/components/ActionForm";
 import ModuleFields from "../ModuleFields";
 import BookPicker from "../BookPicker";
 
-export default async function ContentPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<{ type?: string }> }) {
+export default async function ContentPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<{ type?: string; saved?: string }> }) {
   if (!(await isAdmin())) redirect("/admin/login");
   const { section } = await params;
   if (!contentSections.includes(section as ContentSection)) notFound();
   const selected = section as ContentSection;
-  const { type } = await searchParams;
+  const { type, saved } = await searchParams;
   const records = (await getAdminContent(selected)).filter(record => !(selected === "modules" && type) || record.type === type);
   const books = selected === "collections" ? await sql`select slug,title from books order by title` as { slug: string; title: string }[] : [];
   const collections = selected === "modules" ? await sql`select slug,title from content_collections order by title` as { slug: string; title: string }[] : [];
@@ -21,8 +21,9 @@ export default async function ContentPage({ params, searchParams }: { params: Pr
   const categories = selected === "modules" ? await sql`select slug,name from categories order by sort,name` as { slug: string; name: string }[] : [];
   const options = { books, collections, authors, categories };
   return <section>
+    {saved && <p className="mb-6 rounded-2 border border-brand/30 bg-brand/5 px-4 py-3 text-[15px] text-brand" role="status">Saved. The store is updated.</p>}
     <details className="mb-8 border-y border-line py-4"><summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><Plus size={16} aria-hidden />New {section === "collections" ? "collection" : section === "authors" ? "author" : section === "testimonials" ? "testimonial" : section === "media" ? "media item" : "module"}</summary><div className="pt-5"><Editor section={selected} record={selected === "modules" && type ? { type } : {}} {...options} /></div></details>
-    {!records.length && <p className="text-sm text-ink-soft">No {section} yet.</p>}
+    {!records.length && <p className="text-sm text-ink-soft">No {section === "authors" ? "authors" : section} yet.</p>}
     {records.map(record => <section key={String(record.id ?? record.slug)} className="mb-8 border-b border-line pb-8"><h2 className="mb-4 break-words text-lg font-medium">{String(record.title)}</h2><Editor section={selected} record={record} {...options} /></section>)}
   </section>;
 }
