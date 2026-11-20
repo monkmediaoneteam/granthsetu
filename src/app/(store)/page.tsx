@@ -5,6 +5,7 @@ import { buildHome, sectionsAt } from "@/lib/home";
 import { getSiteSettings } from "@/lib/site-settings";
 import { resolveLayout, sectionFrame, type ResolvedSection } from "@/lib/home-sections";
 import { siteUrl } from "@/lib/store";
+import { seoMetadata, SeoHead } from "@/lib/seo-meta";
 import CategoryTiles from "@/components/home/CategoryTiles";
 import Featured from "@/components/home/Featured";
 import LookInside from "@/components/home/LookInside";
@@ -16,7 +17,7 @@ import { ImageOverlay, ImageText, RichText } from "@/components/home/ContentSect
 import { SectionList } from "@/components/home/BannerSectionView";
 
 export const dynamic = "force-dynamic";
-export const metadata = { alternates: { canonical: siteUrl() } };
+export async function generateMetadata() { return seoMetadata("/"); }
 
 type Position = Parameters<typeof sectionsAt>[1];
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -69,8 +70,11 @@ export default async function Home() {
     }
   }
 
-  return <>{layout.filter((s) => s.enabled).map((section) => {
+  return <>
+    <SeoHead path="/" site />
+    {layout.filter((s) => s.enabled).map((section) => {
     const frame = sectionFrame(section.settings);
     return <div key={section.id} className={frame.className} style={frame.style} data-section={section.type}>{draw(section)}</div>;
-  })}</>;
+  })}
+  </>;
 }
