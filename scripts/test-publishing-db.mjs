@@ -14,6 +14,7 @@ try {
   // Releases attribute the book to its author profile; the catalogue migration that adds author_slug follows in order.
   await db.exec(readFileSync(new URL('../migrations/004-catalogue.sql', import.meta.url), 'utf8'));
   await db.exec(readFileSync(new URL('../migrations/007-marketplace.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../migrations/010-banner-sections.sql', import.meta.url), 'utf8'));
   const defaults = (await db.query("select third_party,release_approved,scan_status from books where slug='existing-title'")).rows[0];
   assert.deepEqual(defaults, { third_party: false, release_approved: false, scan_status: 'pending' });
   globalThis.publishingTestSql = async (parts, ...values) => {
@@ -183,10 +184,15 @@ try {
   assert.deepEqual(publicContent.modules.map(m => m.id), ['m3', 'm4']);
   assert.deepEqual(publicContent.collections[0].book_slugs, ['released-title', 'existing-title']);
   assert.equal(publicContent.authors.length, 0);
-  // Banner placement: hero or one of the two side cards; anything else is refused.
+  // Banner placement: a built-in section or a saved one; anything else is refused. Section keys are unique.
   await c.saveContent('modules', '', null, { title: 'Side art', type: 'banner', status: 'draft', image_url: '/api/media/x', payload: { placement: 'side-2' } });
   await c.saveContent('modules', '', null, { title: 'Band art', type: 'banner', status: 'draft', image_url: '/api/media/y', payload: { placement: 'band' } });
   await assert.rejects(c.saveContent('modules', '', null, { title: 'Bad place', type: 'banner', image_url: '/api/media/z', payload: { placement: 'footer' } }), /where the banner shows/);
+  const festival = { key: 'festival-row', position: 'home-after-books', layout: 'grid', max: '3', columns: '3', width: '800', height: '450', mobile_width: '800', mobile_height: '600', autoplay: '0', empty: 'hide', enabled: 'on' };
+  await c.saveContent('modules', '', null, { title: 'Festival', type: 'banner-section', status: 'published', payload: festival });
+  await c.saveContent('modules', 'fa', null, { title: 'Festival art', type: 'banner', status: 'draft', image_url: '/api/media/f', payload: { placement: 'festival-row' } });
+  await q("delete from content_modules where id='fa'");
+  await assert.rejects(c.saveContent('modules', '', null, { title: 'Again', type: 'banner-section', status: 'published', payload: festival }), /already uses that key/);
   await assert.rejects(c.saveContent('modules', '', null, { title: 'No art', type: 'banner', payload: { placement: 'hero' } }), /Add an image for this banner/, 'a banner is its image');
   await q("delete from content_modules where title='Band art'");
   await q("delete from content_modules where title='Side art'");
