@@ -49,8 +49,24 @@ assert.equal(s.verifyScanSignature(body, time, signature, 'secret', (Number(time
 await assert.rejects(s.readLimitedBody(new Request('https://test.local', { method: 'POST', body: '12345' }), 4), error => error.status === 413);
 assert.equal(new TextDecoder().decode(await s.readLimitedBody(new Request('https://test.local', { method: 'POST', body: '1234' }), 4)), '1234');
 const c = await load('../src/lib/content.ts');
-// The server's banner slots match the slots the homepage and admin use.
-assert.deepEqual(c.BANNER_PLACEMENTS, (await load('../src/lib/banner-slots.ts')).SLOT_KEYS);
+// The server's banner section options match the ones the storefront and admin use.
+const bs = await load('../src/lib/banner-sections.ts');
+assert.deepEqual(c.BANNER_POSITIONS, Object.keys(bs.POSITIONS));
+assert.deepEqual(c.BANNER_LAYOUTS, Object.keys(bs.LAYOUTS));
+const sectionPayload = { key: 'festival-row', position: 'home-after-books', layout: 'grid', max: '3', columns: '3', width: '800', height: '450', mobile_width: '800', mobile_height: '600', autoplay: '0', empty: 'hide', enabled: 'on' };
+assert.equal(c.validateContent('modules', { title: 'Festival', type: 'banner-section', payload: sectionPayload }).type, 'banner-section');
+for (const [field, bad] of [['key', 'Bad Key'], ['position', 'footer'], ['layout', 'mosaic'], ['max', '0'], ['columns', '9'], ['width', '50'], ['height', '9000'], ['autoplay', '-1'], ['empty', 'maybe'], ['enabled', 'yes']])
+  assert.throws(() => c.validateContent('modules', { title: 'x', type: 'banner-section', payload: { ...sectionPayload, [field]: bad } }), undefined, `section ${field}=${bad} is refused`);
+assert.throws(() => c.validateContent('modules', { title: 'x', type: 'banner', payload: { placement: 'Not a slug' } }));
+// Saved settings are read leniently; legacy side-1/side-2 banners belong to the side section; built-ins can be overridden.
+assert.equal(bs.sectionKeyOf('side-2'), 'side'); assert.equal(bs.sectionKeyOf(undefined), 'hero');
+const merged = bs.mergeSections([{ id: 's', type: 'banner-section', title: 'Hero', sort: 0, payload: { key: 'hero', layout: 'grid', max: 99, width: 1200, height: 600 } },
+  { id: 'n', type: 'banner-section', title: 'Festival', sort: 50, payload: sectionPayload }]);
+const hero = merged.find((x) => x.key === 'hero');
+assert.equal(hero.layout, 'grid'); assert.equal(hero.max, 8, 'an out-of-range count falls back to the default'); assert.equal(hero.width, 1200); assert.equal(hero.id, 's');
+for (const s of bs.DEFAULT_SECTIONS) assert.ok(c.BUILT_IN_SECTIONS.includes(s.key), `${s.key} is a built-in section on the server`);
+assert.equal(merged.length, bs.DEFAULT_SECTIONS.length + 1); assert.equal(merged.find((x) => x.key === 'festival-row').builtIn, false);
+assert.equal(bs.mergeSections([{ id: 'o', type: 'banner-section', title: 'Band', sort: 20, payload: { key: 'band', enabled: 'off' } }]).find((x) => x.key === 'band').enabled, false);
 assert.equal(c.safeUrl('/books'), '/books');
 assert.equal(c.safeUrl('https://example.com/image.png'), 'https://example.com/image.png');
 for (const url of ['javascript:alert(1)', '//evil.test', 'http://example.com', '/\\evil.test', 'data:text/html,bad']) assert.throws(() => c.safeUrl(url));

@@ -5,7 +5,7 @@ import { checkOrigin } from "@/lib/reader-auth";
 import { contentSections, saveContent, deleteContent, moveModule, ContentError, type ContentSection } from "@/lib/content";
 
 // Screens that may ask to be sent back after a save; anything else returns to the generic CMS page.
-const RETURN_PATHS = new Set(["/admin/banners"]);
+const RETURN_PATHS = new Set(["/admin/banners", "/admin/banners/sections"]);
 import { readLimitedForm, PublishingError } from "@/lib/submissions";
 
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       }
       input.book_slugs = form.getAll("book_slugs");
       input.payload = form.has("payload") ? JSON.parse(String(form.get("payload") || "{}")) : Object.fromEntries(
-        ["subtitle", "attribution", "collection_slug", "author_id", "video_url", "theme", "size", "category_slug", "placement"].filter(key => form.get(key)).map(key => [key, form.get(key)])
+        ["subtitle", "attribution", "collection_slug", "author_id", "video_url", "theme", "size", "category_slug", "placement", "key", "position", "layout", "max", "columns", "width", "height", "mobile_width", "mobile_height", "autoplay", "empty", "enabled"].filter(key => form.get(key)).map(key => [key, form.get(key)])
       );
       if (form.getAll("category_slugs").length) (input.payload as Record<string, unknown>).category_slugs = form.getAll("category_slugs").map(String);
       await saveContent(section, id, expected || null, input);

@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import { ArrowDown, ArrowUp, ImagePlus, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Plus, Settings2 } from "lucide-react";
 import { isAdmin } from "@/lib/admin-auth";
 import { getAdminContent } from "@/lib/content";
 import AdminShell from "@/components/AdminShell";
-import { BANNER_SLOTS, SLOT_KEYS, toIndiaInput, toSlot, type BannerSlot } from "@/lib/banner-slots";
+import { LAYOUTS, POSITIONS, mergeSections, ratio, sectionKeyOf, sizeLabel, toIndiaInput } from "@/lib/banner-sections";
 import BannerForm, { type AdminBanner } from "./BannerForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Banners", robots: { index: false, follow: false } };
 
 const at = (v: string | null) => (v ? Date.parse(v.replace(" ", "T")) : NaN);
-// What the homepage does with a banner right now.
+// What the site does with a banner right now.
 function state(b: AdminBanner, now = Date.now()): { label: string; live: boolean } {
   if (b.status !== "published") return { label: b.status === "draft" ? "Draft" : "Archived", live: false };
   if (!b.image_url) return { label: "No image", live: false };
@@ -20,47 +20,49 @@ function state(b: AdminBanner, now = Date.now()): { label: string; live: boolean
 }
 
 export default async function BannersPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string; new?: string }> }) {
-  const { saved, error, new: newSlot } = await searchParams;
+  const { saved, error, new: newKey } = await searchParams;
   if (!(await isAdmin())) redirect("/admin/login");
-  const banners = (await getAdminContent("modules") as unknown as (AdminBanner & { type: string })[]).filter((m) => m.type === "banner");
-  const bySlot = Object.fromEntries(SLOT_KEYS.map((slot) => [slot, banners.filter((b) => toSlot(b.payload?.placement) === slot)])) as unknown as Record<BannerSlot, AdminBanner[]>;
-  const adding = newSlot ? toSlot(newSlot) : null;
+  const modules = await getAdminContent("modules") as unknown as (AdminBanner & { type: string })[];
+  const sections = mergeSections(modules);
+  const banners = modules.filter((m) => m.type === "banner");
+  const known = new Set(sections.map((s) => s.key));
+  const orphans = banners.filter((b) => !known.has(sectionKeyOf(b.payload?.placement)));
+  const adding = newKey && known.has(newKey) ? newKey : null;
 
-  return <AdminShell active="banners" title="Banners" subtitle="Every banner on the homepage is an image you choose here. Pick a slot, add an image, and optionally a link.">
-    {saved && <p className="mb-4 rounded-2 border border-brand/30 bg-brand/5 px-4 py-3 text-[15px] text-brand" role="status">Saved. The homepage is updated.</p>}
+  return <AdminShell active="banners" title="Banners" subtitle="Every banner on the site is an image you choose here. Where they show, their layout, count and size are set under Sections."
+    actions={<a className="btn btn-ghost" href="/admin/banners/sections"><Settings2 size={16} aria-hidden="true" />Sections and layout</a>}>
+    {saved && <p className="mb-4 rounded-2 border border-brand/30 bg-brand/5 px-4 py-3 text-[15px] text-brand" role="status">Saved. The site is updated.</p>}
     {error && <p className="mb-4 rounded-2 border border-danger/30 bg-danger/10 px-4 py-3 text-[15px] text-danger" role="alert"><strong>Not saved.</strong> {error}</p>}
 
     <details id="new-banner" className="mb-8 rounded-xl border border-line bg-white p-4" open={!!adding || !banners.length}>
       <summary className="flex cursor-pointer items-center gap-2 font-medium"><Plus size={16} aria-hidden="true" /> New banner</summary>
-      <div className="pt-4"><BannerForm slot={adding ?? "hero"} /></div>
+      <div className="pt-4"><BannerForm sections={sections} sectionKey={adding ?? undefined} /></div>
     </details>
 
-    <div className="grid gap-8">{SLOT_KEYS.map((slot) => {
-      const info = BANNER_SLOTS[slot];
-      const list = bySlot[slot];
-      // Single slots show only their first live banner; others there wait their turn.
-      const showingId = info.many ? null : list.find((b) => state(b).live)?.id ?? null;
-      return <section key={slot} aria-labelledby={`slot-${slot}`}>
+    <div className="grid gap-8">{sections.map((section) => {
+      const list = banners.filter((b) => sectionKeyOf(b.payload?.placement) === section.key);
+      const liveIds = list.filter((b) => state(b).live).slice(0, section.max).map((b) => b.id);
+      return <section key={section.key} aria-labelledby={`sec-${section.key}`}>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 id={`slot-${slot}`} className="text-lg font-semibold">{info.label}</h2>
-            <p className="text-sm text-ink-soft">{info.where} Recommended image {info.size}.</p>
+            <h2 id={`sec-${section.key}`} className="text-lg font-semibold">{section.name}{!section.enabled && <span className="ml-2 rounded-full bg-bg-3 px-2.5 py-0.5 text-xs font-medium text-ink-soft">Off</span>}</h2>
+            <p className="text-sm text-ink-soft">{POSITIONS[section.position].label} · {LAYOUTS[section.layout]} · shows up to {section.max} · image {sizeLabel(section.width, section.height)}</p>
           </div>
-          <a className="btn btn-ghost min-h-10 px-4 py-2 text-sm" href={`/admin/banners?new=${slot}#new-banner`}><ImagePlus size={16} aria-hidden="true" />Add image</a>
+          <a className="btn btn-ghost min-h-10 px-4 py-2 text-sm" href={`/admin/banners?new=${section.key}#new-banner`}><ImagePlus size={16} aria-hidden="true" />Add image</a>
         </div>
         {!list.length && <p className="rounded-xl border border-dashed border-line-2 p-4 text-sm text-ink-soft">
-          {slot === "band" ? "Empty. The homepage leaves this space out until you add a banner." : "Empty. The homepage shows a plain placeholder image here until you add a banner."}</p>}
+          {section.empty === "placeholder" ? "Empty. The site shows a plain placeholder image here until you add a banner." : "Empty. The site leaves this space out until you add a banner."}</p>}
         <ol className="grid gap-3">{list.map((b, i) => {
           const s = state(b);
-          const waiting = !info.many && s.live && showingId !== b.id;
+          const waiting = s.live && !liveIds.includes(b.id);
           return <li key={b.id} className="rounded-xl border border-line bg-white p-4">
             <div className="grid items-start gap-4 md:grid-cols-[240px_minmax(0,1fr)_auto]">
-              <div className="overflow-hidden rounded-lg border border-line bg-bg-2" style={{ aspectRatio: info.ratio }}>
+              <div className="overflow-hidden rounded-lg border border-line bg-bg-2" style={{ aspectRatio: ratio(section.width, section.height) }}>
                 {b.image_url ? <img src={b.image_url} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-xs text-ink-soft">No image</span>}
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold">{b.title}</h3>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.live && !waiting ? "bg-brand/10 text-brand" : "bg-bg-3 text-ink-soft"}`}>{waiting ? "Live, not showing (another banner is first)" : s.label}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.live && !waiting ? "bg-brand/10 text-brand" : "bg-bg-3 text-ink-soft"}`}>{waiting ? `Live, not showing (section shows ${section.max})` : s.label}</span>
                   {b.mobile_image_url && <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-ink-soft">Phone image</span>}</div>
                 <p className="mt-1 text-sm text-ink-soft">{b.link_url ? `Links to ${b.link_url}` : "Not linked"}
                   {b.publish_at ? ` · from ${toIndiaInput(b.publish_at).replace("T", " ")}` : ""}{b.ends_at ? ` · until ${toIndiaInput(b.ends_at).replace("T", " ")}` : ""}</p>
@@ -73,10 +75,17 @@ export default async function BannersPage({ searchParams }: { searchParams: Prom
                     {direction === "up" ? <ArrowUp size={16} aria-hidden="true" /> : <ArrowDown size={16} aria-hidden="true" />}</button></form>)}
               </div>}
             </div>
-            <details className="mt-3 border-t border-line pt-3"><summary className="cursor-pointer text-sm font-medium">Edit</summary><div className="pt-4"><BannerForm banner={b} /></div></details>
+            <details className="mt-3 border-t border-line pt-3"><summary className="cursor-pointer text-sm font-medium">Edit</summary><div className="pt-4"><BannerForm banner={b} sections={sections} /></div></details>
           </li>;
         })}</ol>
       </section>;
     })}</div>
+
+    {orphans.length > 0 && <section className="mt-8" aria-labelledby="orphans">
+      <h2 id="orphans" className="text-lg font-semibold">Not in any section</h2>
+      <p className="mb-3 text-sm text-ink-soft">These banners point to a section that was deleted, so they do not show. Edit one to move it into a section.</p>
+      <ol className="grid gap-3">{orphans.map((b) => <li key={b.id} className="rounded-xl border border-line bg-white p-4"><h3 className="font-semibold">{b.title}</h3>
+        <details className="mt-3 border-t border-line pt-3"><summary className="cursor-pointer text-sm font-medium">Edit</summary><div className="pt-4"><BannerForm banner={b} sections={sections} /></div></details></li>)}</ol>
+    </section>}
   </AdminShell>;
 }

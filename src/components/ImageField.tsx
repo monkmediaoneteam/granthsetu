@@ -35,13 +35,14 @@ const PRESETS: Record<string, ImagePreset[]> = {
 // An image slot in an admin form: shows the current image (or the placeholder that will be used), upload to private
 // storage (checked by the server), presets, paste an address, and remove. The address goes into a normal form field.
 export default function ImageField({
-  name, label, value = "", hint, ratio = "16 / 7", presetCategory,
-}: { name: string; label: string; value?: string; hint?: string; ratio?: string; presetCategory?: "hero" | "side" | "category" }) {
+  name, label, value = "", hint, ratio = "16 / 7", presetCategory, expect,
+}: { name: string; label: string; value?: string; hint?: string; ratio?: string; presetCategory?: "hero" | "side" | "category"; expect?: { width: number; height: number } }) {
   const picker = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(value);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dims, setDims] = useState<{ width: number; height: number; url: string } | null>(null);
 
   async function post(body: object) {
     const response = await fetch("/api/admin/media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -77,7 +78,7 @@ export default function ImageField({
     <input type="hidden" name={name} value={url} />
 
     <div className="relative overflow-hidden rounded-xl border border-line bg-bg-2" style={{ aspectRatio: ratio }}>
-      {url ? <img src={url} alt="" className="h-full w-full object-cover" />
+      {url ? <img src={url} alt="" className="h-full w-full object-cover" onLoad={(e) => setDims({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight, url })} />
         : <span className="grid h-full w-full place-items-center p-4 text-center text-ink-soft">
           <span className="grid justify-items-center gap-1.5">
             <ImageUp size={22} aria-hidden="true" />
@@ -110,7 +111,19 @@ export default function ImageField({
     <input ref={picker} type="file" className="sr-only" tabIndex={-1} aria-hidden="true" accept={TYPES.join(",")} disabled={busy}
       onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) upload(file); }} />
     <span className="text-xs text-ink-soft">{hint ?? "JPEG, PNG or WebP, up to 5 MB."}</span>
+    {expect && url && dims?.url === url && dims.width > 0 && <SizeNote dims={dims} expect={expect} />}
     {status && <p className="text-[13px] text-brand" role="status">{status}</p>}
     {error && <p className="text-[13px] text-danger" role="alert">{error}</p>}
   </div>;
+}
+
+// Compares the chosen image with the section's size: a different shape is cropped to fit; a smaller one may look soft.
+function SizeNote({ dims, expect }: { dims: { width: number; height: number; url: string }; expect: { width: number; height: number } }) {
+  const off = Math.abs(dims.width / dims.height - expect.width / expect.height) / (expect.width / expect.height);
+  // SVG artwork scales without losing sharpness, so only raster images can be "too small".
+  const vector = /\.svg($|\?)|\/api\/placeholder\//i.test(dims.url);
+  const small = !vector && dims.width < expect.width * 0.75;
+  if (off <= 0.05 && !small) return <p className="text-[13px] text-brand">Image is {dims.width} × {dims.height} px: a good fit for this section.</p>;
+  return <p className="text-[13px] text-gold">Image is {dims.width} × {dims.height} px; this section is {expect.width} × {expect.height} px.
+    {off > 0.05 ? " The shape differs, so the image will be cropped to fit." : ""}{small ? " It is smaller than recommended and may look soft on large screens." : ""}</p>;
 }

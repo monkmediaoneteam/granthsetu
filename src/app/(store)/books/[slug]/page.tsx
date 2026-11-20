@@ -23,8 +23,8 @@ import RecentlyViewed from "@/components/RecentlyViewed";
 import { cartLines, loadOffers } from "@/lib/offer-data";
 import { offerBadges } from "@/lib/offers";
 import { TicketPercent } from "lucide-react";
-import BandBanner from "@/components/home/BandBanner";
-import { slotBanner } from "@/lib/home";
+import { SectionList } from "@/components/home/BannerSectionView";
+import { bannerSections, sectionsAt } from "@/lib/home";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,6 +40,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const [book, records, content, categories] = await Promise.all([getBook((await params).slug), getBooks(), getPublicContent(), getCategories()]);
   if (!book || !visibleBook(book)) notFound();
   const live = await loadOffers();
+  const banners = bannerSections(content.modules, now);
   const view = { ...publicBook(book, now), offers: live.length ? offerBadges((await cartLines([book], now))[0], live, now) : [] };
   const enabled = flag("COMMERCE_ENABLED");
   const url = `${siteUrl()}/books/${encodeURIComponent(book.slug)}`;
@@ -91,8 +92,9 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
           <dl className="detail-strip">{details.filter(([, , v]) => v).map(([Icon, label, value]) => <div key={label}><dt><Icon size={14} aria-hidden="true" />{label}</dt><dd>{value}</dd></div>)}</dl>
         </div>
       </article>
-      <BandBanner banner={slotBanner(content.modules, "product", now)} wrapClass="section" />
+      <SectionList list={sectionsAt(banners, "book-below-details")} wrap="section" />
       <BookTabs tabs={tabs} />
+      <SectionList list={sectionsAt(banners, "book-below-tabs")} wrap="section" />
       {byAuthor.length > 0 && <div className="section"><Carousel title={`More by ${book.authorship}`}>{byAuthor.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
       {similar.length > 0 && <div className="section"><Carousel title="Similar books" href={category ? `/category/${category.slug}` : "/search"}>{similar.map((b) => <BookCard key={b.slug} book={b} enabled={enabled} />)}</Carousel></div>}
       <RecentlyViewed current={book.slug} />

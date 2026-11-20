@@ -6,9 +6,9 @@ import { parseListing } from "@/lib/listing";
 import { contentUrl } from "@/components/content-data";
 import { siteUrl } from "@/lib/store";
 import Listing from "@/components/Listing";
-import BandBanner from "@/components/home/BandBanner";
+import { SectionList } from "@/components/home/BannerSectionView";
 import { getPublicContent } from "@/lib/content";
-import { slotBanner } from "@/lib/home";
+import { bannerSections, sectionsAt } from "@/lib/home";
 
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -27,7 +27,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   return <Listing base={`/category/${slug}`} title={category.name} intro={`Digital editions in ${category.name.toLowerCase()}.`} books={books} params={listing}
     banner={{ colour: category.colour, image: contentUrl(category.image_url) }} categories={categories} family={[slug, ...children.map((c) => c.slug)]}
     popularity={popularity} enabled={flag("COMMERCE_ENABLED")}
-    promo={<BandBanner banner={slotBanner(content.modules, "listing")} wrapClass="wrap listing-promo" />}>
+    promo={<SectionList list={sectionsAt(bannerSections(content.modules), "listing-above-results")} wrap="wrap listing-promo" />}>
     {children.length > 0 && <ul className="subcategory-chips">{children.map((c) => <li key={c.slug}><Link className="chip" href={`/category/${c.slug}`}>{c.name}</Link></li>)}</ul>}
   </Listing>;
 }

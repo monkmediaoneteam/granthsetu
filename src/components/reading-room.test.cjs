@@ -335,7 +335,7 @@ async function checkCatalogue() {
       link_url: "/search?offer=1", link_label: null, payload: { placement: "listing" }, sort: 0, status: "published", publish_at: null, ends_at: null }] }) },
   }).default;
   const render = async (query) => renderToStaticMarkup(await Search({ searchParams: Promise.resolve(query) }));
-  assert.match(await render({}), /class="band-banner"[\s\S]*src="\/api\/media\/lb"/, "the listing banner shows above the results");
+  assert.match(await render({}), /class="banner-section layout-single"[\s\S]*src="\/api\/media\/lb"/, "the listing banner shows above the results");
   const isbn = await render({ q: record.isbn });
   assert.match(isbn, /data-book="real-book"/);
   assert.doesNotMatch(isbn, /data-book="second-book"/);
@@ -354,32 +354,36 @@ async function checkHomepage() {
   assert.equal(copyViolations("<h2>One two three four five six seven</h2>").length, 1);
   assert.equal(copyViolations(`<p>${"x".repeat(121)}</p>`).length, 1);
   const motionStub = { "motion/react": { ...require("motion/react"), useReducedMotion: () => true } };
-  const Hero = load("components/home/HeroCampaign.tsx", motionStub);
-  // The hero is the admin's images only: no banners shows a plain placeholder image, never coded text.
-  const none = renderToStaticMarkup(React.createElement(Hero.default, { banners: [] }));
-  assert.match(none, /\/api\/placeholder\/hero/, "no banners shows the placeholder image");
-  assert.doesNotMatch(none, /Next slide|Pause slides|<h1/);
+  // Banner sections: the admin's images only, in the layout, count and size set under Admin > Banners > Sections.
+  const View = load("components/home/BannerSectionView.tsx", motionStub);
+  const { DEFAULT_SECTIONS } = load("lib/banner-sections.ts");
+  const sec = (key, extra = {}) => ({ ...DEFAULT_SECTIONS.find((s) => s.key === key), ...extra });
+  const draw = (section, banners) => renderToStaticMarkup(React.createElement(View.default, { placed: { section, banners } }));
+  const none = draw(sec("hero"), []);
+  assert.match(none, /\/api\/placeholder\/hero/, "an empty hero shows the placeholder image");
+  assert.doesNotMatch(none, /Next banner|Pause banners|<h1/);
+  assert.match(none, /--ratio:1600 \/ 700/, "the section's size sets the banner shape");
   const banner = (id, extra = {}) => ({ id, title: `Offer ${id}`, body: null, subtitle: "Should not show", image: `/api/media/${id}`, mobileImage: null, href: "/search", label: "Shop", theme: "forest", placement: "hero", ...extra });
-  const one = renderToStaticMarkup(React.createElement(Hero.default, { banners: [banner("a")] }));
+  const one = draw(sec("hero"), [banner("a")]);
   assert.match(one, /src="\/api\/media\/a"/);
   assert.match(one, /alt="Offer a"/, "the banner name describes the image");
   assert.match(one, /href="\/search"/, "the whole banner links where the admin chose");
-  assert.doesNotMatch(one, /Should not show|Shop<\/a>|Next slide|Pause slides/, "no text drawn over the image; a single banner has no controls");
-  const imageless = renderToStaticMarkup(React.createElement(Hero.default, { banners: [banner("x", { image: null })] }));
-  assert.match(imageless, /\/api\/placeholder\/hero/, "a banner without an image is skipped");
-  const two = renderToStaticMarkup(React.createElement(Hero.default, { banners: [banner("a"), banner("b")] }));
-  assert.match(two, /Next slide/);
-  assert.doesNotMatch(two, /Pause slides/, "reduced motion never autoplays, so no pause control");
-  const Band = load("components/home/BandBanner.tsx").default;
-  assert.equal(renderToStaticMarkup(React.createElement(Band, { banner: null })), "", "an empty wide band leaves the space out");
-  assert.match(renderToStaticMarkup(React.createElement(Band, { banner: banner("w", { placement: "band" }) })), /class="band-banner"[^>]*>|src="\/api\/media\/w"/);
-  const Side = load("components/home/HomeSide.tsx").default;
-  const side = renderToStaticMarkup(React.createElement(Side, { banners: { first: banner("s1", { placement: "side-1" }), second: null } }));
-  assert.match(side, /src="\/api\/media\/s1"/);
-  assert.match(side, /\/api\/placeholder\/side\?slot=2/, "an empty side card shows the placeholder image");
+  assert.doesNotMatch(one, /Should not show|Shop<\/a>|Next banner|Pause banners/, "no text drawn over the image; a single banner has no controls");
+  const two = draw(sec("hero"), [banner("a"), banner("b")]);
+  assert.match(two, /Next banner/);
+  assert.match(two, /hidden=""/, "a carousel shows one image at a time");
+  assert.doesNotMatch(two, /Pause banners/, "reduced motion never autoplays, so no pause control");
+  assert.equal(draw(sec("band"), []), "", "an empty section set to hide leaves the space out");
+  const grid = draw(sec("band", { layout: "grid", columns: 3 }), [banner("g1"), banner("g2")]);
+  assert.match(grid, /layout-grid/); assert.match(grid, /--cols:3/);
+  assert.doesNotMatch(grid, /hidden=""|Next banner/, "a grid shows every image, no controls");
+  const single = draw(sec("band"), [banner("w1"), banner("w2")]);
+  assert.match(single, /\/api\/media\/w1/); assert.doesNotMatch(single, /\/api\/media\/w2/, "a single-image section shows one");
+  const side = draw(sec("side"), []);
+  assert.match(side, /\/api\/placeholder\/side\?slot=1/); assert.match(side, /\/api\/placeholder\/side\?slot=2/, "an empty side stack shows a placeholder per slot");
   const homeBook = { ...saleBook, highlights: ["Method as the subject, not an appendix"] };
   const sections = [
-    React.createElement(Hero.default, { banners: [] }),
+    React.createElement(View.default, { placed: { section: sec("hero"), banners: [] } }),
     React.createElement(load("components/home/CategoryTiles.tsx").default, { tiles: [{ slug: "science", name: "Science", count: 3, covers: ["/assets/book1.png"] }] }),
     React.createElement(load("components/home/Featured.tsx", { ...motionStub, "next/navigation": { useRouter: () => ({ push() {} }) } }).default, { books: [homeBook], rails: [], enabled: true }),
     React.createElement(load("components/home/LookInside.tsx").default, { books: [homeBook] }),
