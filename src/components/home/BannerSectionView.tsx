@@ -53,7 +53,7 @@ export default function BannerSectionView({ placed, wrap = "", eager = false }: 
   if (!items.length) return null;
 
   const shown = section.layout === "single" ? items.slice(0, 1) : items;
-  const style = { "--ratio": ratio(section.width, section.height), "--mratio": ratio(section.mobileWidth, section.mobileHeight), "--cols": section.columns } as CSSProperties;
+  const style = { "--ratio": ratio(section.width, section.height), "--mratio": ratio(section.mobileWidth, section.mobileHeight), "--cols": section.columns, "--fit": section.fit } as CSSProperties;
   const go = (step: number) => setIndex((i) => (i + step + items.length) % items.length);
   const body = <section className={`banner-section layout-${section.layout}`} style={style} aria-label={section.name}
     aria-roledescription={carousel ? "carousel" : undefined} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>

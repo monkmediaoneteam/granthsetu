@@ -58,6 +58,12 @@ assert.equal(c.validateContent('modules', { title: 'Festival', type: 'banner-sec
 for (const [field, bad] of [['key', 'Bad Key'], ['position', 'footer'], ['layout', 'mosaic'], ['max', '0'], ['columns', '9'], ['width', '50'], ['height', '9000'], ['autoplay', '-1'], ['empty', 'maybe'], ['enabled', 'yes']])
   assert.throws(() => c.validateContent('modules', { title: 'x', type: 'banner-section', payload: { ...sectionPayload, [field]: bad } }), undefined, `section ${field}=${bad} is refused`);
 assert.throws(() => c.validateContent('modules', { title: 'x', type: 'banner', payload: { placement: 'Not a slug' } }));
+assert.equal(c.validateContent('modules', { title: 'Fit', type: 'banner-section', payload: { ...sectionPayload, fit: 'contain' } }).payload.fit, 'contain');
+assert.throws(() => c.validateContent('modules', { title: 'x', type: 'banner-section', payload: { ...sectionPayload, fit: 'stretch' } }), /fit/, 'an unknown image fit is refused');
+assert.throws(() => c.validateContent('modules', { title: 'x', type: 'banner-section', payload: { ...sectionPayload, key: 'new' } }), /reserved/, 'a key that clashes with a screen address is refused');
+assert.equal(bs.sectionFromModule({ id: 's', title: 'x', sort: 0, payload: { key: 'hero', fit: 'contain' } }).fit, 'contain');
+assert.equal(bs.sectionFromModule({ id: 's', title: 'x', sort: 0, payload: { key: 'hero', fit: 'stretch' } }).fit, 'cover', 'a stored odd fit falls back to cover');
+for (const p of bs.SIZE_PRESETS) for (const [v, k] of [[p.width, 'width'], [p.height, 'height'], [p.mobileWidth, 'width'], [p.mobileHeight, 'height']]) assert.ok(v >= bs.LIMITS[k][0] && v <= bs.LIMITS[k][1], `preset ${p.label} ${k} is within limits`);
 // Saved settings are read leniently; legacy side-1/side-2 banners belong to the side section; built-ins can be overridden.
 assert.equal(bs.sectionKeyOf('side-2'), 'side'); assert.equal(bs.sectionKeyOf(undefined), 'hero');
 const merged = bs.mergeSections([{ id: 's', type: 'banner-section', title: 'Hero', sort: 0, payload: { key: 'hero', layout: 'grid', max: 99, width: 1200, height: 600 } },
