@@ -61,7 +61,7 @@ export function validateContent(section: ContentSection, input: Record<string, u
   const bookSlugs = input.book_slugs ?? [];
   if (!Array.isArray(bookSlugs) || bookSlugs.length > 100 || bookSlugs.some(s => typeof s !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s)) || new Set(bookSlugs).size !== bookSlugs.length) throw new ContentError("Invalid book selection.");
   const payload = input.payload ?? {};
-  const allowedKeys = ["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url", "theme", "size", "category_slug", "category_slugs", "placement", "key", "position", "layout", "max", "columns", "width", "height", "mobile_width", "mobile_height", "autoplay", "empty", "enabled"];
+  const allowedKeys = ["subtitle", "quote", "attribution", "collection_slug", "author_id", "book_slugs", "video_url", "theme", "size", "category_slug", "category_slugs", "placement", "key", "position", "layout", "max", "columns", "width", "height", "mobile_width", "mobile_height", "autoplay", "empty", "fit", "enabled"];
   if (!payload || typeof payload !== "object" || Array.isArray(payload) || JSON.stringify(payload).length > 10000 || Object.keys(payload).some(k => !allowedKeys.includes(k))) throw new ContentError("Invalid module data.");
   const p = payload as Record<string, unknown>;
   // A banner names the section it belongs to; a section is a short key plus its layout settings.
@@ -75,6 +75,8 @@ export function validateContent(section: ContentSection, input: Record<string, u
       if (!Number.isInteger(n) || n < lo || n > hi) throw new ContentError(`${field.replace("_", " ")} must be a whole number from ${lo} to ${hi}.`);
     }
     if (!["placeholder", "hide"].includes(String(p.empty))) throw new ContentError("Choose what shows when the section is empty.");
+    if ("fit" in p && !["cover", "contain"].includes(String(p.fit))) throw new ContentError("Choose how the image fits: fill the frame or show it whole.");
+    if (p.key === "new") throw new ContentError("That key is reserved. Choose another.");
     if (!["on", "off"].includes(String(p.enabled))) throw new ContentError("Choose whether the section is on.");
   }
   // A banner is only its image, so it cannot be saved without one.

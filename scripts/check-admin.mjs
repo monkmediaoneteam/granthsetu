@@ -91,34 +91,37 @@ try {
   await page.getByRole('dialog').getByRole('button', { name: 'Show in store' }).click();
   await expect(page.getByText(/Restored \d+ books? to the store/)).toBeVisible();
   expect((await page.request.get(store)).status()).toBe(200);
-  // Banners are images only, placed in admin-configured sections from Admin > Banners.
+  // Banners are managed like products: a table with edit and delete, one page per banner, and sections that set layout and size.
   const saved = () => expect(page.getByText('Saved. The site is updated.')).toBeVisible();
   const newBanner = async (key) => {
-    await page.goto(`${base}/admin/banners?new=${key}#new-banner`, { waitUntil: 'networkidle' });
+    await page.goto(`${base}/admin/banners/new?section=${key}`, { waitUntil: 'networkidle' });
     return page.locator('form', { has: page.getByRole('button', { name: 'Add banner' }) });
   };
-  const sectionCard = (key) => page.locator(`section[aria-labelledby="s-${key}"]`);
-  // A banner without an image is refused with a clear message.
+  const preset = async (form, name) => { await form.getByRole('button', { name }).first().click(); };
+  const sectionForm = () => page.locator('form', { has: page.locator('input[name="max"]') });
+  // A banner without an image is refused with a clear message, and the form comes back.
   let form = await newBanner('hero');
   await form.getByLabel('Name').fill('No image check');
   await form.getByRole('button', { name: 'Add banner' }).click();
   await expect(page.getByText(/Add an image for this banner/)).toBeVisible();
-  // Hero: a live banner from a preset image, linked.
+  // Hero: a live banner from a preset image, linked. A new banner returns to the table.
   form = await newBanner('hero');
   await expect(form.getByLabel('Section')).toHaveValue('hero');
   await form.getByLabel('Name').fill('Hero check');
-  await form.getByRole('button', { name: 'Botanical (desktop)' }).first().click();
+  await preset(form, 'Botanical (desktop)');
   await form.getByLabel('Link when clicked (optional)').fill('/search');
   await form.getByRole('button', { name: 'Add banner' }).click();
+  await expect(page).toHaveURL(/\/admin\/banners\?saved=1/);
   await saved();
-  // Side column.
+  const bannerRow = (name) => page.locator('tr', { hasText: name });
+  await expect(bannerRow('Hero check').getByText('Live', { exact: true })).toBeVisible();
   form = await newBanner('side');
   await expect(form.getByLabel('Section')).toHaveValue('side');
   await form.getByLabel('Name').fill('Side check');
-  await form.getByRole('button', { name: 'Special offer (desktop)' }).first().click();
+  await preset(form, 'Special offer (desktop)');
   await form.getByRole('button', { name: 'Add banner' }).click();
   await saved();
-  // Wide band that already ended: the homepage leaves it out.
+  // Wide band that already ended: the homepage leaves it out, the table says Ended.
   form = await newBanner('band');
   await form.getByLabel('Name').fill('Ended band check');
   await form.locator('summary', { hasText: 'or paste an address' }).first().click();
@@ -127,6 +130,7 @@ try {
   await form.getByLabel('Ends (India time, optional)').fill('2020-01-02T09:00');
   await form.getByRole('button', { name: 'Add banner' }).click();
   await saved();
+  await expect(bannerRow('Ended band check').getByText('Ended', { exact: true })).toBeVisible();
   await page.goto(base, { waitUntil: 'networkidle' });
   const hero = page.locator('.home-main .banner-section');
   await expect(hero.locator('img[alt="Hero check"]')).toHaveCount(1);
@@ -135,58 +139,127 @@ try {
   await expect(page.locator('.home-side img[alt="Side check"]')).toHaveAttribute('src', '/assets/banners/side-deal-desktop.svg');
   await expect(page.locator('img[alt="Ended band check"]')).toHaveCount(0);
 
-  // Sections: the admin sets layout, count and size, and adds new sections.
-  await page.goto(`${base}/admin/banners/sections`, { waitUntil: 'networkidle' });
-  await sectionCard('hero').getByText('Edit settings').click();
-  await sectionCard('hero').locator('input[name="width"]').fill('1200');
-  await sectionCard('hero').locator('input[name="height"]').fill('600');
-  await sectionCard('hero').locator('select[name="layout"]').selectOption('single');
-  await sectionCard('hero').getByRole('button', { name: 'Save section' }).click();
+  // Edit a banner from its table row: rename it, change its status, and see both in the table and on the site.
+  await page.goto(`${base}/admin/banners`, { waitUntil: 'networkidle' });
+  await page.getByRole('link', { name: 'Edit Hero check' }).last().click();
+  await expect(page).toHaveURL(/\/admin\/banners\/[^/]+$/);
+  form = page.locator('form', { has: page.getByRole('button', { name: 'Save changes' }) });
+  await form.getByLabel('Name').fill('Hero renamed');
+  await form.getByRole('button', { name: 'Save changes' }).click();
   await saved();
-  await expect(sectionCard('hero').getByText('Built-in, customised')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hero renamed' })).toBeVisible();
+  await form.getByLabel('Status').selectOption('draft');
+  await form.getByRole('button', { name: 'Save changes' }).click();
+  await saved();
+  await page.goto(`${base}/admin/banners`, { waitUntil: 'networkidle' });
+  await expect(bannerRow('Hero renamed').getByText('Draft', { exact: true })).toBeVisible();
   await page.goto(base, { waitUntil: 'networkidle' });
-  await expect(page.locator('.home-main .banner-section.layout-single')).toHaveAttribute('style', /--ratio:\s*1200 \/ 600/);
-  await page.goto(`${base}/admin/banners/sections`, { waitUntil: 'networkidle' });
-  await page.locator('summary', { hasText: 'New section' }).click();
-  const addSection = page.locator('form', { has: page.getByRole('button', { name: 'Add section' }) });
-  await addSection.locator('input[name="title"]').fill('Festival row');
-  await addSection.locator('input[name="key"]').fill('festival-row');
-  await addSection.locator('select[name="position"]').selectOption('home-after-books');
-  await addSection.locator('select[name="layout"]').selectOption('grid');
-  await addSection.getByRole('button', { name: 'Add section' }).click();
+  await expect(page.locator('img[alt="Hero renamed"]')).toHaveCount(0);
+  // Delete one from the table (asks first), and another from its own page.
+  await page.goto(`${base}/admin/banners`, { waitUntil: 'networkidle' });
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Delete Hero renamed' }).click();
   await saved();
+  await expect(bannerRow('Hero renamed')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Edit Side check' }).last().click();
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Delete banner' }).click();
+  await expect(page).toHaveURL(/\/admin\/banners\?saved=1/);
+  await expect(bannerRow('Side check')).toHaveCount(0);
+  // The section filter narrows the table.
+  await page.goto(`${base}/admin/banners?section=band`, { waitUntil: 'networkidle' });
+  await expect(bannerRow('Ended band check')).toHaveCount(1);
+  await page.goto(`${base}/admin/banners?q=nothing-like-this`, { waitUntil: 'networkidle' });
+  await expect(page.getByText('No banners match this search.')).toBeVisible();
+
+  // Sections: a table, with an edit page for layout, count, image size and fit.
+  await page.goto(`${base}/admin/banners/sections`, { waitUntil: 'networkidle' });
+  await expect(page.locator('tr', { hasText: 'Wide band' }).getByText('1600 × 400 px')).toBeVisible();
+  await page.getByRole('link', { name: 'Edit Hero' }).last().click();
+  await expect(page).toHaveURL(/\/admin\/banners\/sections\/hero$/);
+  await page.getByRole('button', { name: 'Strip 4:1' }).click();
+  await expect(page.locator('input[name="width"]')).toHaveValue('1600');
+  await expect(page.locator('input[name="height"]')).toHaveValue('400');
+  await page.locator('input[name="width"]').fill('1200');
+  await page.locator('input[name="height"]').fill('600');
+  await page.locator('select[name="layout"]').selectOption('single');
+  await page.locator('select[name="fit"]').selectOption('contain');
+  await expect(page.getByLabel('Layout preview')).toContainText('1200×600');
+  await sectionForm().getByRole('button', { name: 'Save changes' }).click();
+  await saved();
+  await expect(page.locator('input[name="width"]')).toHaveValue('1200');
+  // A bad number is refused with the reason, and nothing is saved.
+  await page.locator('input[name="max"]').fill('99');
+  await page.locator('input[name="max"]').evaluate((el) => el.removeAttribute('max'));
+  await sectionForm().getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText(/max must be a whole number from 1 to 12/)).toBeVisible();
+  await page.goto(`${base}/admin/banners/sections`, { waitUntil: 'networkidle' });
+  await expect(page.locator('tr', { hasText: 'Hero' }).first().getByText('Built-in, customised')).toBeVisible();
+  // The banner form now follows the section's size.
+  await page.goto(`${base}/admin/banners/new?section=hero`, { waitUntil: 'networkidle' });
+  await expect(page.getByText(/This section uses 1200 × 600 px/)).toBeVisible();
+  // The storefront follows: shape from the size, fit from the setting.
+  form = page.locator('form', { has: page.getByRole('button', { name: 'Add banner' }) });
+  await form.getByLabel('Name').fill('Fit check');
+  await preset(form, 'Botanical (desktop)');
+  await form.getByRole('button', { name: 'Add banner' }).click();
+  await saved();
+  await page.goto(base, { waitUntil: 'networkidle' });
+  const heroSection = page.locator('.home-main .banner-section.layout-single');
+  await expect(heroSection).toHaveAttribute('style', /--ratio:\s*1200 \/ 600/);
+  await expect(heroSection).toHaveAttribute('style', /--fit:\s*contain/);
+  // Add a section of your own, give it a banner, and see it as a grid on the homepage.
+  await page.goto(`${base}/admin/banners/sections/new`, { waitUntil: 'networkidle' });
+  await page.locator('input[name="title"]').fill('Festival row');
+  await page.locator('input[name="key"]').fill('festival-row');
+  await page.locator('select[name="position"]').selectOption('home-after-books');
+  await page.locator('select[name="layout"]').selectOption('grid');
+  await sectionForm().getByRole('button', { name: 'Add section' }).click();
+  await expect(page).toHaveURL(/\/admin\/banners\/sections\?saved=1/);
+  await expect(page.locator('tr', { hasText: 'Festival row' }).getByText('Custom')).toBeVisible();
   form = await newBanner('festival-row');
   await expect(form.getByLabel('Section')).toHaveValue('festival-row');
   await form.getByLabel('Name').fill('Festival check');
-  await form.getByRole('button', { name: 'Special offer (desktop)' }).first().click();
+  await preset(form, 'Special offer (desktop)');
   await form.getByRole('button', { name: 'Add banner' }).click();
   await saved();
   await page.goto(base, { waitUntil: 'networkidle' });
   await expect(page.locator('.banner-section.layout-grid img[alt="Festival check"]')).toHaveCount(1);
-  // Reset the hero back to its defaults.
-  await page.goto(`${base}/admin/banners/sections`, { waitUntil: 'networkidle' });
+  // A key that would clash with a screen address is refused.
+  await page.goto(`${base}/admin/banners/sections/new`, { waitUntil: 'networkidle' });
+  await page.locator('input[name="title"]').fill('Bad key');
+  await page.locator('input[name="key"]').fill('new');
+  await sectionForm().getByRole('button', { name: 'Add section' }).click();
+  await expect(page.getByText(/reserved/)).toBeVisible();
+  // Reset the hero back to its defaults, and delete the custom section (its banner is kept and flagged).
+  await page.goto(`${base}/admin/banners/sections/hero`, { waitUntil: 'networkidle' });
   page.once('dialog', (d) => d.accept());
-  await sectionCard('hero').getByText('Edit settings').click();
-  await sectionCard('hero').getByRole('button', { name: 'Reset to default' }).click();
+  await page.getByRole('button', { name: 'Reset to default' }).click();
+  await expect(page).toHaveURL(/\/admin\/banners\/sections\?saved=1/);
+  await expect(page.locator('tr', { hasText: 'Hero' }).first().getByText('1600 × 700 px')).toBeVisible();
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: 'Delete Festival row' }).click();
   await saved();
-  await expect(sectionCard('hero').getByText(/1600 × 700 px/)).toBeVisible();
+  await expect(page.locator('tr', { hasText: 'Festival row' })).toHaveCount(0);
+  await page.goto(`${base}/admin/banners`, { waitUntil: 'networkidle' });
+  await expect(bannerRow('Festival check').getByText('Section deleted')).toBeVisible();
 
   // A scheduled banner keeps its start and end when reopened and saved again.
   form = await newBanner('hero');
   await form.getByLabel('Name').fill('Schedule check');
-  await form.getByRole('button', { name: 'Botanical (mobile)' }).first().click();
+  await preset(form, 'Botanical (mobile)');
   await form.getByLabel('Starts (India time, optional)').fill('2030-01-05T09:30');
   await form.getByLabel('Ends (India time, optional)').fill('2030-01-20T18:00');
   await form.getByRole('button', { name: 'Add banner' }).click();
   await saved();
-  const row = page.locator('li', { hasText: 'Schedule check' });
-  await expect(row.getByText('Scheduled')).toBeVisible();
-  await row.getByText('Edit').click();
-  await expect(row.getByLabel('Starts (India time, optional)')).toHaveValue('2030-01-05T09:30');
-  await expect(row.getByLabel('Ends (India time, optional)')).toHaveValue('2030-01-20T18:00');
-  await row.getByRole('button', { name: 'Save banner' }).click();
-  await page.locator('li', { hasText: 'Schedule check' }).getByText('Edit').click();
-  await expect(page.locator('li', { hasText: 'Schedule check' }).getByLabel('Starts (India time, optional)')).toHaveValue('2030-01-05T09:30');
+  await expect(bannerRow('Schedule check').getByText('Scheduled', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Edit Schedule check' }).last().click();
+  form = page.locator('form', { has: page.getByRole('button', { name: 'Save changes' }) });
+  await expect(form.getByLabel('Starts (India time, optional)')).toHaveValue('2030-01-05T09:30');
+  await expect(form.getByLabel('Ends (India time, optional)')).toHaveValue('2030-01-20T18:00');
+  await form.getByRole('button', { name: 'Save changes' }).click();
+  await saved();
+  await expect(page.locator('form', { has: page.getByRole('button', { name: 'Save changes' }) }).getByLabel('Starts (India time, optional)')).toHaveValue('2030-01-05T09:30');
 
   // New category: the web address follows the name; adding one with a taken address is refused, not overwritten.
   await page.goto(`${base}/admin/categories`, { waitUntil: 'networkidle' });
@@ -202,4 +275,4 @@ try {
 
   assert.deepEqual(errors, []);
 } finally { await browser.close(); }
-console.log('Admin browser check passed: sign-in, every section, draft product, details reflected in store, save errors shown, visibility and bulk actions reflected in store, image-only banners per section, section size/layout/new section/reset, image required, ended band hidden, banner schedule kept, category address made from the name.');
+console.log('Admin browser check passed: sign-in, every section, draft product, details reflected in store, save errors shown, visibility and bulk actions reflected in store, banner table with edit and delete, banner and section pages, size presets and fit, new and deleted sections, image required, ended band hidden, banner schedule kept, category address made from the name.');

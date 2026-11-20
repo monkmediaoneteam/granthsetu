@@ -25,11 +25,11 @@ export type Layout = keyof typeof LAYOUTS;
 export type BannerSection = {
   key: string; name: string; position: Position; layout: Layout;
   max: number; columns: number; width: number; height: number; mobileWidth: number; mobileHeight: number;
-  autoplay: number; empty: "placeholder" | "hide"; enabled: boolean; sort: number;
+  autoplay: number; empty: "placeholder" | "hide"; fit: "cover" | "contain"; enabled: boolean; sort: number;
   id?: string; updatedAt?: string; builtIn: boolean;
 };
 
-const base = { columns: 1, autoplay: 0, enabled: true, builtIn: true } as const;
+const base = { columns: 1, autoplay: 0, fit: "cover", enabled: true, builtIn: true } as const;
 export const DEFAULT_SECTIONS: BannerSection[] = [
   { ...base, key: "hero", name: "Hero", position: "home-top-main", layout: "carousel", max: 8, width: 1600, height: 700, mobileWidth: 800, mobileHeight: 1000, autoplay: 7, empty: "placeholder", sort: 0 },
   { ...base, key: "side", name: "Side cards", position: "home-top-side", layout: "stack", max: 2, width: 900, height: 600, mobileWidth: 800, mobileHeight: 600, empty: "placeholder", sort: 10 },
@@ -37,6 +37,23 @@ export const DEFAULT_SECTIONS: BannerSection[] = [
   { ...base, key: "product", name: "Book page banner", position: "book-below-details", layout: "single", max: 1, width: 1600, height: 400, mobileWidth: 800, mobileHeight: 600, empty: "hide", sort: 30 },
   { ...base, key: "listing", name: "Search and category banner", position: "listing-above-results", layout: "single", max: 1, width: 1600, height: 400, mobileWidth: 800, mobileHeight: 600, empty: "hide", sort: 40 },
 ];
+
+// Ready-made sizes offered next to the width and height boxes (desktop and phone together).
+export const SIZE_PRESETS = [
+  { label: "Wide hero 16:5", width: 1920, height: 600, mobileWidth: 800, mobileHeight: 1000 },
+  { label: "Hero 16:7", width: 1600, height: 700, mobileWidth: 800, mobileHeight: 1000 },
+  { label: "Strip 4:1", width: 1600, height: 400, mobileWidth: 800, mobileHeight: 600 },
+  { label: "Card 3:2", width: 900, height: 600, mobileWidth: 800, mobileHeight: 600 },
+  { label: "Square", width: 1000, height: 1000, mobileWidth: 1000, mobileHeight: 1000 },
+  { label: "Portrait 4:5", width: 800, height: 1000, mobileWidth: 800, mobileHeight: 1000 },
+] as const;
+
+// What an admin can choose for an empty section, per position.
+export const EMPTY_CHOICES: Record<Position, readonly (readonly ["placeholder" | "hide", string])[]> = Object.fromEntries(Object.keys(POSITIONS).map((p) => [p,
+  [["placeholder", "Show a plain placeholder image"], ["hide", "Leave the space out"]]])) as never;
+
+// Keys that would clash with a screen address.
+export const RESERVED_KEYS = ["new"];
 
 // Limits for every number an admin can set.
 export const LIMITS = { max: [1, 12], columns: [1, 4], width: [200, 4000], height: [100, 4000], autoplay: [0, 60] } as const;
@@ -67,7 +84,7 @@ export function sectionFromModule(m: StoredModule): BannerSection {
     max: int(p.max, LIMITS.max, d.max), columns: int(p.columns, LIMITS.columns, d.columns),
     width: int(p.width, LIMITS.width, d.width), height: int(p.height, LIMITS.height, d.height),
     mobileWidth: int(p.mobile_width, LIMITS.width, d.mobileWidth), mobileHeight: int(p.mobile_height, LIMITS.height, d.mobileHeight),
-    autoplay: int(p.autoplay, LIMITS.autoplay, d.autoplay), empty: p.empty === "placeholder" || p.empty === "hide" ? p.empty : d.empty,
+    autoplay: int(p.autoplay, LIMITS.autoplay, d.autoplay), fit: p.fit === "contain" ? "contain" : "cover", empty: p.empty === "placeholder" || p.empty === "hide" ? p.empty : d.empty,
     enabled: p.enabled !== "off", builtIn: DEFAULT_SECTIONS.some((s) => s.key === key),
   };
 }
