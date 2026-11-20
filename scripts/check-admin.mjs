@@ -177,6 +177,7 @@ try {
   await expect(page.locator('tr', { hasText: 'Wide band' }).getByText('1600 × 400 px')).toBeVisible();
   await page.getByRole('link', { name: 'Edit Hero' }).last().click();
   await expect(page).toHaveURL(/\/admin\/banners\/sections\/hero$/);
+  await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: 'Strip 4:1' }).click();
   await expect(page.locator('input[name="width"]')).toHaveValue('1600');
   await expect(page.locator('input[name="height"]')).toHaveValue('400');
