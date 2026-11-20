@@ -10,6 +10,7 @@
 @import "../styles/product.css";
 @import "../styles/account.css";
 @import "../styles/media.css";
+@import "../styles/sections.css";
 
 /* Tailwind utilities used by admin and account pages, mapped onto the storefront palette. */
 @theme {
