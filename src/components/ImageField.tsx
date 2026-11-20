@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { put } from "@vercel/blob/client";
 import { Check, Eye, ImageUp, RefreshCw, Trash2, X } from "lucide-react";
 
@@ -35,10 +35,11 @@ const PRESETS: Record<string, ImagePreset[]> = {
 // An image slot in an admin form: shows the current image (or the placeholder that will be used), upload to private
 // storage (checked by the server), presets, paste an address, and remove. The address goes into a normal form field.
 export default function ImageField({
-  name, label, value = "", hint, ratio = "16 / 7", presetCategory, expect,
-}: { name: string; label: string; value?: string; hint?: string; ratio?: string; presetCategory?: "hero" | "side" | "category"; expect?: { width: number; height: number } }) {
+  name, label, value = "", hint, ratio = "16 / 7", presetCategory, expect, onChange,
+}: { name: string; label: string; value?: string; hint?: string; ratio?: string; presetCategory?: "hero" | "side" | "category"; expect?: { width: number; height: number }; onChange?: (url: string) => void }) {
   const picker = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(value);
+  useEffect(() => { onChange?.(url); }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

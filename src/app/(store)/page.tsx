@@ -2,7 +2,7 @@ import { getPublicContent } from "@/lib/content";
 import { flag } from "@/lib/env";
 import { bestsellerSlugs, getCategories, getPublishedAuthors, getStoreBooks } from "@/lib/store-data";
 import { buildHome, sectionsAt } from "@/lib/home";
-import { siteUrl } from "@/lib/store";
+import { seoMetadata, SeoHead } from "@/lib/seo-meta";
 import CategoryTiles from "@/components/home/CategoryTiles";
 import Featured from "@/components/home/Featured";
 import LookInside from "@/components/home/LookInside";
@@ -13,7 +13,7 @@ import FaqGrid from "@/components/home/FaqGrid";
 import ShopStrip from "@/components/home/ShopStrip";
 
 export const dynamic = "force-dynamic";
-export const metadata = { alternates: { canonical: siteUrl() } };
+export async function generateMetadata() { return seoMetadata("/"); }
 
 export default async function Home() {
   const now = new Date();
@@ -24,6 +24,7 @@ export default async function Home() {
   const at = (position: Parameters<typeof sectionsAt>[1]) => sectionsAt(home.sections, position);
   const main = at("home-top-main"), side = at("home-top-side");
   return <>
+    <SeoHead path="/" site />
     {(main.length > 0 || side.length > 0) && <div className={`wrap home-top${side.length ? "" : " home-top-full"}`}>
       <div className="home-main"><SectionList list={main} eager /></div>
       {side.length > 0 && <div className="home-side"><SectionList list={side} /></div>}
