@@ -6,6 +6,8 @@ import { getBook, getBooks } from "@/lib/db";
 import { getPublicContent, safeUrl } from "@/lib/content";
 import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { siteUrl } from "@/lib/store";
+import { seoMetadata, SeoHead } from "@/lib/seo-meta";
+import { bookDefaults, bookPath } from "@/lib/seo-pages";
 import { getCategories } from "@/lib/store-data";
 import { publicBook, visibleBook } from "@/components/book-data";
 import AddToCart from "@/components/AddToCart";
@@ -30,9 +32,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const book = await getBook((await params).slug);
   if (!book || !visibleBook(book)) return { title: "Book not found", robots: { index: false } };
-  return { title: book.title, description: book.description || undefined,
-    alternates: { canonical: `${siteUrl()}/books/${encodeURIComponent(book.slug)}` },
-    openGraph: { title: book.title, description: book.description || undefined, images: book.cover && !book.cover.startsWith("data:") ? [book.cover] : [] } };
+  return seoMetadata(bookPath(book.slug), { ...bookDefaults(book), canonical: `${siteUrl()}/books/${encodeURIComponent(book.slug)}` });
 }
 
 export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -65,6 +65,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   ].filter(Boolean) as { id: string; label: string; content: React.ReactNode }[];
   return <div className="product-page" data-book-page>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(bookJsonLd(book, url, view.saleable, now)) }} />
+    <SeoHead path={bookPath(book.slug)} />
     <div className="wrap">
       <nav className="crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span>{category && <><Link href={`/category/${category.slug}`}>{category.name}</Link><span aria-hidden="true">/</span></>}<span aria-current="page">{book.title}</span></nav>
       <article className="product-main">
