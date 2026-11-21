@@ -56,6 +56,7 @@ try {
   dependencies['@/lib/db'] = { sql: async (parts, ...values) => (await db.query(parts.reduce((sql, part, i) => sql + (i ? `$${i}` : '') + part, ''), values)).rows };
   dependencies['@/lib/submissions'] = await load('../src/lib/submissions.ts');
   dependencies['@/lib/content'] = await load('../src/lib/content.ts');
+  dependencies['@/lib/banner-sections'] = await load('../src/lib/banner-sections.ts');
   dependencies['@/lib/product-status'] = await load('../src/lib/product-status.ts');
   dependencies['@/lib/slug'] = await load('../src/lib/slug.ts');
   dependencies['@/lib/media'] = await load('../src/lib/media.ts');
@@ -63,6 +64,9 @@ try {
   dependencies['@/lib/file-types'] = await load('../src/lib/file-types.ts');
   dependencies['@/lib/admin-sale'] = await load('../src/lib/admin-sale.ts');
   dependencies['@/lib/money'] = await load('../src/lib/money.ts');
+  // File cleanup talks to the Blob store; here it only records what it was asked to remove (the rules are tested in test-storage.mjs).
+  dependencies['@/lib/storage-admin'] = { booksDocs: (slugs) => dependencies['@/lib/db'].sql`select to_jsonb(t)::text as doc from books t where slug = any(${slugs}::text[])`,
+    pathsBefore: async (q) => (await q).map((r) => r.doc), releaseQuietly: async (paths) => { (globalThis.releasedUploads ??= []).push(...paths); return paths.length; } };
   dependencies['@/lib/offers'] = await load('../src/lib/offers.ts');
   dependencies['../BookForm'] = await load('../src/app/admin/books/BookForm.tsx');
   dependencies['../BookUpload'] = { default: () => null };
@@ -319,6 +323,17 @@ try {
   assert.equal((await content.POST(form('/api/admin/platform/content', { section: 'media', action: 'save', title: 'Bad media', image_url: 'javascript:alert(1)' }))).status, 400);
   assert.equal((await content.POST(form('/api/admin/platform/content', { section: 'testimonials', action: 'save', title: 'A test quote', body: 'Test quote', payload: '{"attribution":"Test author"}', status: 'published' }))).status, 303);
   assert.equal((await dependencies['@/lib/content'].getPublicContent()).modules[0].type, 'testimonial');
+  // Advanced content has no placement input: new banners default to hero, edits retain their section.
+  const legacyBanner = { section: 'modules', action: 'save', type: 'banner', title: 'Legacy advanced banner',
+    image_url: 'https://images.example.test/banner.png', status: 'draft' };
+  assert.equal((await content.POST(form('/api/admin/platform/content', legacyBanner))).status, 303);
+  const legacyRow = (await db.query("select id, payload, updated_at::text from content_modules where title='Legacy advanced banner'")).rows[0];
+  assert.equal(legacyRow.payload.placement, 'hero');
+  await db.query("update content_modules set payload=payload || '{\"placement\":\"side\"}'::jsonb where id=$1", [legacyRow.id]);
+  assert.equal((await content.POST(form('/api/admin/platform/content', { ...legacyBanner, id: legacyRow.id, updated_at: legacyRow.updated_at }))).status, 303);
+  assert.equal((await db.query("select payload->>'placement' as placement from content_modules where id=$1", [legacyRow.id])).rows[0].placement, 'side');
+  assert.equal((await content.POST(form('/api/admin/platform/content', { ...legacyBanner, placement: 'missing-section' }))).status, 400);
+  assert.equal((await content.POST(form('/api/admin/platform/content', { ...legacyBanner, image_url: '/other/image.png' }))).status, 400);
   console.log('Publishing/admin APIs: bounded authenticated forms, metadata guards, reviewed first-party release, third-party visibility/audits, immutable purchases, private uploads, signed scans, and rendered forms passed. No provider calls.');
 } finally {
   await db.close(); delete globalThis.publishingRouteDependencies;

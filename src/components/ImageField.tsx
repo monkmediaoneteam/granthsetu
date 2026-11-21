@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ImageCropper from "./ImageCropper";
 import { put } from "@vercel/blob/client";
 import { Check, Eye, ImageUp, RefreshCw, Trash2, X } from "lucide-react";
 
@@ -35,13 +36,29 @@ const PRESETS: Record<string, ImagePreset[]> = {
 // An image slot in an admin form: shows the current image (or the placeholder that will be used), upload to private
 // storage (checked by the server), presets, paste an address, and remove. The address goes into a normal form field.
 export default function ImageField({
-  name, label, value = "", hint, ratio = "16 / 7", presetCategory, expect,
-}: { name: string; label: string; value?: string; hint?: string; ratio?: string; presetCategory?: "hero" | "side" | "category"; expect?: { width: number; height: number } }) {
+  name, label, value = "", hint, ratio = "16 / 7", presetCategory, expect, crop = false, onChange,
+}: { name: string; label: string; value?: string; hint?: string; ratio?: string; presetCategory?: "hero" | "side" | "category"; crop?: boolean; expect?: { width: number; height: number }; onChange?: (url: string) => void }) {
+  const [pending, setPending] = useState<File | null>(null);
+  function choose(file: File) {
+    setError("");
+    if (file.size === 0 || file.size > MAX) { setError("Choose an image up to 5 MB."); return; }
+    if (!TYPES.includes(file.type)) { setError("Choose a JPEG, PNG or WebP image."); return; }
+    if (crop && expect) setPending(file); else void upload(file);
+  }
   const picker = useRef<HTMLInputElement>(null);
+  const field = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState(value);
+  useEffect(() => { onChange?.(url); }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const form = field.current?.closest("form");
+    if (!form || (!busy && !pending)) return;
+    const wait = (event: Event) => { event.preventDefault(); setError("Finish the image upload before saving."); };
+    form.addEventListener("submit", wait);
+    return () => form.removeEventListener("submit", wait);
+  }, [busy, pending]);
   const [dims, setDims] = useState<{ width: number; height: number; url: string } | null>(null);
 
   async function post(body: object) {
@@ -53,7 +70,7 @@ export default function ImageField({
 
   async function upload(file: File) {
     setError(""); setStatus("");
-    if (file.size > MAX) { setError(`That image is ${(file.size / 1048576).toFixed(1)} MB. The limit is 5 MB.`); return; }
+    if (file.size === 0 || file.size > MAX) { setError(`That image is ${(file.size / 1048576).toFixed(1)} MB. The limit is 5 MB.`); return; }
     if (!TYPES.includes(file.type)) { setError("Choose a JPEG, PNG or WebP image."); return; }
     setBusy(true);
     try {
@@ -70,7 +87,9 @@ export default function ImageField({
 
   const presets = presetCategory ? PRESETS[presetCategory] : [];
 
-  return <div className="grid gap-2 text-sm">
+  return <div ref={field} className="grid gap-2 text-sm" aria-busy={busy || !!pending}>
+    {pending && expect && <ImageCropper file={pending} size={expect} onCancel={() => setPending(null)}
+      onComplete={(file) => { setPending(null); void upload(file); }} />}
     <div className="flex items-center justify-between">
       <span className="font-medium text-ink">{label}</span>
       {url && <span className="text-xs font-medium text-brand">Custom image set</span>}
@@ -109,7 +128,7 @@ export default function ImageField({
     </div>}
 
     <input ref={picker} type="file" className="sr-only" tabIndex={-1} aria-hidden="true" accept={TYPES.join(",")} disabled={busy}
-      onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) upload(file); }} />
+      onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) choose(file); }} />
     <span className="text-xs text-ink-soft">{hint ?? "JPEG, PNG or WebP, up to 5 MB."}</span>
     {expect && url && dims?.url === url && dims.width > 0 && <SizeNote dims={dims} expect={expect} />}
     {status && <p className="text-[13px] text-brand" role="status">{status}</p>}

@@ -9,6 +9,9 @@ import { contentSections, saveContent, deleteContent, moveModule, ContentError, 
 const BACK_PATH = /^\/admin\/banners(\/sections)?(\/[A-Za-z0-9_-]{1,120})?$/;
 const backPath = (value: FormDataEntryValue | null) => (typeof value === "string" && BACK_PATH.test(value) ? value : null);
 import { readLimitedForm, PublishingError } from "@/lib/submissions";
+import { pathsBefore, releaseQuietly } from "@/lib/storage-admin";
+import { sql } from "@/lib/db";
+import { bannerInputError } from "@/lib/banner-sections";
 
 export const runtime = "nodejs";
 export async function POST(req: Request) {
@@ -25,6 +28,11 @@ export async function POST(req: Request) {
     const id = String(form.get("id") ?? "");
     const expected = String(form.get("updated_at") ?? "");
     const action = form.get("action");
+    // Uploads this record points at now; if the change drops them, they are removed afterwards (unless used elsewhere).
+    const before = id && (action === "delete" || action === "save") ? await pathsBefore(
+      section === "collections" ? sql`select to_jsonb(t)::text as doc from content_collections t where slug=${id}`
+      : section === "authors" ? sql`select to_jsonb(t)::text as doc from author_profiles t where id=${id}`
+      : sql`select to_jsonb(t)::text as doc from content_modules t where id=${id}`) : [];
     if (action === "delete") await deleteContent(section, id, expected);
     else if (action === "move") await moveModule(id, String(form.get("direction") ?? ""));
     else if (action === "save") {
@@ -39,9 +47,24 @@ export async function POST(req: Request) {
         ["subtitle", "attribution", "collection_slug", "author_id", "video_url", "theme", "size", "category_slug", "placement", "key", "position", "layout", "max", "columns", "width", "height", "mobile_width", "mobile_height", "autoplay", "empty", "fit", "enabled"].filter(key => form.get(key)).map(key => [key, form.get(key)])
       );
       if (form.getAll("category_slugs").length) (input.payload as Record<string, unknown>).category_slugs = form.getAll("category_slugs").map(String);
+      if (section === "modules" && (input.type === "banner" || input.type === "banner-section")) {
+        const previous = id ? await sql`select type, payload from content_modules where id=${id}` : [];
+        // Advanced content predates section controls and omits placement. Preserve an edited
+        // banner's section; new legacy forms keep the original hero default. Explicit bad keys still fail.
+        if (input.type === "banner" && input.payload && typeof input.payload === "object" && !Array.isArray(input.payload)) {
+          const payload = input.payload as Record<string, unknown>;
+          if (!Object.hasOwn(payload, "placement")) payload.placement = previous[0]?.type === "banner"
+            ? previous[0].payload?.placement ?? "hero" : "hero";
+        }
+        const savedKey = previous[0]?.type === "banner-section" ? String(previous[0].payload?.key ?? "") : undefined;
+        const problem = bannerInputError(input, savedKey);
+        if (problem) throw new ContentError(problem);
+      }
       await saveContent(section, id, expected || null, input);
     } else return NextResponse.json({ error: "Unknown content action." }, { status: 400 });
-    revalidatePath("/");
+    if (before.length) await releaseQuietly(before);
+    revalidatePath("/", "layout");
+    revalidatePath("/admin/banners", "layout");
     revalidatePath("/admin/platform");
     return NextResponse.redirect(new URL(done ? `${done}?saved=1` : `/admin/platform/${section}?saved=1`, req.url), 303);
   } catch (error) {

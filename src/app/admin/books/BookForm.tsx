@@ -22,7 +22,7 @@ export default function BookForm({ book, categories, authors }: { book: Book; ca
       <label className="text-sm">Subject<select name="category_slug" className={input} defaultValue={book.category_slug ?? ""}><option value="">None</option>{categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}</select></label>
       <label className="text-sm">Format<select name="file_format" className={input} defaultValue={book.file_format ?? "PDF"}>{FILE_TYPE_KEYS.map((key) => <option key={key} value={key.toUpperCase()}>{FILE_TYPES[key].label}</option>)}</select></label>
       {field("price_inr", "Regular price (₹)", { required: true, inputMode: "decimal", defaultValue: (book.price_inr / 100).toFixed(2) })}
-      <label className="text-sm">Release date<input name="release_date" type="date" className={input} defaultValue={book.release_date ? new Date(book.release_date).toISOString().slice(0, 10) : ""} />
+      <label className="text-sm">Release date<input name="release_date" type="date" min="2000-01-01" className={input} defaultValue={book.release_date ? new Date(book.release_date).toISOString().slice(0, 10) : ""} />
         <span className="mt-1 block text-xs text-ink-soft">A future date shows the book as Coming soon.</span></label>
       {field("language", "Language", { maxLength: 60 })}
       {field("edition", "Edition", { maxLength: 120 })}

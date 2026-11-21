@@ -15,7 +15,7 @@ export default function BookCard({ book, enabled, morph = true }: { book: Public
   return <article className="book-card surface surface-hover surface-lit" data-book-card>
     <div className="card-plate plate">
       <Link href={href(book)} className="card-cover" aria-label={`View ${book.title}`} tabIndex={-1}>{morph ? <Morph name={morphName(book.slug)}>{cover}</Morph> : cover}</Link>
-      {book.comingSoon ? <span className="pill card-flag">Coming soon</span> : book.offers?.[0] ? <span className="pill card-flag offer">{book.offers[0]}</span> : off > 0 && <span className="pill card-flag offer">{off}% off</span>}
+      {book.offers?.[0] ? <span className="pill card-flag offer">{book.offers[0]}</span> : off > 0 && <span className="pill card-flag offer">{off}% off</span>}
       <WishlistButton slug={book.slug} title={book.title} />
       <QuickView book={book} enabled={enabled} />
     </div>
@@ -23,7 +23,7 @@ export default function BookCard({ book, enabled, morph = true }: { book: Public
       <p className="eyebrow card-meta">{[book.file_format, book.language].filter(Boolean).join(" · ") || "Digital edition"}</p>
       <h3 className="card-title"><Link href={href(book)}>{book.title}</Link></h3>
       {book.authorship && <p className="card-author">{book.authorship}</p>}
-      <div className="card-foot"><Price book={book} /><AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={book.saleable} saveable={book.saveable} /></div>
+      <div className="card-foot"><Price book={{ ...book, comingSoon: false }} /><AddToCart slug={book.slug} title={book.title} enabled={enabled} saleable={book.saleable} saveable={book.saveable} /></div>
     </div>
   </article>;
 }

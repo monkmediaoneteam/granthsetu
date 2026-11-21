@@ -6,6 +6,8 @@ import { getBook, getBooks } from "@/lib/db";
 import { getPublicContent, safeUrl } from "@/lib/content";
 import { bookJsonLd, jsonLdHtml } from "@/lib/catalogue";
 import { siteUrl } from "@/lib/store";
+import { seoMetadata, SeoHead } from "@/lib/seo-meta";
+import { bookDefaults, bookPath } from "@/lib/seo-pages";
 import { getCategories } from "@/lib/store-data";
 import { publicBook, visibleBook } from "@/components/book-data";
 import AddToCart from "@/components/AddToCart";
@@ -25,14 +27,21 @@ import { offerBadges } from "@/lib/offers";
 import { TicketPercent } from "lucide-react";
 import { SectionList } from "@/components/home/BannerSectionView";
 import { bannerSections, sectionsAt } from "@/lib/home";
+import "@/styles/polish.css";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const book = await getBook((await params).slug);
   if (!book || !visibleBook(book)) return { title: "Book not found", robots: { index: false } };
-  return { title: book.title, description: book.description || undefined,
-    alternates: { canonical: `${siteUrl()}/books/${encodeURIComponent(book.slug)}` },
-    openGraph: { title: book.title, description: book.description || undefined, images: book.cover && !book.cover.startsWith("data:") ? [book.cover] : [] } };
+  return seoMetadata(bookPath(book.slug), { ...bookDefaults(book), canonical: `${siteUrl()}/books/${encodeURIComponent(book.slug)}` });
+}
+
+// Keep legacy two-digit years readable; new admin saves require the full year.
+function releasedOn(value: string | null) {
+  const m = value?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return value;
+  const year = Number(m[1]) < 100 ? 2000 + Number(m[1]) : Number(m[1]);
+  return new Date(Date.UTC(year, Number(m[2]) - 1, Number(m[3]))).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -53,7 +62,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const similar = others.filter((o) => o.category_slug && o.category_slug === book.category_slug && !byAuthor.includes(o)).slice(0, 12);
   const details: [typeof BookOpen, string, string | number | null | undefined][] = [
     [FileText, "Format", book.file_format], [Layers, "Pages", book.pages], [Globe2, "Language", view.language], [Hash, "ISBN", book.isbn],
-    [Building2, "Publisher", book.publisher], [BookOpen, "Edition", view.edition], [BadgeCheck, "Published", view.release_date ?? book.year],
+    [Building2, "Publisher", book.publisher], [BookOpen, "Edition", view.edition], [BadgeCheck, "Published", releasedOn(view.release_date) ?? book.year],
   ];
   const facts = Object.entries(book.facts || {}).filter(([k]) => !k.startsWith("_"));
   const paragraphs = (book.long_description || "").split(/\n\s*\n/).filter(Boolean);
@@ -65,6 +74,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   ].filter(Boolean) as { id: string; label: string; content: React.ReactNode }[];
   return <div className="product-page" data-book-page>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(bookJsonLd(book, url, view.saleable, now)) }} />
+    <SeoHead path={bookPath(book.slug)} />
     <div className="wrap">
       <nav className="crumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span>{category && <><Link href={`/category/${category.slug}`}>{category.name}</Link><span aria-hidden="true">/</span></>}<span aria-current="page">{book.title}</span></nav>
       <article className="product-main">
