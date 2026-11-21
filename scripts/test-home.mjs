@@ -31,7 +31,7 @@ assert.deepEqual(sectionsAt(home.sections, 'home-top-main').map(p => p.section.k
 const pageMods = [mod('p0', 'banner', { sort: 1, payload: { placement: 'product' } }), mod('p1', 'banner', { sort: 2, image_url: '/api/media/p1', payload: { placement: 'product' } }),
   mod('l1', 'banner', { sort: 3, image_url: '/api/media/l1', payload: { placement: 'listing' } }), mod('lx', 'banner', { sort: 4, image_url: '/api/media/lx', ends_at: '2026-10-01T00:00:00Z', payload: { placement: 'listing' } })];
 const placed = bannerSections(pageMods, now);
-assert.deepEqual(sectionsAt(placed, 'book-below-details')[0].banners.map(b => b.id), ['p1'], 'a banner without an image is skipped');
+assert.deepEqual(sectionsAt(placed, 'book-below-tabs')[0].banners.map(b => b.id), ['p1'], 'a banner without an image is skipped and the default follows tabs');
 assert.deepEqual(sectionsAt(placed, 'listing-above-results')[0].banners.map(b => b.id), ['l1']);
 // Admin settings: a section's maximum caps what shows, a switched-off section disappears, a custom section can be placed anywhere.
 const many = Array.from({ length: 4 }, (_, i) => mod(`g${i}`, 'banner', { sort: i, image_url: `/api/media/g${i}`, payload: { placement: 'promo-row' } }));

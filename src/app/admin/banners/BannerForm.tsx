@@ -18,6 +18,8 @@ const input = "field-input mt-1";
 export default function BannerForm({ banner, sections, sectionKey, returnTo, doneTo }: { banner?: AdminBanner; sections: BannerSection[]; sectionKey?: string; returnTo: string; doneTo?: string }) {
   const initial = banner ? sectionKeyOf(banner.payload?.placement) : sectionKey ?? sections[0]?.key ?? "hero";
   const [key, setKey] = useState(initial);
+  const [image, setImage] = useState(banner?.image_url ?? "");
+  const [mobileImage, setMobileImage] = useState(banner?.mobile_image_url ?? "");
   const s = sections.find((x) => x.key === key) ?? sections[0];
   const preset = s && s.width / s.height >= 2 ? "hero" : "side";
   return <form action="/api/admin/platform/content" method="post" className="grid gap-5 sm:grid-cols-2">
@@ -34,10 +36,10 @@ export default function BannerForm({ banner, sections, sectionKey, returnTo, don
       {s && <span className="mt-1 block text-xs text-ink-soft">{POSITIONS[s.position].label}. {LAYOUTS[s.layout]}, up to {s.max}. Image {sizeLabel(s.width, s.height)}.</span>}</label>
 
     {s && <div className="sm:col-span-2 grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      <ImageField key={`img-${key}`} name="image_url" label="Banner image (required)" value={banner?.image_url ?? ""} ratio={ratio(s.width, s.height)}
+      <ImageField crop key={`img-${key}`} name="image_url" label="Banner image (required)" value={image} onChange={setImage} ratio={ratio(s.width, s.height)}
         presetCategory={preset} expect={{ width: s.width, height: s.height }}
         hint={`This section uses ${sizeLabel(s.width, s.height)}. JPEG, PNG or WebP, up to 5 MB. Put any text into the image itself.`} />
-      <ImageField key={`mob-${key}`} name="mobile_image_url" label="Phone image (optional)" value={banner?.mobile_image_url ?? ""} ratio={ratio(s.mobileWidth, s.mobileHeight)}
+      <ImageField crop key={`mob-${key}`} name="mobile_image_url" label="Phone image (optional)" value={mobileImage} onChange={setMobileImage} ratio={ratio(s.mobileWidth, s.mobileHeight)}
         presetCategory={preset} expect={{ width: s.mobileWidth, height: s.mobileHeight }}
         hint={`Shown on phones instead, ${sizeLabel(s.mobileWidth, s.mobileHeight)}. Leave empty to use the main image.`} />
     </div>}
